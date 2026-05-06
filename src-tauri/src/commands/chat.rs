@@ -283,6 +283,27 @@ async fn build_session_message_context_from_db(
             pisci_kernel::agent::state_frame::state_frame_message(&frame),
         );
     }
+    // Diagnostic: log context composition for IM sessions to help debug
+    // "same reply every time" issues. Shows whether the latest user message
+    // is actually present in the LLM context.
+    let last_user_msg_in_context = llm_messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .map(|m| {
+            let text = m.content.as_text();
+            let preview: String = text.chars().take(80).collect();
+            (preview, text.len())
+        });
+    tracing::info!(
+        "build_session_message_context: sid={} db_msgs={} llm_msgs={} summary_len={} budget={} latest_user={:?}",
+        session_id,
+        history.len(),
+        llm_messages.len(),
+        rolling_summary_opt.map(|s| s.len()).unwrap_or(0),
+        budget,
+        last_user_msg_in_context,
+    );
     Ok(SessionMessageContext {
         llm_messages,
         session_state,

@@ -191,14 +191,42 @@ async fn run_im_agent_and_send_reply(
             })
         });
 
-    let (recipient, routing_state) = resolve_im_outbound_route(
-        &state_ref.db,
-        session_id,
-        &msg.channel,
-        &msg.reply_target,
-        msg.routing_state.clone(),
-    )
-    .await;
+    // Use the original inbound message's routing info directly.
+    // We intentionally do NOT call resolve_im_outbound_route here because
+    // in queue mode the DB binding's latest_reply_target may have been
+    // overwritten by a newer inbound message that arrived while the agent
+    // was processing. Using the binding would cause the reply to be
+    // sent with the wrong context_token, routing it to a different message
+    // than the one the user sent. See: WeChat iLink requires the exact
+    // context_token from the inbound message to correctly thread the reply.
+    let recipient = if msg.reply_target.trim().is_empty() {
+        // Fallback: the inbound message didn't carry routing info — try
+        // the DB binding (this handles legacy channels or edge cases).
+        let (r, _) = resolve_im_outbound_route(
+            &state_ref.db,
+            session_id,
+            &msg.channel,
+            &msg.reply_target,
+            msg.routing_state.clone(),
+        )
+        .await;
+        r
+    } else {
+        msg.reply_target.clone()
+    };
+    let routing_state = if msg.routing_state.is_some() {
+        msg.routing_state.clone()
+    } else {
+        let (_, rs) = resolve_im_outbound_route(
+            &state_ref.db,
+            session_id,
+            &msg.channel,
+            &msg.reply_target,
+            msg.routing_state.clone(),
+        )
+        .await;
+        rs
+    };
 
     let outbound = gateway::OutboundMessage {
         channel: msg.channel.clone(),

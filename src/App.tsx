@@ -122,8 +122,15 @@ function AppContent() {
         dispatch(sessionsActions.setSessions(fresh));
         dispatch(chatActions.setMessages({ sessionId: sid, messages }));
         dispatch(chatActions.setRunning({ sessionId: sid, running: true }));
-        // Clear any stale streaming state / tool steps from a previous run
+        // Clear any stale streaming state / tool steps / frozen bubble from a previous run
         // so the UI doesn't show overlapping output from the old agent.
+        // frozenBubble MUST be cleared here because the IM agent event listener
+        // (Chat/index.tsx) is only subscribed when this session is the active one.
+        // If the user is viewing a different session, freezeStreaming never fires
+        // for this IM session, so the stale frozenBubble from the previous turn
+        // would be reused by im_session_done's setMessagesWithFrozen, causing
+        // a stale collapsed bubble to appear in the middle of the message list.
+        dispatch(chatActions.clearFrozenBubble(sid));
         dispatch(chatActions.clearStreaming(sid));
         dispatch(chatActions.clearToolSteps(sid));
         dispatch(chatActions.clearContextUsage(sid));
