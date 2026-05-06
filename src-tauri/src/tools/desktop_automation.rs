@@ -779,7 +779,7 @@ mod imp {
             run_cmd(
                 "cliclick",
                 &[
-                    &format!("dd:."),
+                    "dd:.",
                     &format!("dm:{},{}", to_x, to_y),
                     &format!("du:{},{}", to_x, to_y),
                 ],
@@ -904,10 +904,7 @@ mod imp {
             amount, key
         );
         run_cmd("osascript", &["-e", &script]).await?;
-        Ok(ToolResult::ok(format!(
-            "Scrolled {} {} times",
-            amount, dir
-        )))
+        Ok(ToolResult::ok(format!("Scrolled {} {} times", amount, dir)))
     }
 
     pub async fn launch_app(input: &Value) -> Result<ToolResult> {
