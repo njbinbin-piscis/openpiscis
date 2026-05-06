@@ -894,25 +894,19 @@ mod imp {
     }
 
     pub async fn scroll(input: &Value) -> Result<ToolResult> {
-        let _dir = input["scroll_direction"].as_str().unwrap_or("down");
+        let dir = input["scroll_direction"].as_str().unwrap_or("down");
         let amount = input["scroll_amount"].as_u64().unwrap_or(3) as i32;
         let (_x, _y) = require_coords(input)?;
-        // cliclick doesn't support scroll directly; use osascript
-        let factor = if _dir == "up" { amount } else { -amount };
+        // Use page up/down keys via osascript for scrolling
+        let key = if dir == "up" { "116" } else { "121" };
         let script = format!(
-            "tell application \"System Events\" to repeat {} times\nkey code 116\nend repeat",
-            amount
-        );
-        // Simpler: just use page up/down for scroll
-        let key = if _dir == "up" { "116" } else { "121" };
-        let script2 = format!(
             "tell application \"System Events\" to repeat {} times\nkey code {}\nend repeat",
             amount, key
         );
-        run_cmd("osascript", &["-e", &script2]).await?;
+        run_cmd("osascript", &["-e", &script]).await?;
         Ok(ToolResult::ok(format!(
             "Scrolled {} {} times",
-            amount, _dir
+            amount, dir
         )))
     }
 

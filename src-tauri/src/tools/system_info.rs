@@ -414,7 +414,7 @@ async fn gpu_info() -> String {
                     .collect::<Vec<_>>()
                     .join("\n")
             })
-            .unwrap_or("    No GPU info"),
+            .unwrap_or("    No GPU info".to_string()),
     )
 }
 
