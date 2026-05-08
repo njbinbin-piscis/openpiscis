@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.14] - 2026-05-07
+
+### Fixed
+- **Linux GTK `<select>` dropdown unreadable text**: on Linux (Webkit2GTK),
+  native `<select>` rendering forces a light background, making the light
+  `--text-primary` color invisible. Applied `appearance: none` + custom
+  chevron SVG to `.board-filter-select` (the three filter dropdowns on the
+  Pond Kanban board toolbar) so it respects the dark theme colors, and
+  added explicit `option` styling.
+
+---
+
 ## [0.7.13] - 2026-05-07
 
 ### Fixed
