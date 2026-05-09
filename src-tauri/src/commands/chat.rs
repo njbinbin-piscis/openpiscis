@@ -250,16 +250,6 @@ async fn build_session_message_context_from_db(
         .find(|m| m.role == "user" && !m.content.trim().is_empty())
         .map(|m| m.content.clone())
         .unwrap_or_default();
-    // Diagnostic: log the last 5 DB messages to see if there's an empty user message
-    for (i, msg) in history.iter().rev().take(5).enumerate() {
-        tracing::info!(
-            "build_session_message_context: DB msg[-{}] role={} content_len={} content_preview={}",
-            i + 1,
-            msg.role,
-            msg.content.len(),
-            msg.content.chars().take(50).collect::<String>()
-        );
-    }
     let rolling_summary_opt =
         if context_toggles.disable_rolling_summary || rolling_summary.trim().is_empty() {
             None
@@ -293,27 +283,6 @@ async fn build_session_message_context_from_db(
             pisci_kernel::agent::state_frame::state_frame_message(&frame),
         );
     }
-    // Diagnostic: log context composition for IM sessions to help debug
-    // "same reply every time" issues. Shows whether the latest user message
-    // is actually present in the LLM context.
-    let last_user_msg_in_context = llm_messages
-        .iter()
-        .rev()
-        .find(|m| m.role == "user")
-        .map(|m| {
-            let text = m.content.as_text();
-            let preview: String = text.chars().take(80).collect();
-            (preview, text.len())
-        });
-    tracing::info!(
-        "build_session_message_context: sid={} db_msgs={} llm_msgs={} summary_len={} budget={} latest_user={:?}",
-        session_id,
-        history.len(),
-        llm_messages.len(),
-        rolling_summary_opt.map(|s| s.len()).unwrap_or(0),
-        budget,
-        last_user_msg_in_context,
-    );
     Ok(SessionMessageContext {
         llm_messages,
         session_state,
@@ -622,6 +591,21 @@ async fn build_chat_prompt_artifacts(
     })
 }
 
+async fn resolve_session_workspace_root(
+    state: &State<'_, AppState>,
+    session_id: &str,
+    default_workspace_root: String,
+) -> Result<String, String> {
+    let db = state.db.lock().await;
+    let override_root = db
+        .get_session(session_id)
+        .map_err(|e| e.to_string())?
+        .and_then(|session| session.workspace_root)
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    Ok(override_root.unwrap_or(default_workspace_root))
+}
+
 #[tauri::command]
 pub async fn create_session(
     state: State<'_, AppState>,
@@ -629,19 +613,6 @@ pub async fn create_session(
 ) -> Result<Session, String> {
     let db = state.db.lock().await;
     db.create_session(title.as_deref())
-        .map_err(|e| e.to_string())
-}
-
-/// Set or clear the per-session workspace override.
-/// Pass `None` for `workspace_root` to revert to the global workspace setting.
-#[tauri::command]
-pub async fn set_session_workspace(
-    state: State<'_, AppState>,
-    session_id: String,
-    workspace_root: Option<String>,
-) -> Result<(), String> {
-    let db = state.db.lock().await;
-    db.set_session_workspace(&session_id, workspace_root.as_deref())
         .map_err(|e| e.to_string())
 }
 
@@ -673,6 +644,17 @@ pub async fn rename_session(
 ) -> Result<(), String> {
     let db = state.db.lock().await;
     db.rename_session(&session_id, &title)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn set_session_workspace(
+    state: State<'_, AppState>,
+    session_id: String,
+    workspace_root: Option<String>,
+) -> Result<(), String> {
+    let db = state.db.lock().await;
+    db.set_session_workspace(&session_id, workspace_root.as_deref())
         .map_err(|e| e.to_string())
 }
 
@@ -738,7 +720,7 @@ pub async fn chat_send(
         tool_settings,
         max_iterations,
         builtin_tool_enabled,
-        mut allow_outside_workspace,
+        allow_outside_workspace,
         vision_enabled,
         vision_use_main_llm,
         vision_provider,
@@ -779,42 +761,7 @@ pub async fn chat_send(
             settings.enable_project_instructions,
         )
     };
-
-    // Per-session workspace override: if the session has a workspace_root
-    // set, it takes precedence over the global setting.
-    // Also auto-enable `allow_outside_workspace` if the session workspace
-    // is outside the global workspace root.
-    let session_workspace = {
-        let db = state.db.lock().await;
-        db.get_session(&session_id)
-            .ok()
-            .flatten()
-            .and_then(|s| s.workspace_root)
-    };
-    let workspace_root = if let Some(ref ws) = session_workspace {
-        // Check if session workspace is outside global workspace
-        if !allow_outside_workspace {
-            let global_ws = std::path::Path::new(&workspace_root);
-            let session_ws = std::path::Path::new(ws);
-            // Canonicalize both for reliable comparison (best-effort)
-            let global_canonical = global_ws.canonicalize().unwrap_or_else(|_| global_ws.to_path_buf());
-            let session_canonical = session_ws.canonicalize().unwrap_or_else(|_| session_ws.to_path_buf());
-            if !session_canonical.starts_with(&global_canonical) {
-                // Auto-enable allow_outside_workspace
-                allow_outside_workspace = true;
-                let mut settings = state.settings.lock().await;
-                settings.allow_outside_workspace = true;
-                let _ = settings.save();
-                tracing::info!(
-                    "chat_send: session workspace '{}' is outside global '{}', auto-enabled allow_outside_workspace",
-                    ws, workspace_root
-                );
-            }
-        }
-        ws.clone()
-    } else {
-        workspace_root
-    };
+    let workspace_root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
 
     tracing::info!(
         "chat_send: provider={} model={} api_key_empty={}",
@@ -1278,12 +1225,6 @@ pub struct HeadlessRunOptions {
     pub workspace_root_override: Option<String>,
     pub builtin_tool_overrides: HashMap<String, bool>,
     pub context_toggles: crate::headless_cli::HeadlessContextToggles,
-    /// Override for the tool-context memory owner.
-    /// When `None`, defaults to "pisci".
-    /// For Koi-driven headless turns, this must be the Koi's own id so that
-    /// pool_chat messages, memory writes, and privilege checks attribute to
-    /// the Koi rather than to Pisci.
-    pub memory_owner_id: Option<String>,
 }
 
 pub(crate) const SESSION_SOURCE_IM_PREFIX: &str = "im_";
@@ -1461,11 +1402,6 @@ pub async fn run_agent_headless(
     pisci_kernel::agent::vision::clear_selection(session_id).await;
 
     let pool_session_id = options.as_ref().and_then(|o| o.pool_session_id.clone());
-    let memory_owner_id = options
-        .as_ref()
-        .and_then(|o| o.memory_owner_id.clone())
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "pisci".to_string());
     let context_toggles = options
         .as_ref()
         .map(|o| o.context_toggles.clone())
@@ -1626,9 +1562,8 @@ pub async fn run_agent_headless(
             );
         } else {
             tracing::info!(
-                "run_agent_headless: inserting user message for {}, content_preview={}",
-                session_id,
-                effective_user_message.chars().take(100).collect::<String>()
+                "run_agent_headless: inserting user message for {}",
+                session_id
             );
             let _ = db.append_message(session_id, "user", &effective_user_message);
         }
@@ -1685,12 +1620,8 @@ pub async fn run_agent_headless(
                     String::new()
                 } else {
                     let db = state.db.lock().await;
-                    match db.search_memories_scoped(
-                        &query,
-                        &memory_owner_id,
-                        pool_session_id.as_deref(),
-                        5,
-                    ) {
+                    match db.search_memories_scoped(&query, "pisci", pool_session_id.as_deref(), 5)
+                    {
                         Ok(mems) if !mems.is_empty() => {
                             let mut ctx = String::from("\n\n## Relevant Memory\n");
                             for m in &mems {
@@ -1832,38 +1763,6 @@ pub async fn run_agent_headless(
         session_context.llm_messages.len(),
         session_id
     );
-    // Log the last 3 messages in context for debugging
-    for (i, msg) in session_context
-        .llm_messages
-        .iter()
-        .rev()
-        .take(3)
-        .enumerate()
-    {
-        let preview = match &msg.content {
-            pisci_kernel::llm::MessageContent::Text(t) => t.chars().take(80).collect::<String>(),
-            pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
-                .iter()
-                .filter_map(|b| {
-                    if let pisci_kernel::llm::ContentBlock::Text { text } = b {
-                        Some(text.as_str())
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("")
-                .chars()
-                .take(80)
-                .collect::<String>(),
-        };
-        tracing::info!(
-            "run_agent_headless: context msg[-{}] role={} preview={}",
-            i + 1,
-            msg.role,
-            preview
-        );
-    }
     let mut llm_messages = sanitize_tool_use_result_pairing(session_context.llm_messages);
     tracing::info!(
         "run_agent_headless: context has {} LLM messages after sanitize for {}",
@@ -1914,7 +1813,7 @@ pub async fn run_agent_headless(
         bypass_permissions: false,
         settings: tool_settings,
         max_iterations: Some(max_iterations),
-        memory_owner_id,
+        memory_owner_id: "pisci".to_string(),
         pool_session_id: pool_session_id.clone(),
         cancel: cancel.clone(),
     };
@@ -2140,6 +2039,7 @@ fn main_chat_overlay_prompt() -> &'static str {
     "\n\n## Main Chat Overlay\n\
 - You are interacting directly with the user.\n\
 - Pool and Koi state is not preloaded from keyword matches. When collaboration may be useful, decide explicitly whether you need live state, then inspect it with `pool_org` and `app_control(action=\"koi_list\")` before acting.\n\
+- For IM delivery tasks, do not invent or guess a `binding_key`. First call `im_channel_list` to see configured and connected channel names. If the desired channel is configured but disconnected, call `im_channel_connect`. Then use `im_channel_binding_list(channel=\"wechat\", ...)` to list candidate tokens for that channel, or `im_channel_binding_lookup(session_id=...|pool_id=...|task_id=...)` when you already know the exact runtime context. After that, call `im_send_message`.\n\
 - When the user asks about an ongoing project or returns to continue work, ALWAYS start by checking pool state:\n\
   1. `pool_org(action=\"get_todos\", pool_id=...)` — see which tasks are in progress, done, or blocked\n\
   2. `pool_org(action=\"get_messages\", pool_id=...)` — see the latest pool_chat updates from Koi agents\n\
@@ -2737,12 +2637,20 @@ pub fn build_im_system_prompt(channel: &str, vision_capable: bool) -> String {
 让用户自行打开。建议将文件保存到桌面或 `C:\\Users\\Public\\` 等易找到的位置。"
     };
 
+    let routing_hint = "### IM 路由规则\n\
+若你需要主动给用户或项目来源会话发送 IM：\n\
+- 不要猜测 `binding_key`。\n\
+- 先用 `im_channel_list` 查看通道状态；若目标通道未连上，可用 `im_channel_connect` 启动已在 Settings 中启用的通道。\n\
+- 再用 `im_channel_binding_lookup(session_id=...|pool_id=...|task_id=...)` 解析目标，再调用 `im_send_message`。\n\
+- 只有当你已经处在当前 IM 驱动会话本身时，才依赖 `im_send_message` 的 session 自动解析。";
+
     format!(
         "{base}\n\n## IM 会话上下文\n\
 你正在通过 **{channel}** IM 频道与用户对话，你的回复将直接发送到该平台。\n\n\
 {platform_caps}\n\n\
 ### 接收图片\n{vision_hint}\n\n\
 {file_send_hint}\n\n\
+{routing_hint}\n\n\
 ### 图表说明\n\
 **不要在 IM 回复中使用 Mermaid 图表**（IM 平台无法渲染 mermaid 代码块）。\
 如需展示流程或结构，请用文字、ASCII 图或简单列表代替。",
@@ -2751,6 +2659,7 @@ pub fn build_im_system_prompt(channel: &str, vision_capable: bool) -> String {
         platform_caps = platform_caps,
         vision_hint = vision_hint,
         file_send_hint = file_send_hint,
+        routing_hint = routing_hint,
     )
 }
 
@@ -3942,6 +3851,7 @@ pub async fn get_context_preview(
             settings.enable_project_instructions,
         )
     };
+    let workspace_root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
 
     // Build context messages from history — this is the exact payload sent to the LLM
     let budget = compute_context_budget(context_window, max_tokens);

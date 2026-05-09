@@ -118,6 +118,30 @@ pub async fn list_builtin_tools(
             icon: "🏊".into(),
             windows_only: false,
         },
+        BuiltinToolInfo {
+            name: "im_channel_list".into(),
+            description: "查看当前已注册 IM 渠道的连接状态与可用性".into(),
+            icon: "📡".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_connect".into(),
+            description: "连接设置中已启用的 IM 渠道，不提供断开能力".into(),
+            icon: "🔌".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_binding_lookup".into(),
+            description: "按 session_id、pool_id 或 task_id 查询可用的 IM binding_key".into(),
+            icon: "🧭".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_binding_list".into(),
+            description: "按 channel 名列出可用的 IM token 候选与 binding_key".into(),
+            icon: "🎯".into(),
+            windows_only: false,
+        },
     ];
     Ok(tools)
 }
@@ -145,6 +169,7 @@ pub async fn trigger_heartbeat(state: State<'_, AppState>) -> Result<(), String>
         interactive_responses: state.interactive_responses.clone(),
         app_handle: state.app_handle.clone(),
         scheduler: state.scheduler.clone(),
+        scheduled_job_ids: state.scheduled_job_ids.clone(),
         gateway: state.gateway.clone(),
         pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
     };

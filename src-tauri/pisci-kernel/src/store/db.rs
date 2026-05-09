@@ -185,6 +185,7 @@ pub struct ScheduledTask {
     pub description: Option<String>,
     pub cron_expression: String,
     pub task_prompt: String,
+    pub notify_targets_json: Option<String>,
     pub status: String,
     pub last_run_status: Option<String>,
     pub run_count: i64,
@@ -1081,6 +1082,63 @@ impl Database {
         Ok(rows.next().transpose()?)
     }
 
+    pub fn find_im_session_binding_for_channel_recipient(
+        &self,
+        channel: &str,
+        recipient: &str,
+    ) -> Result<Option<ImSessionBinding>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT binding_key, channel, external_conversation_key, session_id, peer_id,
+                    peer_name, is_group, group_name, latest_reply_target, routing_state_json,
+                    created_at, updated_at, last_inbound_at
+             FROM im_session_bindings
+             WHERE channel = ?1 AND (latest_reply_target = ?2 OR peer_id = ?2)
+             ORDER BY updated_at DESC
+             LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map(params![channel, recipient], map_im_session_binding_row)?;
+        Ok(rows.next().transpose()?)
+    }
+
+    pub fn list_im_session_bindings(
+        &self,
+        channel: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<ImSessionBinding>> {
+        let limit = limit.max(1) as i64;
+        let sql_with_channel =
+            "SELECT binding_key, channel, external_conversation_key, session_id, peer_id,
+                    peer_name, is_group, group_name, latest_reply_target, routing_state_json,
+                    created_at, updated_at, last_inbound_at
+             FROM im_session_bindings
+             WHERE channel = ?1
+             ORDER BY updated_at DESC
+             LIMIT ?2";
+        let sql_all =
+            "SELECT binding_key, channel, external_conversation_key, session_id, peer_id,
+                    peer_name, is_group, group_name, latest_reply_target, routing_state_json,
+                    created_at, updated_at, last_inbound_at
+             FROM im_session_bindings
+             ORDER BY updated_at DESC
+             LIMIT ?1";
+
+        let mut out = Vec::new();
+        if let Some(channel) = channel {
+            let mut stmt = self.conn.prepare(sql_with_channel)?;
+            let rows = stmt.query_map(params![channel, limit], map_im_session_binding_row)?;
+            for row in rows {
+                out.push(row?);
+            }
+        } else {
+            let mut stmt = self.conn.prepare(sql_all)?;
+            let rows = stmt.query_map(params![limit], map_im_session_binding_row)?;
+            for row in rows {
+                out.push(row?);
+            }
+        }
+        Ok(out)
+    }
+
     pub fn upsert_im_session_binding(
         &self,
         input: &ImSessionBindingUpsert,
@@ -1885,7 +1943,7 @@ impl Database {
 
     pub fn list_tasks(&self) -> Result<Vec<ScheduledTask>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, name, description, cron_expression, task_prompt, status, last_run_status, run_count, last_run_at, next_run_at, created_at FROM scheduled_tasks ORDER BY created_at DESC"
+            "SELECT id, name, description, cron_expression, task_prompt, notify_targets_json, status, last_run_status, run_count, last_run_at, next_run_at, created_at FROM scheduled_tasks ORDER BY created_at DESC"
         )?;
         let rows = stmt.query_map([], |r| {
             Ok(ScheduledTask {
@@ -1894,13 +1952,14 @@ impl Database {
                 description: r.get(2)?,
                 cron_expression: r.get(3)?,
                 task_prompt: r.get(4)?,
-                status: r.get(5)?,
-                last_run_status: r.get(6)?,
-                run_count: r.get(7)?,
-                last_run_at: r.get::<_, Option<String>>(8)?.and_then(|s| s.parse().ok()),
-                next_run_at: r.get::<_, Option<String>>(9)?.and_then(|s| s.parse().ok()),
+                notify_targets_json: r.get(5)?,
+                status: r.get(6)?,
+                last_run_status: r.get(7)?,
+                run_count: r.get(8)?,
+                last_run_at: r.get::<_, Option<String>>(9)?.and_then(|s| s.parse().ok()),
+                next_run_at: r.get::<_, Option<String>>(10)?.and_then(|s| s.parse().ok()),
                 created_at: r
-                    .get::<_, String>(10)?
+                    .get::<_, String>(11)?
                     .parse::<DateTime<Utc>>()
                     .unwrap_or_else(|_| Utc::now()),
             })
@@ -1911,7 +1970,7 @@ impl Database {
 
     pub fn get_task(&self, id: &str) -> Result<Option<ScheduledTask>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, name, description, cron_expression, task_prompt, status, last_run_status, run_count, last_run_at, next_run_at, created_at FROM scheduled_tasks WHERE id = ?1"
+            "SELECT id, name, description, cron_expression, task_prompt, notify_targets_json, status, last_run_status, run_count, last_run_at, next_run_at, created_at FROM scheduled_tasks WHERE id = ?1"
         )?;
         let mut rows = stmt.query_map(params![id], |r| {
             Ok(ScheduledTask {
@@ -1920,13 +1979,14 @@ impl Database {
                 description: r.get(2)?,
                 cron_expression: r.get(3)?,
                 task_prompt: r.get(4)?,
-                status: r.get(5)?,
-                last_run_status: r.get(6)?,
-                run_count: r.get(7)?,
-                last_run_at: r.get::<_, Option<String>>(8)?.and_then(|s| s.parse().ok()),
-                next_run_at: r.get::<_, Option<String>>(9)?.and_then(|s| s.parse().ok()),
+                notify_targets_json: r.get(5)?,
+                status: r.get(6)?,
+                last_run_status: r.get(7)?,
+                run_count: r.get(8)?,
+                last_run_at: r.get::<_, Option<String>>(9)?.and_then(|s| s.parse().ok()),
+                next_run_at: r.get::<_, Option<String>>(10)?.and_then(|s| s.parse().ok()),
                 created_at: r
-                    .get::<_, String>(10)?
+                    .get::<_, String>(11)?
                     .parse::<DateTime<Utc>>()
                     .unwrap_or_else(|_| Utc::now()),
             })
@@ -1940,13 +2000,14 @@ impl Database {
         description: Option<&str>,
         cron_expression: &str,
         task_prompt: &str,
+        notify_targets_json: Option<&str>,
     ) -> Result<ScheduledTask> {
         let id = Uuid::new_v4().to_string();
         let now = Utc::now();
         let now_str = now.to_rfc3339();
         self.conn.execute(
-            "INSERT INTO scheduled_tasks (id, name, description, cron_expression, task_prompt, status, run_count, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 'active', 0, ?6)",
-            params![id, name, description, cron_expression, task_prompt, now_str],
+            "INSERT INTO scheduled_tasks (id, name, description, cron_expression, task_prompt, notify_targets_json, status, run_count, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active', 0, ?7)",
+            params![id, name, description, cron_expression, task_prompt, notify_targets_json, now_str],
         )?;
         Ok(ScheduledTask {
             id,
@@ -1954,6 +2015,7 @@ impl Database {
             description: description.map(String::from),
             cron_expression: cron_expression.to_string(),
             task_prompt: task_prompt.to_string(),
+            notify_targets_json: notify_targets_json.map(String::from),
             status: "active".into(),
             last_run_status: None,
             run_count: 0,
@@ -1969,6 +2031,7 @@ impl Database {
         name: Option<&str>,
         cron_expression: Option<&str>,
         task_prompt: Option<&str>,
+        notify_targets_json: Option<&str>,
         status: Option<&str>,
     ) -> Result<()> {
         if let Some(n) = name {
@@ -1987,6 +2050,12 @@ impl Database {
             self.conn.execute(
                 "UPDATE scheduled_tasks SET task_prompt = ?1 WHERE id = ?2",
                 params![p, id],
+            )?;
+        }
+        if let Some(targets) = notify_targets_json {
+            self.conn.execute(
+                "UPDATE scheduled_tasks SET notify_targets_json = ?1 WHERE id = ?2",
+                params![targets, id],
             )?;
         }
         if let Some(s) = status {
@@ -3517,6 +3586,25 @@ impl Database {
         Ok(rows.next().transpose()?)
     }
 
+    /// Resolve the IM binding that originally created a pool, if one
+    /// was recorded on `pool_sessions.origin_im_binding_key`.
+    pub fn find_im_session_binding_for_pool(
+        &self,
+        pool_id: &str,
+    ) -> Result<Option<ImSessionBinding>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT b.binding_key, b.channel, b.external_conversation_key, b.session_id, b.peer_id,
+                    b.peer_name, b.is_group, b.group_name, b.latest_reply_target, b.routing_state_json,
+                    b.created_at, b.updated_at, b.last_inbound_at
+             FROM pool_sessions p
+             JOIN im_session_bindings b ON b.binding_key = p.origin_im_binding_key
+             WHERE p.id = ?1
+             LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map(params![pool_id], map_im_session_binding_row)?;
+        Ok(rows.next().transpose()?)
+    }
+
     pub fn set_scheduled_task_notify_targets(
         &self,
         task_id: &str,
@@ -3867,6 +3955,9 @@ mod tests {
         let db = Database::open_in_memory().expect("in-memory db");
         db.ensure_im_session("im_wechat_fixed", "wechat", "im_wechat")
             .expect("session");
+        let pool = db
+            .create_pool_session("wechat pool", 0)
+            .expect("create pool");
 
         let binding = db
             .upsert_im_session_binding(&ImSessionBindingUpsert {
@@ -3899,6 +3990,34 @@ mod tests {
             .expect("binding by session")
             .expect("binding exists");
         assert_eq!(by_session.binding_key, "wechat::dm:wx-user-1");
+
+        let by_recipient = db
+            .find_im_session_binding_for_channel_recipient("wechat", "wx-user-1")
+            .expect("binding by peer id")
+            .expect("binding exists");
+        assert_eq!(by_recipient.binding_key, "wechat::dm:wx-user-1");
+
+        let by_reply_target = db
+            .find_im_session_binding_for_channel_recipient("wechat", "wx-user-1|ctx-1")
+            .expect("binding by reply target")
+            .expect("binding exists");
+        assert_eq!(by_reply_target.binding_key, "wechat::dm:wx-user-1");
+
+        db.set_pool_origin_im_binding(&pool.id, Some("wechat::dm:wx-user-1"))
+            .expect("set pool origin binding");
+        let by_pool = db
+            .find_im_session_binding_for_pool(&pool.id)
+            .expect("binding by pool")
+            .expect("pool binding exists");
+        assert_eq!(by_pool.binding_key, "wechat::dm:wx-user-1");
+
+        let missing_pool = db
+            .create_pool_session("no binding", 0)
+            .expect("create pool without binding");
+        assert!(db
+            .find_im_session_binding_for_pool(&missing_pool.id)
+            .expect("missing pool lookup")
+            .is_none());
     }
 
     #[test]

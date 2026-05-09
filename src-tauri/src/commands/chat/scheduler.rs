@@ -32,6 +32,18 @@ fn trim_preview(text: &str, limit: usize) -> String {
     }
 }
 
+fn build_scheduler_session_title(task_name: Option<&str>, task_id: &str) -> String {
+    let title = task_name
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| {
+            let short_id = task_id.chars().take(8).collect::<String>();
+            short_id
+        });
+    format!("[定时] {}", title)
+}
+
 fn build_memory_consolidation_template() -> String {
     format!(
         "{marker}\n\
@@ -308,7 +320,9 @@ pub async fn trigger_memory_consolidation_for_session(
     trigger_consolidation_for_session(&state, &session_id).await
 }
 
-async fn register_task_job(state: &AppState, task: &ScheduledTask) {
+pub(crate) async fn register_task_job(state: &AppState, task: &ScheduledTask) {
+    unregister_task_job(state, &task.id).await;
+
     let app_h = state.app_handle.clone();
     let task_id = task.id.clone();
     let task_prompt_clone = task.task_prompt.clone();
@@ -318,43 +332,57 @@ async fn register_task_job(state: &AppState, task: &ScheduledTask) {
     let cancel_flags = state.cancel_flags.clone();
     let cron = task.cron_expression.clone();
     let sched = state.scheduler.clone();
+    let scheduled_job_ids = state.scheduled_job_ids.clone();
     let task_id_log = task.id.clone();
 
-    tokio::spawn(async move {
-        match sched
-            .add_job(&cron, task_id.clone(), move |_uuid, _sched| {
-                let app_h = app_h.clone();
-                let task_id = task_id.clone();
-                let task_prompt = task_prompt_clone.clone();
-                let db_arc = db_arc.clone();
-                let settings_arc = settings_arc.clone();
-                let browser = browser.clone();
-                let cancel_flags = cancel_flags.clone();
-                Box::pin(async move {
-                    execute_task(
-                        app_h,
-                        task_id,
-                        task_prompt,
-                        db_arc,
-                        settings_arc,
-                        browser,
-                        cancel_flags,
-                    )
-                    .await;
-                })
+    match sched
+        .add_job(&cron, task_id.clone(), move |_uuid, _sched| {
+            let app_h = app_h.clone();
+            let task_id = task_id.clone();
+            let task_prompt = task_prompt_clone.clone();
+            let db_arc = db_arc.clone();
+            let settings_arc = settings_arc.clone();
+            let browser = browser.clone();
+            let cancel_flags = cancel_flags.clone();
+            Box::pin(async move {
+                execute_task(
+                    app_h,
+                    task_id,
+                    task_prompt,
+                    db_arc,
+                    settings_arc,
+                    browser,
+                    cancel_flags,
+                )
+                .await;
             })
-            .await
-        {
-            Ok(job_id) => info!(
-                "Scheduled task {} registered as job {}",
-                task_id_log, job_id
-            ),
-            Err(e) => warn!(
-                "Failed to register task {} in scheduler: {}",
-                task_id_log, e
-            ),
+        })
+        .await
+    {
+        Ok(job_id) => {
+            let mut jobs = scheduled_job_ids.lock().await;
+            jobs.insert(task.id.clone(), job_id);
+            info!("Scheduled task {} registered as job {}", task_id_log, job_id);
         }
-    });
+        Err(e) => warn!("Failed to register task {} in scheduler: {}", task_id_log, e),
+    }
+}
+
+pub(crate) async fn unregister_task_job(state: &AppState, task_id: &str) {
+    let job_id = {
+        let mut jobs = state.scheduled_job_ids.lock().await;
+        jobs.remove(task_id)
+    };
+    if let Some(job_id) = job_id {
+        if let Err(err) = state.scheduler.remove_job(job_id).await {
+            warn!(
+                "Failed to remove scheduled job {} for task {}: {}",
+                job_id, task_id, err
+            );
+        } else {
+            info!("Removed scheduled job {} for task {}", job_id, task_id);
+        }
+    }
 }
 
 async fn ensure_memory_consolidation_task_inner(
@@ -389,6 +417,7 @@ async fn ensure_memory_consolidation_task_inner(
                     Some(MEMORY_CONSOLIDATION_TASK_NAME),
                     Some(cron),
                     Some(&task_prompt),
+                    None,
                     Some("active"),
                 )
                 .map_err(|e| e.to_string())?;
@@ -404,6 +433,7 @@ async fn ensure_memory_consolidation_task_inner(
                     Some(description),
                     cron,
                     &task_prompt,
+                    None,
                 )
                 .map_err(|e| e.to_string())?,
         }
@@ -428,6 +458,7 @@ pub async fn create_task(
     description: Option<String>,
     cron_expression: String,
     task_prompt: String,
+    notify_targets: Option<Vec<String>>,
 ) -> Result<ScheduledTask, String> {
     let parts: Vec<&str> = cron_expression.split_whitespace().collect();
     if parts.len() != 5 {
@@ -437,6 +468,13 @@ pub async fn create_task(
         ));
     }
 
+    let notify_targets_json = match notify_targets {
+        Some(tokens) if !tokens.is_empty() => {
+            Some(serde_json::to_string(&tokens).map_err(|e| e.to_string())?)
+        }
+        _ => None,
+    };
+
     let task = {
         let db = state.db.lock().await;
         db.create_task(
@@ -444,6 +482,7 @@ pub async fn create_task(
             description.as_deref(),
             &cron_expression,
             &task_prompt,
+            notify_targets_json.as_deref(),
         )
         .map_err(|e| e.to_string())?
     };
@@ -476,21 +515,42 @@ pub async fn update_task(
     name: Option<String>,
     cron_expression: Option<String>,
     task_prompt: Option<String>,
+    notify_targets: Option<Vec<String>>,
     status: Option<String>,
 ) -> Result<(), String> {
-    let db = state.db.lock().await;
-    db.update_task(
-        &task_id,
-        name.as_deref(),
-        cron_expression.as_deref(),
-        task_prompt.as_deref(),
-        status.as_deref(),
-    )
-    .map_err(|e| e.to_string())
+    let notify_targets_json = match notify_targets {
+        Some(tokens) => Some(serde_json::to_string(&tokens).map_err(|e| e.to_string())?),
+        None => None,
+    };
+    {
+        let db = state.db.lock().await;
+        db.update_task(
+            &task_id,
+            name.as_deref(),
+            cron_expression.as_deref(),
+            task_prompt.as_deref(),
+            notify_targets_json.as_deref(),
+            status.as_deref(),
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    let task = {
+        let db = state.db.lock().await;
+        db.get_task(&task_id).map_err(|e| e.to_string())?
+    };
+
+    match task {
+        Some(task) if task.status == "active" => register_task_job(&state, &task).await,
+        Some(_) | None => unregister_task_job(&state, &task_id).await,
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, task_id: String) -> Result<(), String> {
+    unregister_task_job(&state, &task_id).await;
     let db = state.db.lock().await;
     db.delete_task(&task_id).map_err(|e| e.to_string())
 }
@@ -597,6 +657,14 @@ pub async fn execute_task(
     cancel_flags: Arc<Mutex<std::collections::HashMap<String, Arc<AtomicBool>>>>,
 ) {
     info!("Executing scheduled task: {}", task_id);
+    let task_name = {
+        let db = db.lock().await;
+        db.get_task(&task_id)
+            .ok()
+            .flatten()
+            .map(|task| task.name)
+    };
+    let session_title = build_scheduler_session_title(task_name.as_deref(), &task_id);
     {
         let db = db.lock().await;
         let _ = db.record_task_run(&task_id);
@@ -635,6 +703,20 @@ pub async fn execute_task(
     let effective_task_prompt = {
         let db_lock = db.lock().await;
         resolve_memory_consolidation_prompt(&task_prompt, &db_lock)
+    };
+    let task_notify_targets_section = {
+        let db_lock = db.lock().await;
+        match db_lock.get_scheduled_task_notify_targets(&task_id) {
+            Ok(Some(raw)) if !raw.trim().is_empty() => match serde_json::from_str::<Vec<String>>(&raw)
+            {
+                Ok(tokens) if !tokens.is_empty() => format!(
+                    "\n\nConfigured notify targets for this task: {:?}.\nPrefer using app_control(action=\"notify_user\", message=..., targets=<that exact target list>) for the default delivery path.\nIf you need raw IM output instead, use an im_binding target's binding_key with im_send_message.\nOnly fall back to im_channel_binding_lookup(task_id=...) when this configured target list is empty or insufficient.",
+                    tokens
+                ),
+                _ => String::new(),
+            },
+            _ => String::new(),
+        }
     };
 
     if api_key.is_empty() {
@@ -708,9 +790,17 @@ pub async fn execute_task(
     let system_prompt = format!(
         "You are Pisci, a Windows AI Agent running a scheduled task.\n\
          Task ID: {}\n\
-         Today's date: {}{}",
+         Today's date: {}\n\
+         IM routing rule: if this task needs to notify a user through WeChat / WeCom / Feishu / other IM, do NOT guess a binding_key. First use `im_channel_list` to see which channel names are configured and connected. If the desired channel is configured but disconnected, use `im_channel_connect`. Then prefer `im_channel_binding_list(channel=..., task_id=...)` to list candidate tokens for that named channel; use `im_channel_binding_lookup(task_id=...)` or `im_channel_binding_lookup(session_id=...)` only when you already know the exact runtime context you want.\n\
+         Example sequence for scheduled tasks:\n\
+         1. `im_channel_list()`\n\
+         2. if the required channel is disconnected: `im_channel_connect(channel=\"wechat\")`\n\
+         3. `im_channel_binding_list(channel=\"wechat\", task_id=\"{0}\")`\n\
+         4. `im_send_message(binding_key=\"<resolved binding_key>\", text=\"<short result summary>\")`\n\
+         If step 3 returns no candidates, state that there is no bound IM target for that channel instead of pretending the message was delivered.{}{}",
         task_id,
         chrono::Utc::now().format("%Y-%m-%d"),
+        task_notify_targets_section,
         task_state_section
     );
     let scheduler_compaction_settings = {
@@ -796,7 +886,7 @@ pub async fn execute_task(
                 if attempt >= TASK_MAX_RETRIES {
                     run_success = false;
                     let db_lock = db.lock().await;
-                    let _ = db_lock.update_task(&task_id, None, None, None, Some("error"));
+                    let _ = db_lock.update_task(&task_id, None, None, None, None, Some("error"));
                     break;
                 }
                 let backoff = std::time::Duration::from_secs(1 << (attempt - 1));
@@ -814,9 +904,10 @@ pub async fn execute_task(
         // Ensure a session exists for this scheduled task run.
         let _ = db_lock.ensure_fixed_session(
             &scope_id,
-            &format!("[定时] {}", task_id),
+            &session_title,
             "scheduled_task",
         );
+        let _ = db_lock.rename_session(&scope_id, &session_title);
         // Append the full conversation (user prompt + agent replies).
         for msg in &final_messages {
             let text = match &msg.content {

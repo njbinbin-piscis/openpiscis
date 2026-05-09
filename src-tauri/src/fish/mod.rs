@@ -63,7 +63,7 @@ pub struct FishAgentConfig {
 }
 
 fn default_system_prompt() -> String {
-    "You are a helpful specialized assistant.".to_string()
+    "You are a helpful specialized assistant. If you need to send an IM notification, do not guess the binding_key: inspect configured and connected channel names with im_channel_list, connect enabled channels with im_channel_connect if needed, list candidate tokens for the desired channel with im_channel_binding_list, then call im_send_message.".to_string()
 }
 
 fn default_max_iterations() -> u32 {

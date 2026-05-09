@@ -233,6 +233,7 @@ async fn deliver_via_gateway(
     let Some(gateway) = deps.gateway.as_ref() else {
         return NotificationOutcome::failed(target, "gateway manager unavailable");
     };
+    let history_text = render_im_text(request);
     let routing_state = binding
         .routing_state_json
         .as_deref()
@@ -245,16 +246,33 @@ async fn deliver_via_gateway(
     let outbound = gateway::OutboundMessage {
         channel: binding.channel.clone(),
         recipient: recipient.clone(),
-        content: render_im_text(request),
+        content: history_text.clone(),
         reply_to: None,
         media: None,
         routing_state,
     };
     match gateway.send(&outbound).await {
-        Ok(()) => NotificationOutcome::ok(
-            target,
-            format!("sent via {} to {}", binding.channel, recipient),
-        ),
+        Ok(()) => {
+            if let Some(db) = deps.db.as_ref() {
+                let db = db.lock().await;
+                let title = format!("{} · {}", binding.channel, binding.peer_name.as_deref().unwrap_or(&binding.peer_id));
+                let source = format!("im_{}", binding.channel);
+                if let Err(err) = db.ensure_im_session(&binding.session_id, &title, &source) {
+                    warn!(
+                        "notify: delivered IM notification but failed to ensure history session {}: {}",
+                        binding.session_id, err
+                    );
+                }
+                if let Err(err) = db.append_message(&binding.session_id, "assistant", &history_text)
+                {
+                    warn!(
+                        "notify: delivered IM notification but failed to persist history for session {}: {}",
+                        binding.session_id, err
+                    );
+                }
+            }
+            NotificationOutcome::ok(target, format!("sent via {} to {}", binding.channel, recipient))
+        }
         Err(err) => {
             warn!(
                 "notify: failed to send via channel={} binding_key={}: {}",

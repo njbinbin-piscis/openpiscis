@@ -1003,6 +1003,13 @@ export default function Chat() {
     gatewayApi.list().then((r) => setGatewayChannels(r.channels)).catch(() => setGatewayChannels([]));
   }, [sessionFilter]);
 
+  useEffect(() => {
+    const unlisten = listen<{ channels: ChannelInfo[] }>("gateway_channels_updated", (event) => {
+      setGatewayChannels(event.payload.channels ?? []);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
+
   // (activeFishIds removed — session filtering no longer depends on Fish activation state)
 
   const handleGatewayConnect = useCallback(async () => {

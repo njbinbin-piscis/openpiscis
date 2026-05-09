@@ -35,8 +35,8 @@ use crate::runtime::koi::DesktopInProcessSubagentRuntime;
 use crate::skills::loader::SkillLoader;
 use crate::store::{AppState, Database, Settings};
 use crate::tools::{
-    app_control, browser, call_fish, call_koi, chat_ui, desktop_automation, im_send, screen,
-    skill_list, system_info,
+    app_control, browser, call_fish, call_koi, chat_ui, desktop_automation, im_channel,
+    im_send, screen, skill_list, system_info,
 };
 
 #[cfg(target_os = "windows")]
@@ -518,6 +518,34 @@ impl HostTools for DesktopHostTools {
         // through the same `GatewayManager` the inbound channel already
         // owns. Registered whenever a gateway is available; the
         // `builtin_tool_enabled` map can disable it per-deployment.
+        if self.is_enabled("im_channel_list")
+            && (self.gateway.is_some() || self.settings.is_some())
+        {
+            registry.register(Box::new(im_channel::ImChannelListTool {
+                gateway: self.gateway.clone(),
+                settings: self.settings.clone(),
+            }));
+        }
+        if self.is_enabled("im_channel_connect") {
+            if let (Some(ref gateway), Some(ref app_handle)) = (&self.gateway, &self.app_handle) {
+                registry.register(Box::new(im_channel::ImChannelConnectTool {
+                    gateway: Some(gateway.clone()),
+                    app_handle: Some(app_handle.clone()),
+                }));
+            }
+        }
+        if self.is_enabled("im_channel_binding_lookup") && self.db.is_some() {
+            registry.register(Box::new(im_channel::ImChannelBindingLookupTool {
+                db: self.db.clone(),
+                gateway: self.gateway.clone(),
+            }));
+        }
+        if self.is_enabled("im_channel_binding_list") && self.db.is_some() {
+            registry.register(Box::new(im_channel::ImChannelBindingListTool {
+                db: self.db.clone(),
+                gateway: self.gateway.clone(),
+            }));
+        }
         if self.is_enabled("im_send_message") {
             if let Some(ref gateway) = self.gateway {
                 registry.register(Box::new(im_send::ImSendMessageTool {

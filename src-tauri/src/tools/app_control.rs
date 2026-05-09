@@ -119,9 +119,9 @@ impl Tool for AppControlTool {
     fn description(&self) -> &str {
         "Control OpenPisci application: manage scheduled tasks, settings, UI/windows, built-in tools, user tools, runtimes, SSH servers, and skills.\
          \n\nACTIONS — Scheduled Tasks:\
-         \n- 'task_list': List all scheduled tasks (name, cron, status, last run).\
-         \n- 'task_create': Create a task. Required: name, cron_expression (5-field), task_prompt. Optional: description.\
-         \n- 'task_update': Update a task by id. Optional: name, cron_expression, task_prompt, status (active/paused).\
+         \n- 'task_list': List all scheduled tasks (name, cron, status, last run, optional notify targets).\
+         \n- 'task_create': Create a task. Required: name, cron_expression (5-field), task_prompt. Optional: description, notify_targets (array of 'ui' / 'im_binding:<key>' / 'im_session:<sid>' tokens).\
+         \n- 'task_update': Update a task by id. Optional: name, cron_expression, task_prompt, notify_targets, status (active/paused).\
          \n- 'task_delete': Delete a task by id.\
          \n- 'task_run_now': Immediately trigger a task by id.\
          \
@@ -211,6 +211,11 @@ impl Tool for AppControlTool {
                 "description": { "type": "string" },
                 "cron_expression": { "type": "string", "description": "5-field cron, e.g. '0 * * * *'" },
                 "task_prompt": { "type": "string", "description": "Prompt sent to agent when task fires" },
+                "notify_targets": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Optional scheduled-task default notification targets. Tokens: 'ui', 'im_binding:<binding_key>', or 'im_session:<session_id>'."
+                },
                 "status": { "type": "string", "enum": ["active", "paused"] },
                 // Settings fields
                 "provider": { "type": "string", "description": "LLM provider: anthropic|openai|custom|deepseek|qwen|minimax|zhipu|kimi" },
@@ -362,19 +367,47 @@ impl Tool for AppControlTool {
 // ── Scheduled Tasks ───────────────────────────────────────────────────────────
 
 impl AppControlTool {
+    fn collect_notify_targets(input: &Value) -> anyhow::Result<Option<String>> {
+        let Some(arr) = input.get("notify_targets") else {
+            return Ok(None);
+        };
+        if arr.is_null() {
+            return Ok(Some("[]".to_string()));
+        }
+        let entries = arr
+            .as_array()
+            .ok_or_else(|| anyhow::anyhow!("'notify_targets' must be an array when provided"))?;
+        let mut tokens = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let token = entry
+                .as_str()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .ok_or_else(|| {
+                    anyhow::anyhow!("'notify_targets' entries must be non-empty strings")
+                })?;
+            NotificationTarget::parse_token(token)
+                .map_err(|err| anyhow::anyhow!(err))?;
+            tokens.push(token.to_string());
+        }
+        Ok(Some(serde_json::to_string(&tokens)?))
+    }
+
     async fn task_list(&self) -> anyhow::Result<ToolResult> {
         let db = self.db.lock().await;
         match db.list_tasks() {
             Ok(tasks) if tasks.is_empty() => Ok(ToolResult::ok("No scheduled tasks configured.")),
             Ok(tasks) => {
                 let lines: Vec<String> = tasks.iter().map(|t| {
+                    let notify_targets = t.notify_targets_json.as_deref().unwrap_or("(none)");
                     format!(
-                        "ID: {}\n  Name: {}\n  Cron: {}\n  Status: {}\n  Last run: {}\n  Run count: {}\n  Prompt: {}",
+                        "ID: {}\n  Name: {}\n  Cron: {}\n  Status: {}\n  Last run: {}\n  Run count: {}\n  Notify targets: {}\n  Prompt: {}",
                         t.id, t.name, t.cron_expression, t.status,
                         t.last_run_at
                             .map(|d| d.format("%Y-%m-%d %H:%M UTC").to_string())
                             .unwrap_or_else(|| "never".to_string()),
                         t.run_count,
+                        notify_targets,
                         if t.task_prompt.chars().count() > 80 {
                             format!("{}…", t.task_prompt.chars().take(80).collect::<String>())
                         } else {
@@ -416,6 +449,10 @@ impl AppControlTool {
             None => return Ok(ToolResult::err("'task_prompt' is required for task_create")),
         };
         let description = input["description"].as_str();
+        let notify_targets_json = match Self::collect_notify_targets(input) {
+            Ok(value) => value,
+            Err(err) => return Ok(ToolResult::err(err.to_string())),
+        };
 
         if cron.split_whitespace().count() != 5 {
             return Ok(ToolResult::err(format!(
@@ -426,10 +463,13 @@ impl AppControlTool {
         }
 
         let db = self.db.lock().await;
-        match db.create_task(name, description, cron, prompt) {
+        match db.create_task(name, description, cron, prompt, notify_targets_json.as_deref()) {
             Ok(task) => Ok(ToolResult::ok(format!(
-                "Scheduled task created.\nID: {}\nName: {}\nCron: {}\nStatus: active",
-                task.id, task.name, task.cron_expression
+                "Scheduled task created.\nID: {}\nName: {}\nCron: {}\nStatus: active\nNotify targets: {}",
+                task.id,
+                task.name,
+                task.cron_expression,
+                task.notify_targets_json.as_deref().unwrap_or("(none)")
             ))),
             Err(e) => Ok(ToolResult::err(format!("Failed to create task: {}", e))),
         }
@@ -443,11 +483,20 @@ impl AppControlTool {
         let name = input["name"].as_str();
         let cron = input["cron_expression"].as_str();
         let prompt = input["task_prompt"].as_str();
+        let notify_targets_json = match Self::collect_notify_targets(input) {
+            Ok(value) => value,
+            Err(err) => return Ok(ToolResult::err(err.to_string())),
+        };
         let status = input["status"].as_str();
 
-        if name.is_none() && cron.is_none() && prompt.is_none() && status.is_none() {
+        if name.is_none()
+            && cron.is_none()
+            && prompt.is_none()
+            && notify_targets_json.is_none()
+            && status.is_none()
+        {
             return Ok(ToolResult::err(
-                "task_update requires at least one field: name, cron_expression, task_prompt, or status"
+                "task_update requires at least one field: name, cron_expression, task_prompt, notify_targets, or status"
             ));
         }
         if let Some(c) = cron {
@@ -462,7 +511,14 @@ impl AppControlTool {
             Err(e) => return Ok(ToolResult::err(format!("Failed to look up task: {}", e))),
             Ok(Some(_)) => {}
         }
-        match db.update_task(id, name, cron, prompt, status) {
+        match db.update_task(
+            id,
+            name,
+            cron,
+            prompt,
+            notify_targets_json.as_deref(),
+            status,
+        ) {
             Ok(_) => Ok(ToolResult::ok(format!("Task '{}' updated.", id))),
             Err(e) => Ok(ToolResult::err(format!("Failed to update task: {}", e))),
         }
@@ -2124,6 +2180,30 @@ fn builtin_tool_catalog() -> Vec<BuiltinToolInfo> {
             description:
                 "Send Markdown messages to IM conversations through the connected channel.".into(),
             icon: "💬".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_list".into(),
+            description: "Inspect registered IM channels and their connection status.".into(),
+            icon: "📡".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_connect".into(),
+            description: "Start the IM channels enabled in Settings without exposing disconnect.".into(),
+            icon: "🔌".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_binding_lookup".into(),
+            description: "Resolve an IM binding_key from a session, pool, or scheduled task context.".into(),
+            icon: "🧭".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "im_channel_binding_list".into(),
+            description: "List candidate IM binding tokens for a named channel such as wechat.".into(),
+            icon: "🎯".into(),
             windows_only: false,
         },
         BuiltinToolInfo {

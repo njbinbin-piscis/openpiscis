@@ -156,6 +156,7 @@ export interface ScheduledTask {
   description?: string;
   cron_expression: string;
   task_prompt: string;
+  notify_targets_json?: string;
   status: string;
   last_run_status?: string;
   run_count: number;
@@ -171,12 +172,14 @@ export const schedulerApi = {
     description?: string;
     cron_expression: string;
     task_prompt: string;
+    notify_targets?: string[];
   }) => invoke<ScheduledTask>("create_task", params),
   update: (params: {
     task_id: string;
     name?: string;
     cron_expression?: string;
     task_prompt?: string;
+    notify_targets?: string[];
     status?: string;
   }) => invoke<void>("update_task", params),
   delete: (taskId: string) => invoke<void>("delete_task", { taskId }),

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { listen } from "@tauri-apps/api/event";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { RootState, settingsActions } from "../../store";
@@ -253,6 +254,13 @@ export default function Settings({ theme, setTheme, onOpenTools }: SettingsProps
   useEffect(() => {
     gatewayApi.list().then((r) => setGatewayStatus(r.channels)).catch(() => setGatewayStatus([]));
   }, [settings]);
+
+  useEffect(() => {
+    const unlisten = listen<{ channels: ChannelInfo[] }>("gateway_channels_updated", (event) => {
+      setGatewayStatus(event.payload.channels ?? []);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
 
   const refreshCapabilityStatus = useCallback(async (platform: EnterprisePlatformId) => {
     try {

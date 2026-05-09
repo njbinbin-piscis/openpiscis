@@ -11,12 +11,14 @@ use crate::gateway::{
 };
 use crate::store::AppState;
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{Emitter, State};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GatewayStatus {
     pub channels: Vec<ChannelInfo>,
 }
+
+pub const GATEWAY_CHANNELS_UPDATED_EVENT: &str = "gateway_channels_updated";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GatewayDiagnosticItem {
@@ -162,13 +164,20 @@ pub async fn connect_gateway_channels(state: State<'_, AppState>) -> Result<Gate
     state.gateway.start_all().await.map_err(|e| e.to_string())?;
 
     let channels = state.gateway.list_channels().await;
+    let _ = state
+        .app_handle
+        .emit(GATEWAY_CHANNELS_UPDATED_EVENT, GatewayStatus { channels: channels.clone() });
     Ok(GatewayStatus { channels })
 }
 
 /// 断开所有 IM 渠道
 #[tauri::command]
 pub async fn disconnect_gateway_channels(state: State<'_, AppState>) -> Result<(), String> {
-    state.gateway.stop_all().await.map_err(|e| e.to_string())
+    state.gateway.stop_all().await.map_err(|e| e.to_string())?;
+    let _ = state
+        .app_handle
+        .emit(GATEWAY_CHANNELS_UPDATED_EVENT, GatewayStatus { channels: Vec::new() });
+    Ok(())
 }
 
 const ILINK_DEFAULT_BASE_URL: &str = "https://ilinkai.weixin.qq.com";

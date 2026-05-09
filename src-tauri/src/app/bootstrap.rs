@@ -191,42 +191,14 @@ async fn run_im_agent_and_send_reply(
             })
         });
 
-    // Use the original inbound message's routing info directly.
-    // We intentionally do NOT call resolve_im_outbound_route here because
-    // in queue mode the DB binding's latest_reply_target may have been
-    // overwritten by a newer inbound message that arrived while the agent
-    // was processing. Using the binding would cause the reply to be
-    // sent with the wrong context_token, routing it to a different message
-    // than the one the user sent. See: WeChat iLink requires the exact
-    // context_token from the inbound message to correctly thread the reply.
-    let recipient = if msg.reply_target.trim().is_empty() {
-        // Fallback: the inbound message didn't carry routing info — try
-        // the DB binding (this handles legacy channels or edge cases).
-        let (r, _) = resolve_im_outbound_route(
-            &state_ref.db,
-            session_id,
-            &msg.channel,
-            &msg.reply_target,
-            msg.routing_state.clone(),
-        )
-        .await;
-        r
-    } else {
-        msg.reply_target.clone()
-    };
-    let routing_state = if msg.routing_state.is_some() {
-        msg.routing_state.clone()
-    } else {
-        let (_, rs) = resolve_im_outbound_route(
-            &state_ref.db,
-            session_id,
-            &msg.channel,
-            &msg.reply_target,
-            msg.routing_state.clone(),
-        )
-        .await;
-        rs
-    };
+    let (recipient, routing_state) = resolve_im_outbound_route(
+        &state_ref.db,
+        session_id,
+        &msg.channel,
+        &msg.reply_target,
+        msg.routing_state.clone(),
+    )
+    .await;
 
     let outbound = gateway::OutboundMessage {
         channel: msg.channel.clone(),
@@ -350,6 +322,7 @@ fn run_impl() {
                 interactive_responses: state.interactive_responses.clone(),
                 app_handle: state.app_handle.clone(),
                 scheduler: state.scheduler.clone(),
+                scheduled_job_ids: state.scheduled_job_ids.clone(),
                 gateway: state.gateway.clone(),
                 pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
             };
@@ -359,44 +332,13 @@ fn run_impl() {
                 let db = tauri::async_runtime::block_on(state.db.lock());
                 let tasks = db.list_tasks().unwrap_or_default();
                 drop(db);
-                for task in tasks {
-                    if task.status == "active" {
-                        let app_h = app_handle.clone();
-                        let task_id = task.id.clone();
-                        let task_prompt = task.task_prompt.clone();
-                        let db_arc = state.db.clone();
-                        let settings_arc = state.settings.clone();
-                        let browser = state.browser.clone();
-                        let cancel_flags = state.cancel_flags.clone();
-                        let cron = task.cron_expression.clone();
-                        let sched = state.scheduler.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = sched
-                                .add_job(&cron, task_id.clone(), move |_uuid, _sched| {
-                                    let app_h = app_h.clone();
-                                    let task_id = task_id.clone();
-                                    let task_prompt = task_prompt.clone();
-                                    let db_arc = db_arc.clone();
-                                    let settings_arc = settings_arc.clone();
-                                    let browser = browser.clone();
-                                    let cancel_flags = cancel_flags.clone();
-                                    Box::pin(async move {
-                                        commands::chat::scheduler::execute_task(
-                                            app_h,
-                                            task_id,
-                                            task_prompt,
-                                            db_arc,
-                                            settings_arc,
-                                            browser,
-                                            cancel_flags,
-                                        )
-                                        .await;
-                                    })
-                                })
-                                .await;
-                        });
+                tauri::async_runtime::block_on(async {
+                    for task in tasks {
+                        if task.status == "active" {
+                            commands::chat::scheduler::register_task_job(&state, &task).await;
+                        }
                     }
-                }
+                });
             }
 
             {
@@ -427,6 +369,7 @@ fn run_impl() {
                 let im_processing: std::sync::Arc<
                     tokio::sync::Mutex<std::collections::HashMap<String, bool>>,
                 > = std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new()));
+                let scheduled_job_ids = state.scheduled_job_ids.clone();
                 tauri::async_runtime::spawn(async move {
                     if let Some(mut rx) = gateway.take_receiver().await {
                         info!("Gateway inbound consumer started");
@@ -456,6 +399,7 @@ fn run_impl() {
                                         interactive_responses: interactive_resp.clone(),
                                         app_handle: app_h.clone(),
                                         scheduler: sched.clone(),
+                                        scheduled_job_ids: scheduled_job_ids.clone(),
                                         gateway: gateway.clone(),
                                         pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                     },
@@ -617,6 +561,7 @@ fn run_impl() {
                                     interactive_responses: interactive_resp.clone(),
                                     app_handle: app_h.clone(),
                                     scheduler: sched.clone(),
+                                    scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                 };
@@ -627,12 +572,6 @@ fn run_impl() {
                                 tokio::spawn(async move {
                                     let _session_guard = session_lock.lock().await;
                                     info!("IM session lock acquired for {}", session_id);
-
-                                    // Track processed message IDs to prevent duplicate agent runs
-                                    // when the same message slips through the gateway dedup cache
-                                    // (race condition during rapid re-deliveries).
-                                    let mut processed_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-                                    processed_ids.insert(msg.id.clone());
 
                                     run_im_agent_and_send_reply(&state_ref, &gw, &session_id, &msg).await;
 
@@ -646,15 +585,6 @@ fn run_impl() {
                                         };
 
                                         if let Some(queued_msg) = next_msg {
-                                            // Skip if we've already processed this message ID
-                                            if !processed_ids.insert(queued_msg.id.clone()) {
-                                                info!(
-                                                    "Skipping duplicate queued message id={} for session {}",
-                                                    queued_msg.id, session_id
-                                                );
-                                                continue;
-                                            }
-
                                             info!("Processing queued message for session {}", session_id);
                                             let _ = state_ref.app_handle.emit("im_session_updated", &session_id);
                                             run_im_agent_and_send_reply(&state_ref, &gw, &session_id, &queued_msg).await;
@@ -703,6 +633,7 @@ fn run_impl() {
                                     interactive_responses: interactive_resp.clone(),
                                     app_handle: app_h.clone(),
                                     scheduler: sched.clone(),
+                                    scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                 };
@@ -840,6 +771,7 @@ fn run_impl() {
                 let interactive_resp_arc = state.interactive_responses.clone();
                 let app_h = app_handle.clone();
                 let sched_arc = state.scheduler.clone();
+                let scheduled_job_ids_arc = state.scheduled_job_ids.clone();
                 let gateway_arc = state.gateway.clone();
                 let pisci_heartbeat_cursor_arc = state.pisci_heartbeat_cursor.clone();
                 tauri::async_runtime::spawn(async move {
@@ -880,6 +812,7 @@ fn run_impl() {
                             interactive_responses: interactive_resp_arc.clone(),
                             app_handle: app_h.clone(),
                             scheduler: sched_arc.clone(),
+                            scheduled_job_ids: scheduled_job_ids_arc.clone(),
                             gateway: gateway_arc.clone(),
                             pisci_heartbeat_cursor: pisci_heartbeat_cursor_arc.clone(),
                         };
@@ -1150,6 +1083,7 @@ fn run_impl() {
                     interactive_responses: state.interactive_responses.clone(),
                     app_handle: app_handle.clone(),
                     scheduler: state.scheduler.clone(),
+                    scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
                 };
@@ -1163,6 +1097,7 @@ fn run_impl() {
                     interactive_responses: state.interactive_responses.clone(),
                     app_handle: app_handle.clone(),
                     scheduler: state.scheduler.clone(),
+                    scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
                 };
@@ -1319,10 +1254,10 @@ fn run_impl() {
             commands::config::enterprise_capability::test_enterprise_capability,
             // chat/
             commands::chat::create_session,
-            commands::chat::set_session_workspace,
             commands::chat::list_sessions,
             commands::chat::delete_session,
             commands::chat::rename_session,
+            commands::chat::set_session_workspace,
             commands::chat::get_messages,
             commands::chat::chat_send,
             commands::chat::chat_cancel,
@@ -1346,9 +1281,9 @@ fn run_impl() {
             commands::chat::debug::run_debug_scenario,
             commands::chat::debug::run_all_debug_scenarios,
             commands::chat::debug::run_uia_drag_test,
+            commands::chat::debug::test_mouse_control,
             commands::chat::debug::get_debug_report,
             commands::chat::debug::get_log_tail,
-            commands::chat::debug::test_mouse_control,
             commands::chat::fish::get_fish_dir,
             commands::chat::fish::list_fish,
             commands::chat::collab_trial::run_collaboration_trial,

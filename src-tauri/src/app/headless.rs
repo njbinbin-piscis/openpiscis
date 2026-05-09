@@ -105,6 +105,10 @@ fn cli_extra_system_context(request: &HeadlessCliRequest) -> String {
                 "- When Koi todos are done, perform supervisor closeout: review pool messages/todos, then explicitly merge branches with pool_org(action=\"merge_branches\") or request rework. Koi completion alone is not final delivery."
                     .to_string(),
             );
+            lines.push(
+                "- If this pool run needs to notify a human through IM, use the explicit routing sequence: im_channel_list -> im_channel_connect (if needed) -> im_channel_binding_lookup(pool_id=...) -> im_send_message. Do not guess binding_key values or claim delivery when no binding exists."
+                    .to_string(),
+            );
             if let Some(size) = request.pool_size {
                 lines.push(format!(
                     "- Target collaboration scale: at most {} Koi unless the task clearly needs fewer.",
@@ -333,7 +337,6 @@ pub async fn run_cli_headless_request(
         workspace_root_override: workspace_override,
         builtin_tool_overrides,
         context_toggles: request.context_toggles.clone(),
-        memory_owner_id: None,
     };
 
     let (response_text, _, _) = commands::chat::run_agent_headless(

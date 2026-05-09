@@ -23,6 +23,8 @@ pub struct AppState {
     pub browser: crate::browser::SharedBrowserManager,
     /// Cron scheduler for recurring tasks
     pub scheduler: Arc<pisci_kernel::scheduler::cron::CronScheduler>,
+    /// Active cron job ids keyed by scheduled task id so updates/restarts can replace jobs instead of duplicating them.
+    pub scheduled_job_ids: Arc<Mutex<std::collections::HashMap<String, uuid::Uuid>>>,
     /// App handle for emitting events from scheduler tasks
     pub app_handle: AppHandle,
     /// Pending permission confirmation channels: request_id -> oneshot sender
@@ -80,6 +82,7 @@ impl AppState {
             cancel_flags: Arc::new(Mutex::new(std::collections::HashMap::new())),
             browser: crate::browser::create_browser_manager(browser_options),
             scheduler: Arc::new(scheduler),
+            scheduled_job_ids: Arc::new(Mutex::new(std::collections::HashMap::new())),
             app_handle: app.clone(),
             confirmation_responses: Arc::new(Mutex::new(std::collections::HashMap::new())),
             interactive_responses: Arc::new(Mutex::new(std::collections::HashMap::new())),
