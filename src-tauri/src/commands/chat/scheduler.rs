@@ -642,6 +642,12 @@ pub async fn execute_task(
             "Scheduled task {}: API key not configured, skipping",
             task_id
         );
+        let db_lock = db.lock().await;
+        let _ = db_lock.update_task_run_status(&task_id, "error");
+        let _ = app.emit(
+            &format!("task_status_{}", task_id),
+            serde_json::json!({ "status": "error", "error": "API key not configured" }),
+        );
         return;
     }
 
@@ -765,6 +771,7 @@ pub async fn execute_task(
 
     let mut attempt = 0usize;
     let run_success;
+    let mut final_messages: Vec<LlmMessage> = Vec::new();
     loop {
         match agent
             .run(
@@ -775,7 +782,8 @@ pub async fn execute_task(
             )
             .await
         {
-            Ok(_) => {
+            Ok((msgs, _input_tokens, _output_tokens)) => {
+                final_messages = msgs;
                 run_success = true;
                 break;
             }
@@ -797,8 +805,74 @@ pub async fn execute_task(
         }
     }
 
+    // Persist the agent conversation to the DB so the user can inspect
+    // what actually happened (e.g. whether im_send_message was called,
+    // whether it succeeded, and what the LLM said).
+    let scope_id = format!("sched_{}", task_id);
+    {
+        let db_lock = db.lock().await;
+        // Ensure a session exists for this scheduled task run.
+        let _ = db_lock.ensure_fixed_session(
+            &scope_id,
+            &format!("[定时] {}", task_id),
+            "scheduled_task",
+        );
+        // Append the full conversation (user prompt + agent replies).
+        for msg in &final_messages {
+            let text = match &msg.content {
+                pisci_kernel::llm::MessageContent::Text(t) => t.clone(),
+                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                    .iter()
+                    .filter_map(|b| {
+                        if let pisci_kernel::llm::ContentBlock::Text { text } = b {
+                            Some(text.as_str())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            };
+            if !text.is_empty() {
+                let _ = db_lock.append_message(&scope_id, &msg.role, &text);
+            }
+        }
+    }
+
     // Write final run status
     let scope_id = format!("sched_{}", task_id);
+
+    // Log a summary of what the agent actually produced — this helps diagnose
+    // silent failures where the agent ran but did not call im_send_message.
+    let last_assistant_text = final_messages
+        .iter()
+        .rev()
+        .filter(|m| m.role == "assistant")
+        .find_map(|m| {
+            let t = match &m.content {
+                pisci_kernel::llm::MessageContent::Text(t) => Some(t.as_str()),
+                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                    .iter()
+                    .filter_map(|b| {
+                        if let pisci_kernel::llm::ContentBlock::Text { text } = b {
+                            Some(text.as_str())
+                        } else {
+                            None
+                        }
+                    })
+                    .next(),
+            };
+            t.filter(|s| !s.trim().is_empty())
+        });
+    if let Some(summary) = last_assistant_text {
+        let preview: String = summary.chars().take(200).collect();
+        info!("Scheduled task {} final agent output: {}", task_id, preview);
+    } else {
+        warn!(
+            "Scheduled task {} produced no assistant text output — the agent may have failed silently or only used tools",
+            task_id
+        );
+    }
     persist_task_spine_from_plan_state(
         &app,
         &db,

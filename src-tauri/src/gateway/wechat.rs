@@ -1066,7 +1066,8 @@ fn build_media_message_item(media: &MediaAttachment, uploaded: &UploadedWechatMe
                     "encrypt_type": 1
                 },
                 "file_name": file_name,
-                "len": uploaded.raw_size.to_string()
+                "len": uploaded.raw_size,
+                "mid_size": uploaded.encrypted_size
             }
         })
     }
@@ -1572,7 +1573,8 @@ mod tests {
         );
         assert_eq!(file["type"], MESSAGE_ITEM_TYPE_FILE);
         assert_eq!(file["file_item"]["file_name"], "doc.pdf");
-        assert_eq!(file["file_item"]["len"], "42");
+        assert_eq!(file["file_item"]["len"], 42);
+        assert_eq!(file["file_item"]["mid_size"], 48);
     }
 
     #[tokio::test]
