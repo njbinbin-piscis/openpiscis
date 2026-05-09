@@ -6,6 +6,25 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.16] - 2026-05-07
+
+### Fixed
+- **WeChat duplicate agent runs (queue race condition)**: the gateway-level
+  dedup cache (`WechatState::seen_messages`) prevents most duplicate message
+  deliveries from iLink, but when iLink re-delivers the same `message_id`
+  very rapidly (within the same `getupdates` batch or within milliseconds),
+  multiple copies can slip through before the first one is marked. These
+  duplicates then enter the IM message queue and are processed sequentially
+  by the queue drain loop, causing the agent to run multiple times with the
+  same context and emit identical replies.
+  
+  Added a second layer of defense: the queue-mode processing task now
+  tracks processed message IDs in a local `HashSet<String>` and skips any
+  queued message whose ID has already been processed in the current session
+  run. This catches duplicates that bypassed the gateway dedup due to timing.
+
+---
+
 ## [0.7.15] - 2026-05-07
 
 ### Fixed
