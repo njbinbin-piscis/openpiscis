@@ -362,9 +362,15 @@ pub(crate) async fn register_task_job(state: &AppState, task: &ScheduledTask) {
         Ok(job_id) => {
             let mut jobs = scheduled_job_ids.lock().await;
             jobs.insert(task.id.clone(), job_id);
-            info!("Scheduled task {} registered as job {}", task_id_log, job_id);
+            info!(
+                "Scheduled task {} registered as job {}",
+                task_id_log, job_id
+            );
         }
-        Err(e) => warn!("Failed to register task {} in scheduler: {}", task_id_log, e),
+        Err(e) => warn!(
+            "Failed to register task {} in scheduler: {}",
+            task_id_log, e
+        ),
     }
 }
 
@@ -659,10 +665,7 @@ pub async fn execute_task(
     info!("Executing scheduled task: {}", task_id);
     let task_name = {
         let db = db.lock().await;
-        db.get_task(&task_id)
-            .ok()
-            .flatten()
-            .map(|task| task.name)
+        db.get_task(&task_id).ok().flatten().map(|task| task.name)
     };
     let session_title = build_scheduler_session_title(task_name.as_deref(), &task_id);
     {
@@ -902,11 +905,7 @@ pub async fn execute_task(
     {
         let db_lock = db.lock().await;
         // Ensure a session exists for this scheduled task run.
-        let _ = db_lock.ensure_fixed_session(
-            &scope_id,
-            &session_title,
-            "scheduled_task",
-        );
+        let _ = db_lock.ensure_fixed_session(&scope_id, &session_title, "scheduled_task");
         let _ = db_lock.rename_session(&scope_id, &session_title);
         // Append the full conversation (user prompt + agent replies).
         for msg in &final_messages {

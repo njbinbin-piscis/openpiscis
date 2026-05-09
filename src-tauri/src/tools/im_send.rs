@@ -96,11 +96,12 @@ fn derive_outbound_binding_identity(
             )
         }
         "wecom" => {
-            let conversation_key = if recipient.starts_with("group:") || recipient.starts_with("user:") {
-                recipient.to_string()
-            } else {
-                format!("user:{}", recipient)
-            };
+            let conversation_key =
+                if recipient.starts_with("group:") || recipient.starts_with("user:") {
+                    recipient.to_string()
+                } else {
+                    format!("user:{}", recipient)
+                };
             let is_group = conversation_key.starts_with("group:");
             let peer_id = if is_group {
                 conversation_key
@@ -117,7 +118,12 @@ fn derive_outbound_binding_identity(
         }
         _ => {
             let conversation_key = recipient.to_string();
-            (conversation_key, recipient.to_string(), false, recipient.to_string())
+            (
+                conversation_key,
+                recipient.to_string(),
+                false,
+                recipient.to_string(),
+            )
         }
     }
 }
@@ -165,7 +171,11 @@ async fn ensure_outbound_history_session(
     }
     let _ = db.rename_session(&session_id, &title);
 
-    let group_name = if is_group { Some(peer_id.clone()) } else { None };
+    let group_name = if is_group {
+        Some(peer_id.clone())
+    } else {
+        None
+    };
     if let Err(err) = db.upsert_im_session_binding(&crate::store::db::ImSessionBindingUpsert {
         binding_key,
         channel: outbound.channel.clone(),
@@ -331,150 +341,151 @@ impl Tool for ImSendMessageTool {
             None => None,
         };
 
-        let prepared =
-            if let Some(key) = binding_key {
-                // Explicit binding_key provided — look it up directly.
-                let db = match self.db.as_ref() {
-                    Some(d) => d.clone(),
-                    None => {
-                        return Ok(ToolResult::err(
-                            "database handle unavailable; cannot resolve binding_key",
-                        ))
-                    }
-                };
-                let binding = {
-                    let db = db.lock().await;
-                    match db.get_im_session_binding(key) {
-                        Ok(Some(b)) => b,
-                        Ok(None) => {
-                            return Ok(ToolResult::err(format!("IM binding '{}' not found", key)))
-                        }
-                        Err(err) => {
-                            return Ok(ToolResult::err(format!(
-                                "failed to look up binding '{}': {}",
-                                key, err
-                            )))
-                        }
-                    }
-                };
-                let routing_state = binding
-                    .routing_state_json
-                    .as_deref()
-                    .and_then(|raw| serde_json::from_str::<Value>(raw).ok());
-                let recipient = if binding.latest_reply_target.trim().is_empty() {
-                    binding.peer_id.clone()
-                } else {
-                    binding.latest_reply_target.clone()
-                };
-                PreparedSend {
-                    outbound: OutboundMessage {
-                        channel: binding.channel.clone(),
-                        recipient,
-                        content: text,
-                        reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
-                        media: media.clone(),
-                        routing_state,
-                    },
-                    history_session_id: Some(binding.session_id.clone()),
+        let prepared = if let Some(key) = binding_key {
+            // Explicit binding_key provided — look it up directly.
+            let db = match self.db.as_ref() {
+                Some(d) => d.clone(),
+                None => {
+                    return Ok(ToolResult::err(
+                        "database handle unavailable; cannot resolve binding_key",
+                    ))
                 }
-            } else if channel_arg.is_some() || recipient_arg.is_some() {
-                // Explicit channel + recipient provided.
-                let channel = match channel_arg {
+            };
+            let binding = {
+                let db = db.lock().await;
+                match db.get_im_session_binding(key) {
+                    Ok(Some(b)) => b,
+                    Ok(None) => {
+                        return Ok(ToolResult::err(format!("IM binding '{}' not found", key)))
+                    }
+                    Err(err) => {
+                        return Ok(ToolResult::err(format!(
+                            "failed to look up binding '{}': {}",
+                            key, err
+                        )))
+                    }
+                }
+            };
+            let routing_state = binding
+                .routing_state_json
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<Value>(raw).ok());
+            let recipient = if binding.latest_reply_target.trim().is_empty() {
+                binding.peer_id.clone()
+            } else {
+                binding.latest_reply_target.clone()
+            };
+            PreparedSend {
+                outbound: OutboundMessage {
+                    channel: binding.channel.clone(),
+                    recipient,
+                    content: text,
+                    reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
+                    media: media.clone(),
+                    routing_state,
+                },
+                history_session_id: Some(binding.session_id.clone()),
+            }
+        } else if channel_arg.is_some() || recipient_arg.is_some() {
+            // Explicit channel + recipient provided.
+            let channel =
+                match channel_arg {
                     Some(c) => c.to_string(),
                     None => return Ok(ToolResult::err(
                         "'channel' is required when 'recipient' is provided without 'binding_key'",
                     )),
                 };
-                let recipient = match recipient_arg {
+            let recipient =
+                match recipient_arg {
                     Some(r) => r.to_string(),
                     None => return Ok(ToolResult::err(
                         "'recipient' is required when 'channel' is provided without 'binding_key'",
                     )),
                 };
-                let history_session_id = match self.db.as_ref() {
-                    Some(db) => {
-                        let db = db.lock().await;
-                        match db.find_im_session_binding_for_channel_recipient(&channel, &recipient)
-                        {
-                            Ok(Some(binding)) => Some(binding.session_id),
-                            Ok(None) => None,
-                            Err(err) => {
-                                warn!(
+            let history_session_id = match self.db.as_ref() {
+                Some(db) => {
+                    let db = db.lock().await;
+                    match db.find_im_session_binding_for_channel_recipient(&channel, &recipient) {
+                        Ok(Some(binding)) => Some(binding.session_id),
+                        Ok(None) => None,
+                        Err(err) => {
+                            warn!(
                                     "im_send_message: failed to resolve history session for channel={} recipient={}: {}",
                                     channel, recipient, err
                                 );
-                                None
-                            }
+                            None
                         }
                     }
-                    None => None,
-                };
-                let routing_state = input.get("routing_state").cloned().filter(|v| !v.is_null());
-                PreparedSend {
-                    outbound: OutboundMessage {
-                        channel,
-                        recipient,
-                        content: text,
-                        reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
-                        media,
-                        routing_state,
-                    },
-                    history_session_id,
                 }
-            } else {
-                // No explicit addressing — auto-resolve from current session.
-                let db =
-                    match self.db.as_ref() {
-                        Some(d) => d.clone(),
-                        None => return Ok(ToolResult::err(
-                            "either 'binding_key' or both 'channel' and 'recipient' are required \
+                None => None,
+            };
+            let routing_state = input.get("routing_state").cloned().filter(|v| !v.is_null());
+            PreparedSend {
+                outbound: OutboundMessage {
+                    channel,
+                    recipient,
+                    content: text,
+                    reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
+                    media,
+                    routing_state,
+                },
+                history_session_id,
+            }
+        } else {
+            // No explicit addressing — auto-resolve from current session.
+            let db = match self.db.as_ref() {
+                Some(d) => d.clone(),
+                None => {
+                    return Ok(ToolResult::err(
+                        "either 'binding_key' or both 'channel' and 'recipient' are required \
                          (no database handle to auto-resolve from session)",
-                        )),
-                    };
-                let binding = {
-                    let db = db.lock().await;
-                    match db.find_im_session_binding_for_session(&_ctx.session_id) {
-                        Ok(Some(b)) => b,
-                        Ok(None) => {
-                            return Ok(ToolResult::err(format!(
-                                "no IM binding found for current session '{}'; \
-                             provide 'binding_key' or 'channel' + 'recipient'",
-                                _ctx.session_id
-                            )))
-                        }
-                        Err(err) => {
-                            return Ok(ToolResult::err(format!(
-                                "failed to look up binding for session '{}': {}",
-                                _ctx.session_id, err
-                            )))
-                        }
-                    }
-                };
-                info!(
-                    "im_send_message: auto-resolved binding_key='{}' from session_id='{}'",
-                    binding.binding_key, _ctx.session_id
-                );
-                let routing_state = binding
-                    .routing_state_json
-                    .as_deref()
-                    .and_then(|raw| serde_json::from_str::<Value>(raw).ok());
-                let recipient = if binding.latest_reply_target.trim().is_empty() {
-                    binding.peer_id.clone()
-                } else {
-                    binding.latest_reply_target.clone()
-                };
-                PreparedSend {
-                    outbound: OutboundMessage {
-                        channel: binding.channel.clone(),
-                        recipient,
-                        content: text,
-                        reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
-                        media,
-                        routing_state,
-                    },
-                    history_session_id: Some(binding.session_id.clone()),
+                    ))
                 }
             };
+            let binding = {
+                let db = db.lock().await;
+                match db.find_im_session_binding_for_session(&_ctx.session_id) {
+                    Ok(Some(b)) => b,
+                    Ok(None) => {
+                        return Ok(ToolResult::err(format!(
+                            "no IM binding found for current session '{}'; \
+                             provide 'binding_key' or 'channel' + 'recipient'",
+                            _ctx.session_id
+                        )))
+                    }
+                    Err(err) => {
+                        return Ok(ToolResult::err(format!(
+                            "failed to look up binding for session '{}': {}",
+                            _ctx.session_id, err
+                        )))
+                    }
+                }
+            };
+            info!(
+                "im_send_message: auto-resolved binding_key='{}' from session_id='{}'",
+                binding.binding_key, _ctx.session_id
+            );
+            let routing_state = binding
+                .routing_state_json
+                .as_deref()
+                .and_then(|raw| serde_json::from_str::<Value>(raw).ok());
+            let recipient = if binding.latest_reply_target.trim().is_empty() {
+                binding.peer_id.clone()
+            } else {
+                binding.latest_reply_target.clone()
+            };
+            PreparedSend {
+                outbound: OutboundMessage {
+                    channel: binding.channel.clone(),
+                    recipient,
+                    content: text,
+                    reply_to: input["reply_to"].as_str().map(|s| s.to_string()),
+                    media,
+                    routing_state,
+                },
+                history_session_id: Some(binding.session_id.clone()),
+            }
+        };
 
         let outbound = prepared.outbound;
         let history_session_id = prepared.history_session_id;
@@ -487,14 +498,14 @@ impl Tool for ImSendMessageTool {
                     (None, None) => None,
                     (None, Some(session_id)) => Some(session_id),
                 };
-                if let (Some(db), Some(session_id)) = (self.db.as_ref(), history_session_id.as_deref()) {
-                    let history_content = render_sent_history_content(&outbound.content, outbound.media.as_ref());
+                if let (Some(db), Some(session_id)) =
+                    (self.db.as_ref(), history_session_id.as_deref())
+                {
+                    let history_content =
+                        render_sent_history_content(&outbound.content, outbound.media.as_ref());
                     let db = db.lock().await;
-                    let title = build_im_session_title(
-                        &outbound.channel,
-                        &outbound.recipient,
-                        false,
-                    );
+                    let title =
+                        build_im_session_title(&outbound.channel, &outbound.recipient, false);
                     let source = format!("im_{}", outbound.channel);
                     if let Err(err) = db.ensure_im_session(session_id, &title, &source) {
                         warn!(

@@ -1114,8 +1114,7 @@ impl Database {
              WHERE channel = ?1
              ORDER BY updated_at DESC
              LIMIT ?2";
-        let sql_all =
-            "SELECT binding_key, channel, external_conversation_key, session_id, peer_id,
+        let sql_all = "SELECT binding_key, channel, external_conversation_key, session_id, peer_id,
                     peer_name, is_group, group_name, latest_reply_target, routing_state_json,
                     created_at, updated_at, last_inbound_at
              FROM im_session_bindings

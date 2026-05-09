@@ -232,14 +232,13 @@ impl Tool for ImChannelConnectTool {
         if self.gateway.is_none() {
             return Ok(ToolResult::err("IM gateway is unavailable in this context"));
         }
-        let app = match self.app_handle.as_ref() {
-            Some(app) => app.clone(),
-            None => {
-                return Ok(ToolResult::err(
+        let app =
+            match self.app_handle.as_ref() {
+                Some(app) => app.clone(),
+                None => return Ok(ToolResult::err(
                     "desktop app handle unavailable; cannot connect IM channels in this runtime",
-                ))
-            }
-        };
+                )),
+            };
         let state = app.state::<AppState>();
         let desired = input
             .get("channel")
@@ -267,7 +266,10 @@ impl Tool for ImChannelConnectTool {
                     .to_string(),
                 ))
             }
-            Err(err) => Ok(ToolResult::err(format!("failed to connect IM channels: {}", err))),
+            Err(err) => Ok(ToolResult::err(format!(
+                "failed to connect IM channels: {}",
+                err
+            ))),
         }
     }
 }
@@ -317,7 +319,11 @@ impl Tool for ImChannelBindingLookupTool {
     async fn call(&self, input: Value, ctx: &ToolContext) -> anyhow::Result<ToolResult> {
         let db = match self.db.as_ref() {
             Some(db) => db.clone(),
-            None => return Ok(ToolResult::err("database handle unavailable; cannot resolve IM binding")),
+            None => {
+                return Ok(ToolResult::err(
+                    "database handle unavailable; cannot resolve IM binding",
+                ))
+            }
         };
         let (lookup_kind, lookup_value) = match resolve_lookup_key(&input, ctx) {
             Ok(result) => result,
@@ -329,7 +335,9 @@ impl Tool for ImChannelBindingLookupTool {
                 "binding_key" => db.get_im_session_binding(&lookup_value),
                 "session_id" => db.find_im_session_binding_for_session(&lookup_value),
                 "pool_id" => db.find_im_session_binding_for_pool(&lookup_value),
-                "task_id" => db.find_im_session_binding_for_session(&scheduler_session_id(&lookup_value)),
+                "task_id" => {
+                    db.find_im_session_binding_for_session(&scheduler_session_id(&lookup_value))
+                }
                 _ => unreachable!("validated lookup kind"),
             }
         };
@@ -393,7 +401,10 @@ impl Tool for ImChannelBindingLookupTool {
     }
 }
 
-fn render_binding_json(binding: &crate::store::db::ImSessionBinding, status: Option<&ChannelInfo>) -> Value {
+fn render_binding_json(
+    binding: &crate::store::db::ImSessionBinding,
+    status: Option<&ChannelInfo>,
+) -> Value {
     json!({
         "binding_key": binding.binding_key,
         "channel": binding.channel,
@@ -460,15 +471,36 @@ impl Tool for ImChannelBindingListTool {
     async fn call(&self, input: Value, _ctx: &ToolContext) -> anyhow::Result<ToolResult> {
         let db = match self.db.as_ref() {
             Some(db) => db.clone(),
-            None => return Ok(ToolResult::err("database handle unavailable; cannot list IM bindings")),
+            None => {
+                return Ok(ToolResult::err(
+                    "database handle unavailable; cannot list IM bindings",
+                ))
+            }
         };
-        let channel = match input["channel"].as_str().map(str::trim).filter(|s| !s.is_empty()) {
+        let channel = match input["channel"]
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
             Some(channel) => channel.to_ascii_lowercase(),
-            None => return Ok(ToolResult::err("'channel' is required for im_channel_binding_list")),
+            None => {
+                return Ok(ToolResult::err(
+                    "'channel' is required for im_channel_binding_list",
+                ))
+            }
         };
-        let session_id = input["session_id"].as_str().map(str::trim).filter(|s| !s.is_empty());
-        let task_id = input["task_id"].as_str().map(str::trim).filter(|s| !s.is_empty());
-        let pool_id = input["pool_id"].as_str().map(str::trim).filter(|s| !s.is_empty());
+        let session_id = input["session_id"]
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let task_id = input["task_id"]
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        let pool_id = input["pool_id"]
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
         let limit = input["limit"].as_u64().unwrap_or(5).clamp(1, 20) as usize;
 
         let mut bindings = Vec::new();
@@ -485,8 +517,15 @@ impl Tool for ImChannelBindingListTool {
                 .map(str::to_string)
                 .or_else(|| task_id.map(scheduler_session_id));
             if let Some(session_id) = narrowed_session {
-                if let Ok(Some(binding)) = db.get_im_session_binding_by_session(&session_id, &channel) {
-                    if !bindings.iter().any(|existing: &crate::store::db::ImSessionBinding| existing.binding_key == binding.binding_key) {
+                if let Ok(Some(binding)) =
+                    db.get_im_session_binding_by_session(&session_id, &channel)
+                {
+                    if !bindings
+                        .iter()
+                        .any(|existing: &crate::store::db::ImSessionBinding| {
+                            existing.binding_key == binding.binding_key
+                        })
+                    {
                         bindings.push(binding);
                     }
                 }
@@ -501,7 +540,10 @@ impl Tool for ImChannelBindingListTool {
                 }
             };
             for binding in recent {
-                if !bindings.iter().any(|existing| existing.binding_key == binding.binding_key) {
+                if !bindings
+                    .iter()
+                    .any(|existing| existing.binding_key == binding.binding_key)
+                {
                     bindings.push(binding);
                 }
             }
@@ -555,10 +597,13 @@ mod tests {
     #[test]
     fn resolve_lookup_prefers_explicit_binding_key() {
         let ctx = test_ctx();
-        let (kind, value) = resolve_lookup_key(&json!({
-            "binding_key": "wechat::u:1",
-            "session_id": "sess_other"
-        }), &ctx)
+        let (kind, value) = resolve_lookup_key(
+            &json!({
+                "binding_key": "wechat::u:1",
+                "session_id": "sess_other"
+            }),
+            &ctx,
+        )
         .unwrap();
         assert_eq!(kind, "binding_key");
         assert_eq!(value, "wechat::u:1");
@@ -567,9 +612,12 @@ mod tests {
     #[test]
     fn resolve_lookup_uses_current_session_when_requested() {
         let ctx = test_ctx();
-        let (kind, value) = resolve_lookup_key(&json!({
-            "use_current_session": true
-        }), &ctx)
+        let (kind, value) = resolve_lookup_key(
+            &json!({
+                "use_current_session": true
+            }),
+            &ctx,
+        )
         .unwrap();
         assert_eq!(kind, "session_id");
         assert_eq!(value, "sess_123");
@@ -656,7 +704,10 @@ mod tests {
         assert!(!result.is_error);
         let payload: Value = serde_json::from_str(&result.content).expect("json payload");
         assert_eq!(payload["found"], json!(true));
-        assert_eq!(payload["binding"]["binding_key"], json!("wechat::dm:user-1"));
+        assert_eq!(
+            payload["binding"]["binding_key"],
+            json!("wechat::dm:user-1")
+        );
         assert_eq!(payload["lookup"]["kind"], json!("session_id"));
         assert_eq!(payload["usable"], json!(false));
     }
@@ -701,12 +752,17 @@ mod tests {
         let payload: Value = serde_json::from_str(&result.content).expect("json payload");
         assert_eq!(payload["found"], json!(true));
         assert_eq!(payload["lookup"]["kind"], json!("task_id"));
-        assert_eq!(payload["binding"]["binding_key"], json!("wechat::dm:user-2"));
+        assert_eq!(
+            payload["binding"]["binding_key"],
+            json!("wechat::dm:user-2")
+        );
     }
 
     #[tokio::test]
     async fn binding_lookup_returns_not_found_payload() {
-        let db = Arc::new(Mutex::new(Database::open_in_memory().expect("in-memory db")));
+        let db = Arc::new(Mutex::new(
+            Database::open_in_memory().expect("in-memory db"),
+        ));
         let tool = ImChannelBindingLookupTool {
             db: Some(db),
             gateway: None,
@@ -731,7 +787,10 @@ mod tests {
         };
 
         let result = tool
-            .call(json!({ "channel": "wechat", "task_id": "task_42" }), &test_ctx())
+            .call(
+                json!({ "channel": "wechat", "task_id": "task_42" }),
+                &test_ctx(),
+            )
             .await
             .expect("tool call");
 

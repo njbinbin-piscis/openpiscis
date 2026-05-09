@@ -35,8 +35,8 @@ use crate::runtime::koi::DesktopInProcessSubagentRuntime;
 use crate::skills::loader::SkillLoader;
 use crate::store::{AppState, Database, Settings};
 use crate::tools::{
-    app_control, browser, call_fish, call_koi, chat_ui, desktop_automation, im_channel,
-    im_send, screen, skill_list, system_info,
+    app_control, browser, call_fish, call_koi, chat_ui, desktop_automation, im_channel, im_send,
+    screen, skill_list, system_info,
 };
 
 #[cfg(target_os = "windows")]
@@ -518,8 +518,7 @@ impl HostTools for DesktopHostTools {
         // through the same `GatewayManager` the inbound channel already
         // owns. Registered whenever a gateway is available; the
         // `builtin_tool_enabled` map can disable it per-deployment.
-        if self.is_enabled("im_channel_list")
-            && (self.gateway.is_some() || self.settings.is_some())
+        if self.is_enabled("im_channel_list") && (self.gateway.is_some() || self.settings.is_some())
         {
             registry.register(Box::new(im_channel::ImChannelListTool {
                 gateway: self.gateway.clone(),

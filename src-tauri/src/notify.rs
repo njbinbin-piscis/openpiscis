@@ -255,7 +255,11 @@ async fn deliver_via_gateway(
         Ok(()) => {
             if let Some(db) = deps.db.as_ref() {
                 let db = db.lock().await;
-                let title = format!("{} · {}", binding.channel, binding.peer_name.as_deref().unwrap_or(&binding.peer_id));
+                let title = format!(
+                    "{} · {}",
+                    binding.channel,
+                    binding.peer_name.as_deref().unwrap_or(&binding.peer_id)
+                );
                 let source = format!("im_{}", binding.channel);
                 if let Err(err) = db.ensure_im_session(&binding.session_id, &title, &source) {
                     warn!(
@@ -271,7 +275,10 @@ async fn deliver_via_gateway(
                     );
                 }
             }
-            NotificationOutcome::ok(target, format!("sent via {} to {}", binding.channel, recipient))
+            NotificationOutcome::ok(
+                target,
+                format!("sent via {} to {}", binding.channel, recipient),
+            )
         }
         Err(err) => {
             warn!(

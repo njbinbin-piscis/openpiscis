@@ -386,8 +386,7 @@ impl AppControlTool {
                 .ok_or_else(|| {
                     anyhow::anyhow!("'notify_targets' entries must be non-empty strings")
                 })?;
-            NotificationTarget::parse_token(token)
-                .map_err(|err| anyhow::anyhow!(err))?;
+            NotificationTarget::parse_token(token).map_err(|err| anyhow::anyhow!(err))?;
             tokens.push(token.to_string());
         }
         Ok(Some(serde_json::to_string(&tokens)?))
@@ -2190,19 +2189,22 @@ fn builtin_tool_catalog() -> Vec<BuiltinToolInfo> {
         },
         BuiltinToolInfo {
             name: "im_channel_connect".into(),
-            description: "Start the IM channels enabled in Settings without exposing disconnect.".into(),
+            description: "Start the IM channels enabled in Settings without exposing disconnect."
+                .into(),
             icon: "🔌".into(),
             windows_only: false,
         },
         BuiltinToolInfo {
             name: "im_channel_binding_lookup".into(),
-            description: "Resolve an IM binding_key from a session, pool, or scheduled task context.".into(),
+            description:
+                "Resolve an IM binding_key from a session, pool, or scheduled task context.".into(),
             icon: "🧭".into(),
             windows_only: false,
         },
         BuiltinToolInfo {
             name: "im_channel_binding_list".into(),
-            description: "List candidate IM binding tokens for a named channel such as wechat.".into(),
+            description: "List candidate IM binding tokens for a named channel such as wechat."
+                .into(),
             icon: "🎯".into(),
             windows_only: false,
         },

@@ -761,7 +761,8 @@ pub async fn chat_send(
             settings.enable_project_instructions,
         )
     };
-    let workspace_root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
+    let workspace_root =
+        resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
 
     tracing::info!(
         "chat_send: provider={} model={} api_key_empty={}",
@@ -3851,7 +3852,8 @@ pub async fn get_context_preview(
             settings.enable_project_instructions,
         )
     };
-    let workspace_root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
+    let workspace_root =
+        resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
 
     // Build context messages from history — this is the exact payload sent to the LLM
     let budget = compute_context_budget(context_window, max_tokens);

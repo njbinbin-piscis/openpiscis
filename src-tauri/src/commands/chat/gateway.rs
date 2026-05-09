@@ -164,9 +164,12 @@ pub async fn connect_gateway_channels(state: State<'_, AppState>) -> Result<Gate
     state.gateway.start_all().await.map_err(|e| e.to_string())?;
 
     let channels = state.gateway.list_channels().await;
-    let _ = state
-        .app_handle
-        .emit(GATEWAY_CHANNELS_UPDATED_EVENT, GatewayStatus { channels: channels.clone() });
+    let _ = state.app_handle.emit(
+        GATEWAY_CHANNELS_UPDATED_EVENT,
+        GatewayStatus {
+            channels: channels.clone(),
+        },
+    );
     Ok(GatewayStatus { channels })
 }
 
@@ -174,9 +177,12 @@ pub async fn connect_gateway_channels(state: State<'_, AppState>) -> Result<Gate
 #[tauri::command]
 pub async fn disconnect_gateway_channels(state: State<'_, AppState>) -> Result<(), String> {
     state.gateway.stop_all().await.map_err(|e| e.to_string())?;
-    let _ = state
-        .app_handle
-        .emit(GATEWAY_CHANNELS_UPDATED_EVENT, GatewayStatus { channels: Vec::new() });
+    let _ = state.app_handle.emit(
+        GATEWAY_CHANNELS_UPDATED_EVENT,
+        GatewayStatus {
+            channels: Vec::new(),
+        },
+    );
     Ok(())
 }
 
