@@ -632,6 +632,19 @@ pub async fn create_session(
         .map_err(|e| e.to_string())
 }
 
+/// Set or clear the per-session workspace override.
+/// Pass `None` for `workspace_root` to revert to the global workspace setting.
+#[tauri::command]
+pub async fn set_session_workspace(
+    state: State<'_, AppState>,
+    session_id: String,
+    workspace_root: Option<String>,
+) -> Result<(), String> {
+    let db = state.db.lock().await;
+    db.set_session_workspace(&session_id, workspace_root.as_deref())
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn list_sessions(
     state: State<'_, AppState>,
@@ -725,7 +738,7 @@ pub async fn chat_send(
         tool_settings,
         max_iterations,
         builtin_tool_enabled,
-        allow_outside_workspace,
+        mut allow_outside_workspace,
         vision_enabled,
         vision_use_main_llm,
         vision_provider,
@@ -765,6 +778,42 @@ pub async fn chat_send(
             settings.project_instruction_budget_chars,
             settings.enable_project_instructions,
         )
+    };
+
+    // Per-session workspace override: if the session has a workspace_root
+    // set, it takes precedence over the global setting.
+    // Also auto-enable `allow_outside_workspace` if the session workspace
+    // is outside the global workspace root.
+    let session_workspace = {
+        let db = state.db.lock().await;
+        db.get_session(&session_id)
+            .ok()
+            .flatten()
+            .and_then(|s| s.workspace_root)
+    };
+    let workspace_root = if let Some(ref ws) = session_workspace {
+        // Check if session workspace is outside global workspace
+        if !allow_outside_workspace {
+            let global_ws = std::path::Path::new(&workspace_root);
+            let session_ws = std::path::Path::new(ws);
+            // Canonicalize both for reliable comparison (best-effort)
+            let global_canonical = global_ws.canonicalize().unwrap_or_else(|_| global_ws.to_path_buf());
+            let session_canonical = session_ws.canonicalize().unwrap_or_else(|_| session_ws.to_path_buf());
+            if !session_canonical.starts_with(&global_canonical) {
+                // Auto-enable allow_outside_workspace
+                allow_outside_workspace = true;
+                let mut settings = state.settings.lock().await;
+                settings.allow_outside_workspace = true;
+                let _ = settings.save();
+                tracing::info!(
+                    "chat_send: session workspace '{}' is outside global '{}', auto-enabled allow_outside_workspace",
+                    ws, workspace_root
+                );
+            }
+        }
+        ws.clone()
+    } else {
+        workspace_root
     };
 
     tracing::info!(

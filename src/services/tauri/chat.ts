@@ -27,6 +27,8 @@ export interface Session {
   total_input_tokens?: number;
   total_output_tokens?: number;
   last_compacted_at?: string | null;
+  /** Per-session workspace override. When set, replaces global workspace_root for this session. */
+  workspace_root?: string | null;
 }
 
 export interface ChatMessage {
@@ -51,6 +53,9 @@ export const sessionsApi = {
   rename: (sessionId: string, title: string) => invoke<void>("rename_session", { sessionId, title }),
   getMessages: (sessionId: string, limit = 100, offset = 0) =>
     invoke<ChatMessage[]>("get_messages", { sessionId, limit, offset }),
+  /** Set or clear per-session workspace override. Pass null to revert to global. */
+  setWorkspace: (sessionId: string, workspaceRoot: string | null) =>
+    invoke<void>("set_session_workspace", { sessionId, workspaceRoot }),
 };
 
 // ---------------------------------------------------------------------------

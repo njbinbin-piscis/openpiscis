@@ -1,12 +1,15 @@
 import { Component, useEffect, useRef, useState, useCallback, useMemo, type ErrorInfo, type ReactNode } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { listen } from "@tauri-apps/api/event";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { RootState, chatActions, sessionsActions, ToolStep, StreamingState, PlanTodoItem, ContextUsageSnapshot } from "../../store";
 import { chatApi, sessionsApi, gatewayApi, AgentEventType, ChannelInfo, ChatAttachment, type Session, type ChatMessage } from "../../services/tauri";
+import { settingsApi } from "../../services/tauri";
+import type { Settings } from "../../services/tauri";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { openPath } from "../../services/tauri";
@@ -369,10 +372,16 @@ export default function Chat() {
   const { messagesBySession, streaming, toolSteps, planBySession, isRunning, contextUsage } = useSelector(
     (s: RootState) => s.chat
   );
+  const settings = useSelector((s: RootState) => s.settings.settings) as Settings | null;
 
   const [input, setInput] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
+    const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [sessionFilter, setSessionFilter] = useState<"all" | SessionKind>("all");
+
+  // ── Input history navigation (up/down arrows) ──────────────────────────
+  const [historyIndex, setHistoryIndex] = useState(-1); // -1 = not navigating, 0 = oldest, N-1 = newest
+  const historyDraftRef = useRef<string>(""); // preserved draft before navigating history
 
   // Attachment state
   const [attachment, setAttachment] = useState<ChatAttachment | null>(null);
@@ -665,6 +674,9 @@ export default function Chat() {
     if (!activeSessionId) return;
     setCapacity(CHAT_INITIAL_SIZE);
     setUnreadCount(0);
+    // Reset history navigation on session switch
+    setHistoryIndex(-1);
+    historyDraftRef.current = "";
     prevLastChatIdRef.current = null;
     isNearBottomRef.current = true;
 
@@ -1104,7 +1116,65 @@ export default function Chat() {
     setAttachmentPreview(null);
   }, []);
 
-  // ── File drag-and-drop ────────────────────────────────────────────────────
+  // ── Workspace selector ──────────────────────────────────────────────────
+  // The effective workspace for the active session:
+  //   session.workspace_root > settings.workspace_root > ""
+    const effectiveWorkspace = activeSession?.workspace_root || settings?.workspace_root || "";
+    const globalWorkspace = settings?.workspace_root || "";
+
+  const handleWorkspaceBrowse = useCallback(async () => {
+    if (!activeSessionId) return;
+    try {
+            const selected = await openFileDialog({ directory: true, title: t("chat.workspaceBrowseTitle") });
+      if (!selected) return;
+      const dirPath = selected as string;
+
+      // Check if the selected dir is outside the global workspace
+      const isOutside = globalWorkspace && !dirPath.startsWith(globalWorkspace);
+
+      // Set the session workspace override
+      await sessionsApi.setWorkspace(activeSessionId, dirPath);
+
+      // Auto-enable allow_outside_workspace if needed
+      if (isOutside && settings && !settings.allow_outside_workspace) {
+        await settingsApi.save({ allow_outside_workspace: true });
+        // Refresh settings in Redux
+        const updated = await settingsApi.get();
+        dispatch({ type: "settings/setSettings", payload: updated });
+        // Notify the user
+        setInfoNotice(t("chat.workspaceOutsideAutoEnabled"));
+        // Auto-dismiss the notification after 5 seconds
+        setTimeout(() => setInfoNotice(null), 5000);
+      }
+
+      // Refresh the session in local state so the dropdown updates
+      dispatch(sessionsActions.updateSessionWorkspace({
+        id: activeSessionId,
+        workspace_root: dirPath,
+      }));
+    } catch (e) {
+      console.error("workspace browse error:", e);
+    }
+  }, [activeSessionId, globalWorkspace, settings, dispatch, t]);
+
+  const handleWorkspaceReset = useCallback(async () => {
+    if (!activeSessionId) return;
+    try {
+      await sessionsApi.setWorkspace(activeSessionId, null);
+      dispatch(sessionsActions.updateSessionWorkspace({
+        id: activeSessionId,
+        workspace_root: null,
+      }));
+    } catch (e) {
+      console.error("workspace reset error:", e);
+    }
+  }, [activeSessionId, dispatch]);
+
+  // ── File drag-and-drop (Tauri v2 events) ─────────────────────────────────
+  // Tauri v2 intercepts native drag-and-drop and emits its own events.
+  // We listen to tauri://drag-enter / drag-leave / drag-drop instead of
+  // HTML5 onDragOver/onDragLeave/onDrop, because only Tauri events provide
+  // the full file paths via payload.paths.
   const [isDragging, setIsDragging] = useState(false);
 
   const processDroppedFile = useCallback(async (filePath: string) => {
@@ -1143,55 +1213,51 @@ export default function Chat() {
     }
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (running) return;
+  // Refs to access latest state inside Tauri event listeners without re-registering
+  const activeSessionIdRef2 = useRef(activeSessionId);
+  useEffect(() => { activeSessionIdRef2.current = activeSessionId; }, [activeSessionId]);
+  const isImSessionRef2 = useRef(isImSession);
+  useEffect(() => { isImSessionRef2.current = isImSession; }, [isImSession]);
+  const runningRef2 = useRef(running);
+  useEffect(() => { runningRef2.current = running; }, [running]);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
+  useEffect(() => {
+    let unlistenEnter: UnlistenFn | null = null;
+    let unlistenLeave: UnlistenFn | null = null;
+    let unlistenDrop: UnlistenFn | null = null;
 
-    // Check if any file is an image (for single-image attachment)
-    const imageExts = ["png", "jpg", "jpeg", "gif", "webp"];
-    const imageFiles = files.filter(f => {
-      const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
-      return imageExts.includes(ext);
-    });
-    const nonImageFiles = files.filter(f => {
-      const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
-      return !imageExts.includes(ext);
-    });
+    const setup = async () => {
+      unlistenEnter = await listen<{ paths: string[] }>("tauri://drag-enter", () => {
+        if (activeSessionIdRef2.current && !isImSessionRef2.current && !runningRef2.current) {
+          setIsDragging(true);
+        }
+      });
 
-    // Single image and no non-image files: use attachment mechanism
-    if (imageFiles.length === 1 && nonImageFiles.length === 0) {
-      // Get path via webkitRelativePath or name; Tauri provides full path via dataTransfer
-      const filePath = (files[0] as any).path as string | undefined;
-      if (filePath) {
-        await processDroppedFile(filePath);
-        return;
-      }
-    }
+      unlistenLeave = await listen("tauri://drag-leave", () => {
+        setIsDragging(false);
+      });
 
-    // Multiple files or non-images: append all paths to input
-    for (const file of files) {
-      const filePath = (file as any).path as string | undefined;
-      if (filePath) {
-        await processDroppedFile(filePath);
-      }
-    }
-  }, [running, processDroppedFile]);
+      unlistenDrop = await listen<{ paths: string[] }>("tauri://drag-drop", async (e) => {
+        setIsDragging(false);
+        // Only allow drop in chat sessions (not IM, not empty state)
+        if (!activeSessionIdRef2.current || isImSessionRef2.current || runningRef2.current) return;
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!running) setIsDragging(true);
-  }, [running]);
+        const paths = e.payload.paths;
+        if (!paths || paths.length === 0) return;
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+        for (const filePath of paths) {
+          await processDroppedFile(filePath);
+        }
+      });
+    };
+
+    setup();
+    return () => {
+      unlistenEnter?.();
+      unlistenLeave?.();
+      unlistenDrop?.();
+    };
+  }, [processDroppedFile]);
 
   // Core send logic, called after plan-resume decision is made.
   // clearPlan=true: clear existing plan before this turn (default / new task)
@@ -1293,7 +1359,87 @@ export default function Chat() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      // Reset history navigation on send
+      setHistoryIndex(-1);
+      historyDraftRef.current = "";
       handleSend();
+      return;
+    }
+
+    // ── Arrow-up / down: navigate sent-message history ──────────────────
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      // Only intercept when cursor is at start of textarea (or on empty input)
+      const ta = textareaRef.current;
+      if (ta) {
+        const atStart = ta.selectionStart === 0 && ta.selectionEnd === 0;
+        const isSingleLine = ta.value.indexOf("\n") === -1;
+        // Intercept up-arrow at start of line, or on empty/single-line input
+        const interceptUp = e.key === "ArrowUp" && (atStart || isSingleLine);
+        const interceptDown = e.key === "ArrowDown" && historyIndex >= 0;
+        if (!interceptUp && !interceptDown) return;
+      }
+
+      e.preventDefault();
+
+      // Collect user-sent messages (real, not optimistic) for this session
+      const userMessages = rawMessages.filter(
+        (m) => m.role === "user" && !m.id.startsWith("optimistic_")
+      );
+      if (userMessages.length === 0) return;
+
+      // On first arrow-up: save current draft and start from newest
+      if (e.key === "ArrowUp") {
+        if (historyIndex < 0) {
+          historyDraftRef.current = input;
+          setHistoryIndex(userMessages.length - 1); // newest
+          setInput(userMessages[userMessages.length - 1].content);
+        } else if (historyIndex > 0) {
+          const next = historyIndex - 1;
+          setHistoryIndex(next);
+          setInput(userMessages[next].content);
+        }
+        // historyIndex === 0: already at oldest, do nothing
+      } else {
+        // ArrowDown
+        if (historyIndex < 0) return; // shouldn't reach here due to guard above
+        if (historyIndex < userMessages.length - 1) {
+          const next = historyIndex + 1;
+          setHistoryIndex(next);
+          setInput(userMessages[next].content);
+        } else {
+          // Past newest: restore draft
+          setHistoryIndex(-1);
+          setInput(historyDraftRef.current);
+          historyDraftRef.current = "";
+        }
+      }
+
+      // Move cursor to end of input after setting value
+      requestAnimationFrame(() => {
+        const ta = textareaRef.current;
+        if (ta) {
+          ta.selectionStart = ta.selectionEnd = ta.value.length;
+        }
+      });
+      return;
+    }
+
+    // ── Escape: exit history navigation, restore draft ──────────────────
+    if (e.key === "Escape" && historyIndex >= 0) {
+      e.preventDefault();
+      setHistoryIndex(-1);
+      setInput(historyDraftRef.current);
+      historyDraftRef.current = "";
+      return;
+    }
+
+    // Any other key while navigating: exit history and keep the displayed text as draft
+    if (historyIndex >= 0 && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // Exit history mode so the user's typed character appends normally
+      historyDraftRef.current = "";
+      setHistoryIndex(-1);
+      // Let the key event pass through naturally — the onChange handler will pick it up
+      return;
     }
   };
 
@@ -1436,13 +1582,26 @@ export default function Chat() {
       </div>
 
       {/* Main chat area */}
-      <div className="chat-main">
+      <div
+        className="chat-main"
+      >
+        {isDragging && !isImSession && (
+          <div className="drag-overlay">
+            <div className="drag-overlay-text">📎 {t("chat.dropFiles")}</div>
+          </div>
+        )}
         {activeSessionId ? (
           <>
             {sendError && (
               <div className="error-banner" role="alert">
                 <span>{sendError}</span>
                 <button className="error-dismiss" onClick={() => setSendError(null)}>✕</button>
+              </div>
+            )}
+            {infoNotice && (
+              <div className="info-banner" role="status">
+                <span>{infoNotice}</span>
+                <button className="info-dismiss" onClick={() => setInfoNotice(null)}>✕</button>
               </div>
             )}
 
@@ -1630,15 +1789,7 @@ export default function Chat() {
 
             {!isImSession && <div
               className={`input-area${isDragging ? " drag-over" : ""}`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
             >
-              {isDragging && (
-                <div className="drag-overlay">
-                  <div className="drag-overlay-text">📎 {t("chat.dropFiles")}</div>
-                </div>
-              )}
               {/* Attachment preview strip */}
               {attachment && (
                 <div className="attachment-preview">
@@ -1664,6 +1815,31 @@ export default function Chat() {
                 disabled={running}
               />
               <div className="input-actions">
+                <div className="workspace-selector">
+                  <span className="workspace-label">📁</span>
+                  <select
+                    className="workspace-select"
+                    value={activeSession?.workspace_root ?? "__default__"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__browse__") {
+                        handleWorkspaceBrowse();
+                      } else if (val === "__reset__") {
+                        handleWorkspaceReset();
+                      }
+                      // Reset select to current value after action (browse/reset are async)
+                      e.target.value = activeSession?.workspace_root ?? "__default__";
+                    }}
+                  >
+                    <option value="__default__" title={effectiveWorkspace}>
+                      {effectiveWorkspace || t("chat.workspaceLabel")}
+                    </option>
+                    {activeSession?.workspace_root && (
+                      <option value="__reset__">{t("chat.workspaceReset")}</option>
+                    )}
+                    <option value="__browse__">{t("chat.workspaceBrowse")}</option>
+                  </select>
+                </div>
                 <ContextUsageRing
                   usage={activeSessionId ? contextUsage[activeSessionId] : undefined}
                   t={t}

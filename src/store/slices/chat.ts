@@ -55,6 +55,10 @@ export const sessionsSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    updateSessionWorkspace: (state, action: PayloadAction<{ id: string; workspace_root: string | null }>) => {
+      const s = state.sessions.find((s) => s.id === action.payload.id);
+      if (s) s.workspace_root = action.payload.workspace_root ?? undefined;
+    },
   },
 });
 

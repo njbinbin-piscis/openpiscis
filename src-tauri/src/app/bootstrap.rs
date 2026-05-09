@@ -1319,6 +1319,7 @@ fn run_impl() {
             commands::config::enterprise_capability::test_enterprise_capability,
             // chat/
             commands::chat::create_session,
+            commands::chat::set_session_workspace,
             commands::chat::list_sessions,
             commands::chat::delete_session,
             commands::chat::rename_session,

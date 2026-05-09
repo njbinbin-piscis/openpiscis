@@ -58,6 +58,11 @@ pub struct Session {
     pub total_output_tokens: i64,
     #[serde(default)]
     pub last_compacted_at: Option<DateTime<Utc>>,
+    /// Per-session workspace override. When set, this replaces the global
+    /// `workspace_root` from settings for all tool operations and prompt
+    /// injection in this session. NULL = use global workspace_root.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_root: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,6 +297,7 @@ fn map_session_row(r: &Row<'_>) -> rusqlite::Result<Session> {
         total_input_tokens: r.get(9)?,
         total_output_tokens: r.get(10)?,
         last_compacted_at: parse_optional_datetime(r.get::<_, Option<String>>(11)?),
+        workspace_root: r.get(12).ok().flatten(),
     })
 }
 
@@ -471,6 +477,11 @@ impl Database {
         let _ = self
             .conn
             .execute("ALTER TABLE sessions ADD COLUMN state_frame_json TEXT", []);
+
+        // Per-session workspace override: when set, replaces global workspace_root
+        let _ = self
+            .conn
+            .execute("ALTER TABLE sessions ADD COLUMN workspace_root TEXT", []);
 
         // Memory enhancement: add embedding and memory_type columns (ignore if already exist)
         let _ = self
@@ -996,6 +1007,7 @@ impl Database {
             total_input_tokens: 0,
             total_output_tokens: 0,
             last_compacted_at: None,
+            workspace_root: None,
         })
     }
 
@@ -1003,7 +1015,8 @@ impl Database {
         let mut stmt = self.conn.prepare(
             "SELECT id, title, status, COALESCE(source, 'chat'), created_at, updated_at, message_count, \
                     COALESCE(rolling_summary, ''), COALESCE(rolling_summary_version, 0), \
-                    COALESCE(total_input_tokens, 0), COALESCE(total_output_tokens, 0), last_compacted_at \
+                    COALESCE(total_input_tokens, 0), COALESCE(total_output_tokens, 0), last_compacted_at, \
+                    workspace_root \
              FROM sessions WHERE id = ?1"
         )?;
         let mut rows = stmt.query_map(params![id], map_session_row)?;
@@ -1118,7 +1131,8 @@ impl Database {
         let mut stmt = self.conn.prepare(
             "SELECT id, title, status, COALESCE(source, 'chat'), created_at, updated_at, message_count, \
                     COALESCE(rolling_summary, ''), COALESCE(rolling_summary_version, 0), \
-                    COALESCE(total_input_tokens, 0), COALESCE(total_output_tokens, 0), last_compacted_at \
+                    COALESCE(total_input_tokens, 0), COALESCE(total_output_tokens, 0), last_compacted_at, \
+                    workspace_root \
              FROM sessions ORDER BY updated_at DESC LIMIT ?1 OFFSET ?2"
         )?;
         let rows = stmt.query_map(params![limit, offset], map_session_row)?;
@@ -1143,6 +1157,17 @@ impl Database {
         self.conn.execute(
             "UPDATE sessions SET title = ?1, updated_at = ?2 WHERE id = ?3",
             params![title, now, id],
+        )?;
+        Ok(())
+    }
+
+    /// Set or clear the per-session workspace override.
+    /// Pass `None` to revert to the global workspace_root.
+    pub fn set_session_workspace(&self, id: &str, workspace_root: Option<&str>) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        self.conn.execute(
+            "UPDATE sessions SET workspace_root = ?1, updated_at = ?2 WHERE id = ?3",
+            params![workspace_root, now, id],
         )?;
         Ok(())
     }

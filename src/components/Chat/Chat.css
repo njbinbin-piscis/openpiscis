@@ -152,6 +152,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .session-task-panel {
@@ -503,19 +504,101 @@
 
 .input-actions {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 6px;
 }
 
-/* Context-usage ring indicator shown left of the attach button.
+/* Workspace selector — sits on the left of the input-actions row */
+.workspace-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: auto; /* push right-side buttons to the far right */
+  min-width: 0;
+}
+
+.workspace-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.workspace-select {
+  max-width: 280px;
+  padding: 0 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font);
+  outline: none;
+  cursor: pointer;
+  min-width: 0;
+  transition: border-color 0.15s;
+  height: 22px;
+  line-height: 22px;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  appearance: none;
+  /* Custom dropdown arrow */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 18px;
+}
+
+.workspace-select:hover {
+  border-color: var(--accent);
+}
+
+.workspace-select:focus {
+  border-color: var(--accent);
+}
+
+/* Dark-theme-friendly option styling */
+.workspace-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Info notification banner (non-error) */
+.info-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(52, 152, 219, 0.15);
+  border-left: 3px solid #3498db;
+  color: #5dade2;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.info-dismiss {
+  background: none;
+  border: none;
+  color: #5dade2;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.info-dismiss:hover {
+  opacity: 1;
+}
+
+/* Context-usage ring indicator shown alongside action buttons.
  * Shows current request-input token estimate as a percentage of the
  * proactive compaction trigger line (60% of the input budget). */
 .context-usage-ring {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-right: auto; /* push the ring to the left edge of input-actions */
   padding: 2px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 6px);
@@ -523,6 +606,7 @@
   cursor: help;
   user-select: none;
   white-space: pre-line; /* render \n in tooltip */
+  flex-shrink: 0;
 }
 
 .context-usage-ring svg {
