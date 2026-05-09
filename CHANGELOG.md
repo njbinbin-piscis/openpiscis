@@ -6,6 +6,31 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.15] - 2026-05-07
+
+### Fixed
+- **WeChat file attachments cannot be opened ("文件过大")**: the iLink file
+  message payload was missing the `mid_size` (encrypted file size) field and
+  sent `len` as a string instead of a number. WeChat clients need `mid_size`
+  to properly download and decrypt the file. Fixed:
+  - Change `"len"` from `String` to `Number` (`uploaded.raw_size`)
+  - Add `"mid_size"` field (`uploaded.encrypted_size`) matching the
+    `image_item` structure
+
+### Changed
+- **Scheduled task conversation persistence**: agent conversations from
+  scheduled tasks are now saved to the database under session
+  `sched_{task_id}` so users can inspect what the agent did (e.g. whether
+  `im_send_message` was called and whether it succeeded).
+- **Scheduled task diagnostic logging**: the final assistant message is now
+  logged (first 200 chars) to help diagnose silent failures where the agent
+  ran but did not produce expected results.
+- **Scheduled task API key error handling**: missing API key now emits an
+  error event and updates the task run status to "error" instead of silently
+  skipping.
+
+---
+
 ## [0.7.14] - 2026-05-07
 
 ### Fixed
