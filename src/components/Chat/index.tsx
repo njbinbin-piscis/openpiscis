@@ -390,6 +390,7 @@ export default function Chat() {
   const [gatewayChannels, setGatewayChannels] = useState<ChannelInfo[]>([]);
   const [gatewayConnecting, setGatewayConnecting] = useState(false);
   const [gatewayDisconnecting, setGatewayDisconnecting] = useState(false);
+  const [workspaceDisplayOverride, setWorkspaceDisplayOverride] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [deletingSession, setDeletingSession] = useState(false);
   // History pagination: capacity starts at CHAT_INITIAL_SIZE, grows by CHAT_LAZY_STEP on each lazy-load
@@ -514,6 +515,13 @@ export default function Chat() {
   // Throttle buffer for text_delta — accumulate deltas and flush every 80ms
   const deltaBufferRef = useRef<Record<string, string>>({});
   const flushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const flushBufferedDelta = useCallback((sessionId: string) => {
+    const buffered = deltaBufferRef.current[sessionId];
+    if (!buffered) return;
+    delete deltaBufferRef.current[sessionId];
+    dispatch(chatActions.appendDelta({ sessionId, delta: buffered }));
+  }, [dispatch]);
 
   useEffect(() => {
     flushTimerRef.current = setInterval(() => {
@@ -668,6 +676,10 @@ export default function Chat() {
   const isImSession = activeSessionKind === "im";
   isImSessionRef.current = isImSession;
 
+  useEffect(() => {
+    setWorkspaceDisplayOverride(null);
+  }, [activeSessionId, activeSession?.workspace_root, settings?.workspace_root]);
+
   // Load messages when the active session ID changes.
   // Also sync running state from DB to fix stale state if im_session_done was missed.
   useEffect(() => {
@@ -788,13 +800,7 @@ export default function Chat() {
       switch (event.type) {
         case "text_segment_start":
           // Flush any buffered delta before starting a new segment
-          {
-            const buffered = deltaBufferRef.current[sid];
-            if (buffered) {
-              delete deltaBufferRef.current[sid];
-              dispatch(chatActions.appendDelta({ sessionId: sid, delta: buffered }));
-            }
-          }
+          flushBufferedDelta(sid);
           // Mark segment boundary — current text stays visible, new deltas will append
           dispatch(chatActions.startNewSegment(sid));
           break;
@@ -857,6 +863,7 @@ export default function Chat() {
           // freezeStreaming and getMessages always target the correct session, even if
           // the user switched to a different session while the agent was running.
           console.log('[Chat] agent done event, boundSid=', boundSessionId);
+          flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.freezeStreaming(boundSessionId));
           dispatch(chatActions.removeOptimisticMessages(boundSessionId));
@@ -879,6 +886,7 @@ export default function Chat() {
           }).catch(() => {});
           break;
         case "cancelled":
+          flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.clearStreaming(boundSessionId));
           dispatch(chatActions.removeOptimisticMessages(boundSessionId));
@@ -896,6 +904,7 @@ export default function Chat() {
           break;
         case "error":
           // Also use boundSessionId for error — clears running state for the correct session.
+          flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.clearStreaming(boundSessionId));
           setSendError((event as { type: "error"; message: string }).message ?? "Unknown error");
@@ -917,7 +926,7 @@ export default function Chat() {
         unlistenRef.current = null;
       }
     };
-  }, [activeSessionId, dispatch]);
+  }, [activeSessionId, dispatch, flushBufferedDelta]);
 
   // Track whether user is near the bottom (bottom 10%) and trigger lazy-load on scroll to top
   useEffect(() => {
@@ -1126,15 +1135,18 @@ export default function Chat() {
   // ── Workspace selector ──────────────────────────────────────────────────
   // The effective workspace for the active session:
   //   session.workspace_root > settings.workspace_root > ""
-    const effectiveWorkspace = activeSession?.workspace_root || settings?.workspace_root || "";
-    const globalWorkspace = settings?.workspace_root || "";
+  const effectiveWorkspace = activeSession?.workspace_root || settings?.workspace_root || "";
+  const displayedWorkspace = workspaceDisplayOverride ?? effectiveWorkspace;
+  const hasSessionWorkspace = workspaceDisplayOverride !== null || Boolean(activeSession?.workspace_root);
+  const globalWorkspace = settings?.workspace_root || "";
 
   const handleWorkspaceBrowse = useCallback(async () => {
     if (!activeSessionId) return;
     try {
-            const selected = await openFileDialog({ directory: true, title: t("chat.workspaceBrowseTitle") });
+    const selected = await openFileDialog({ directory: true, title: t("chat.workspaceBrowseTitle") });
       if (!selected) return;
       const dirPath = selected as string;
+    setWorkspaceDisplayOverride(dirPath);
 
       // Check if the selected dir is outside the global workspace
       const isOutside = globalWorkspace && !dirPath.startsWith(globalWorkspace);
@@ -1160,6 +1172,7 @@ export default function Chat() {
         workspace_root: dirPath,
       }));
     } catch (e) {
+      setWorkspaceDisplayOverride(null);
       console.error("workspace browse error:", e);
     }
   }, [activeSessionId, globalWorkspace, settings, dispatch, t]);
@@ -1167,6 +1180,7 @@ export default function Chat() {
   const handleWorkspaceReset = useCallback(async () => {
     if (!activeSessionId) return;
     try {
+      setWorkspaceDisplayOverride(null);
       await sessionsApi.setWorkspace(activeSessionId, null);
       dispatch(sessionsActions.updateSessionWorkspace({
         id: activeSessionId,
@@ -1826,22 +1840,25 @@ export default function Chat() {
                   <span className="workspace-label">📁</span>
                   <select
                     className="workspace-select"
-                    value={activeSession?.workspace_root ?? "__default__"}
-                    onChange={(e) => {
+                    value={hasSessionWorkspace ? "__current__" : "__default__"}
+                    onChange={async (e) => {
                       const val = e.target.value;
                       if (val === "__browse__") {
-                        handleWorkspaceBrowse();
+                        await handleWorkspaceBrowse();
                       } else if (val === "__reset__") {
-                        handleWorkspaceReset();
+                        await handleWorkspaceReset();
                       }
-                      // Reset select to current value after action (browse/reset are async)
-                      e.target.value = activeSession?.workspace_root ?? "__default__";
                     }}
                   >
-                    <option value="__default__" title={effectiveWorkspace}>
-                      {effectiveWorkspace || t("chat.workspaceLabel")}
+                    {hasSessionWorkspace && (
+                      <option value="__current__" title={displayedWorkspace}>
+                        {displayedWorkspace}
+                      </option>
+                    )}
+                    <option value="__default__" title={displayedWorkspace}>
+                      {displayedWorkspace || t("chat.workspaceLabel")}
                     </option>
-                    {activeSession?.workspace_root && (
+                    {hasSessionWorkspace && (
                       <option value="__reset__">{t("chat.workspaceReset")}</option>
                     )}
                     <option value="__browse__">{t("chat.workspaceBrowse")}</option>

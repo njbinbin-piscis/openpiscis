@@ -18,6 +18,14 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
+## 🆕 What's New in v0.7.19
+
+- **Explicit IM channel tooling**: agents can now list configured IM channels, connect them on demand, and resolve channel bindings explicitly instead of relying on hidden routing heuristics.
+- **Scheduler-to-IM continuity**: successful scheduled-task notifications now create missing IM sessions when needed and mirror outbound messages into the target IM history, so later replies keep full context.
+- **More reliable scheduled delivery**: scheduled jobs now deduplicate cron registrations across restarts, preventing one task from being restored multiple times and firing unexpectedly.
+- **Sharper desktop UX**: chat workspace switching now reflects the just-selected folder immediately, buffered streaming deltas flush correctly at segment boundaries, and IM connection badges refresh as soon as background connects succeed.
+- **Settings cleanup**: the Settings page now uses clearer provider labels and a safer built-in heartbeat default that does not depend on eager i18n initialization.
+
 ## ✨ Key Features
 
 ### 🤖 Powerful Agent Capabilities

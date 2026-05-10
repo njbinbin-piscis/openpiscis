@@ -6,6 +6,20 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.19] - 2026-05-10
+
+### Added
+- **Explicit IM channel tools for agents**: added `im_channel_list`, `im_channel_connect`, `im_channel_binding_lookup`, and `im_channel_binding_list` so agents can inspect configured channels, connect them on demand, and resolve binding keys without relying on implicit routing.
+
+### Fixed
+- **Scheduled-task IM delivery continuity**: successful scheduler and notification sends now create any missing IM session/binding on demand and mirror outbound messages into the target IM conversation history, so follow-up replies keep the right context.
+- **Duplicate scheduled job registration after restart**: scheduled tasks now track and replace prior cron job IDs during restore and CRUD updates, preventing one task from being registered multiple times across restarts.
+- **Gateway connection badge stale after background connect**: the chat and settings views now refresh their IM channel status when backend gateway state changes, so the UI reflects successful background connections immediately.
+- **Chat workspace selector UX**: browsing or resetting a session workspace now keeps the selector display in sync with the just-chosen path, and buffered streaming deltas are flushed before segment boundaries and terminal events.
+
+### Changed
+- **Settings copy and defaults**: refreshed provider labels, multi-provider editor text, and language labels in Settings, and inlined the default heartbeat prompt string so it no longer depends on an eager i18n lookup during module initialization.
+
 ## [0.7.18] - 2026-05-07
 
 ### Fixed
