@@ -5,6 +5,9 @@ use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use tokio::process::Command;
 
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 pub struct SystemInfoTool;
 
 #[async_trait]
@@ -585,8 +588,14 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
         "Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First {} Name,Id,CPU,WorkingSet | Format-Table -AutoSize",
         top_n
     );
-    let output = Command::new("powershell")
-        .args(["-Command", &ps])
+    let mut command = Command::new("powershell");
+    command.args(["-Command", &ps]);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let output = command
         .output()
         .await
         .map_err(|e| anyhow::anyhow!("powershell process list failed: {}", e))?;
@@ -605,11 +614,17 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
 
 #[cfg(target_os = "windows")]
 async fn service_list() -> Result<ToolResult> {
-    let output = Command::new("powershell")
-        .args([
-            "-Command",
-            "Get-Service | Select-Object Name,Status,DisplayName | Format-Table -AutoSize",
-        ])
+    let mut command = Command::new("powershell");
+    command.args([
+        "-Command",
+        "Get-Service | Select-Object Name,Status,DisplayName | Format-Table -AutoSize",
+    ]);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    let output = command
         .output()
         .await
         .map_err(|e| anyhow::anyhow!("Get-Service failed: {}", e))?;
@@ -638,7 +653,14 @@ async fn read_commands(commands: &[(&str, &[&str])]) -> Vec<String> {
     let futures: Vec<_> = commands
         .iter()
         .map(|(cmd, args)| async move {
-            let output = Command::new(*cmd).args(*args).output().await;
+            let mut command = Command::new(*cmd);
+            command.args(*args);
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                command.creation_flags(CREATE_NO_WINDOW);
+            }
+            let output = command.output().await;
             match output {
                 Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
                 Err(e) => format!("[{} error: {}]", cmd, e),

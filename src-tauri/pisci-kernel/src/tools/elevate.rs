@@ -8,7 +8,6 @@
 use anyhow::Result;
 use std::path::PathBuf;
 use std::time::Duration;
-#[cfg(not(target_os = "windows"))]
 use tokio::process::Command;
 use tokio::time::{sleep, timeout};
 
@@ -182,10 +181,7 @@ pub async fn run_elevated_shell(
     timeout_secs: u64,
 ) -> Result<ElevatedResult> {
     let paths = write_unix_wrapper(command, cwd, env)?;
-    let shell_cmd = format!(
-        "/bin/sh {}",
-        shell_quote(&paths.script_path.to_string_lossy())
-    );
+    let shell_cmd = format!("/bin/sh {}", shell_quote(&paths.script_path.to_string_lossy()));
     let script = format!(
         "do shell script \"{}\" with administrator privileges",
         apple_script_escape(&shell_cmd)
@@ -300,10 +296,7 @@ fn write_unix_wrapper(
 #[cfg(not(target_os = "windows"))]
 fn finalize_unix_result(
     paths: ElevatedPaths,
-    launch_result: Result<
-        Result<std::process::Output, std::io::Error>,
-        tokio::time::error::Elapsed,
-    >,
+    launch_result: Result<Result<std::process::Output, std::io::Error>, tokio::time::error::Elapsed>,
     prompt_name: &str,
     timeout_secs: u64,
 ) -> Result<ElevatedResult> {

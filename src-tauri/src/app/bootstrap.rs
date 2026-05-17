@@ -235,7 +235,11 @@ fn open_path(path: String) -> Result<(), String> {
                 .spawn()
                 .map_err(|e| format!("Failed to open directory in Explorer: {e}"))?;
         } else {
-            std::process::Command::new("cmd")
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+            let mut process = std::process::Command::new("cmd");
+            process.creation_flags(CREATE_NO_WINDOW);
+            process
                 .args(["/c", "start", "", &path])
                 .spawn()
                 .map_err(|e| format!("Failed to open file: {e}"))?;
@@ -1281,7 +1285,6 @@ fn run_impl() {
             commands::chat::debug::run_debug_scenario,
             commands::chat::debug::run_all_debug_scenarios,
             commands::chat::debug::run_uia_drag_test,
-            commands::chat::debug::test_mouse_control,
             commands::chat::debug::get_debug_report,
             commands::chat::debug::get_log_tail,
             commands::chat::fish::get_fish_dir,
