@@ -489,6 +489,7 @@ async fn build_chat_prompt_artifacts(
     builtin_tool_enabled: &std::collections::HashMap<String, bool>,
     project_instruction_budget_chars: u32,
     enable_project_instructions: bool,
+    pisci_personal_prompt: &str,
 ) -> Result<ChatPromptArtifacts, String> {
     let scene_policy = ScenePolicy::for_kind(SceneKind::MainChat);
     let user_tools_dir = app.path().app_data_dir().map(|d| d.join("user-tools")).ok();
@@ -569,6 +570,7 @@ async fn build_chat_prompt_artifacts(
         &full_memory_context,
         workspace_root,
         allow_outside_workspace,
+        pisci_personal_prompt,
     );
     if !project_instruction_context.is_empty() {
         system_prompt.push_str(&project_instruction_context);
@@ -730,6 +732,7 @@ pub async fn chat_send(
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
         enable_project_instructions,
+        pisci_personal_prompt,
     ) = {
         let settings = state.settings.lock().await;
         (
@@ -759,6 +762,7 @@ pub async fn chat_send(
             settings.auto_compact_input_tokens_threshold,
             settings.project_instruction_budget_chars,
             settings.enable_project_instructions,
+            settings.pisci_personal_prompt.clone(),
         )
     };
     let workspace_root =
@@ -971,6 +975,7 @@ pub async fn chat_send(
         &builtin_tool_enabled,
         project_instruction_budget_chars,
         enable_project_instructions,
+        &pisci_personal_prompt,
     )
     .await?;
     let registry = prompt_artifacts.registry.clone();
@@ -1340,6 +1345,7 @@ pub async fn run_agent_headless(
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
         enable_project_instructions,
+        pisci_personal_prompt,
     ) = {
         let settings = state.settings.lock().await;
         (
@@ -1367,6 +1373,7 @@ pub async fn run_agent_headless(
             settings.auto_compact_input_tokens_threshold,
             settings.project_instruction_budget_chars,
             settings.enable_project_instructions,
+            settings.pisci_personal_prompt.clone(),
         )
     };
     if api_key.is_empty() {
@@ -1703,7 +1710,12 @@ pub async fn run_agent_headless(
         injected_context_tokens
     );
 
-    let mut system_prompt = build_headless_scene_system_prompt(scene_kind, channel, vision_capable);
+    let mut system_prompt = build_headless_scene_system_prompt(
+        scene_kind,
+        channel,
+        vision_capable,
+        &pisci_personal_prompt,
+    );
     if !injected_context.is_empty() {
         system_prompt.push_str(&injected_context);
     }
@@ -1979,11 +1991,23 @@ pub fn build_main_chat_system_prompt(
     memory_context: &str,
     workspace_root: &str,
     allow_outside: bool,
+    pisci_personal_prompt: &str,
 ) -> String {
     let mut prompt =
         build_system_prompt_with_env(memory_context, "", workspace_root, allow_outside);
+    append_pisci_personal_prompt(&mut prompt, pisci_personal_prompt);
     prompt.push_str(main_chat_overlay_prompt());
     prompt
+}
+
+fn append_pisci_personal_prompt(prompt: &mut String, pisci_personal_prompt: &str) {
+    let trimmed = pisci_personal_prompt.trim();
+    if trimmed.is_empty() {
+        return;
+    }
+    prompt.push_str("\n\n## Personal Pisci Prompt\n");
+    prompt.push_str(trimmed);
+    prompt.push('\n');
 }
 
 fn heartbeat_scene_guidance() -> &'static str {
@@ -2015,7 +2039,7 @@ You must be truthful, tool-grounded, and conservative about assumptions.\n\
 - Prefer the smallest effective action that preserves project momentum.\n\
 - Never invent project state, agent intent, file state, or task completion.\n\
 - Safety, permissions, and consistency are enforced by the host runtime; use explicit tool actions to make state changes visible.\n\
-- Waiting discipline: when you need to wait for an external event, background process, Koi/Fish response, file change, server startup, or user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. Do not infer timeout from loop/turn count or from several immediate checks.\n"
+- Waiting discipline: when you need to wait for an external event, background process, Koi/Fish response, file change, server startup, screenshot refresh, window appearance, page/app loading, or any other user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. This is the default policy for every wait, not an optional optimization. Do not infer timeout from loop/turn count or from several immediate checks.\n"
 }
 
 fn collaboration_protocol_prompt() -> &'static str {
@@ -2058,16 +2082,19 @@ fn build_headless_scene_system_prompt(
     scene_kind: SceneKind,
     channel: &str,
     vision_capable: bool,
+    pisci_personal_prompt: &str,
 ) -> String {
     match scene_kind {
         SceneKind::HeartbeatSupervisor => {
             let mut prompt = String::from(build_pisci_core_prompt_compact());
+            append_pisci_personal_prompt(&mut prompt, pisci_personal_prompt);
             prompt.push_str(collaboration_protocol_prompt());
             prompt.push_str(heartbeat_scene_guidance());
             prompt
         }
         SceneKind::PoolCoordinator => {
             let mut prompt = String::from(build_pisci_core_prompt_compact());
+            append_pisci_personal_prompt(&mut prompt, pisci_personal_prompt);
             prompt.push_str(collaboration_protocol_prompt());
             prompt.push_str(pool_coordinator_scene_guidance());
             prompt
@@ -2075,6 +2102,7 @@ fn build_headless_scene_system_prompt(
         SceneKind::IMHeadless => build_im_system_prompt(channel, vision_capable),
         SceneKind::MainChat => {
             let mut prompt = build_system_prompt("", "");
+            append_pisci_personal_prompt(&mut prompt, pisci_personal_prompt);
             prompt.push_str(main_chat_overlay_prompt());
             prompt
         }
@@ -2116,7 +2144,7 @@ pub fn build_system_prompt_with_env(
 Today's date: {date}{workspace_line}
 
 ## Waiting Discipline
-When you need to wait for an external event, background process, Koi/Fish response, file change, server startup, or user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. Do not infer timeout from loop/turn count or from several immediate checks.
+When you need to wait for an external event, background process, Koi/Fish response, file change, server startup, screenshot refresh, window appearance, page/app loading, or any other user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. This is the default policy for every wait, not an optional optimization. Do not infer timeout from loop/turn count or from several immediate checks.
 
 ## Interactive User Input
 When `chat_ui` returns `USER_INTERACTIVE_RESPONSE_JSON`, that JSON is the user's latest explicit structured choice. Treat it as authoritative and use the submitted values exactly. It overrides prior assumptions, examples, defaults, inferred preferences, and tentative plans. If the user selected a type/name/options in the card, do not substitute a different type/name/options later unless the user explicitly changes them.
@@ -2193,7 +2221,9 @@ This applies to every new task, no exceptions.
   Workflow: `uia(list_windows)` → `uia(find)` → `uia(click/type/get_value)`
   `uia(get_value)` and `uia(get_text)` read actual control content (not just the label)
 → Cross-platform (Windows/Linux/macOS): Use `screen_capture` + `desktop_automation`
-  Workflow: `screen_capture(action="capture", grid=true)` → identify element coordinates from the grid overlay → `desktop_automation(action="click", x=X, y=Y)`
+    Workflow: `screen_capture(action="capture", grid=true, grid_spacing=100)` → identify element coordinates from the 100x100 grid overlay and cursor crosshair → `desktop_automation(action="click", x=X, y=Y)`
+    In screenshots with `grid=true`, coordinate labels are edge-aligned absolute screen pixels. On Windows, the mouse position is additionally marked by a crosshair at the cursor coordinates.
+    If a screenshot shows incomplete page content, progress bars, loading spinners, skeleton placeholders, blank regions, or other obvious loading signals, treat that as a wait state: recapture using real elapsed time with exponential backoff before acting.
   For typing: `desktop_automation(action="type_text", text="...")`
   For keyboard shortcuts: `desktop_automation(action="hotkey", keys=["ctrl","c"])`
 → For window management: `desktop_automation(action="list_windows")`, `desktop_automation(action="activate_window", title="...")`
@@ -3839,6 +3869,7 @@ pub async fn get_context_preview(
         builtin_tool_enabled,
         project_instruction_budget_chars,
         enable_project_instructions,
+        pisci_personal_prompt,
     ) = {
         let settings = state.settings.lock().await;
         (
@@ -3850,6 +3881,7 @@ pub async fn get_context_preview(
             settings.builtin_tool_enabled.clone(),
             settings.project_instruction_budget_chars,
             settings.enable_project_instructions,
+            settings.pisci_personal_prompt.clone(),
         )
     };
     let workspace_root =
@@ -3870,6 +3902,7 @@ pub async fn get_context_preview(
         &builtin_tool_enabled,
         project_instruction_budget_chars,
         enable_project_instructions,
+        &pisci_personal_prompt,
     )
     .await?;
     let base_llm_messages = session_context.llm_messages;
@@ -4049,12 +4082,13 @@ pub async fn get_context_preview(
 #[cfg(test)]
 mod tests {
     use super::{
-        build_context_messages, build_main_chat_system_prompt, collapse_superseded_tool_failures,
-        derive_headless_session_source, extract_tool_minimals_from_history,
+        build_context_messages, build_headless_scene_system_prompt, build_main_chat_system_prompt,
+        collapse_superseded_tool_failures, derive_headless_session_source,
+        extract_tool_minimals_from_history,
         minimal_tool_result_blocks, resolve_headless_scene_kind, HeadlessRunOptions,
         SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL, SESSION_SOURCE_PISCI_POOL,
     };
-    use crate::commands::config::scene::SceneKind;
+    use crate::commands::config::scene::{SceneKind, ScenePolicy};
     use crate::store::db::ChatMessage;
     use chrono::Utc;
     use pisci_kernel::llm::{ContentBlock, LlmMessage, MessageContent};
@@ -4222,7 +4256,7 @@ mod tests {
 
     #[test]
     fn main_prompt_preserves_pisci_routing_heuristics() {
-        let prompt = build_main_chat_system_prompt("", "", false);
+        let prompt = build_main_chat_system_prompt("", "", false, "");
         for required in [
             "Pool and Koi state is not preloaded from keyword matches",
             "Use `pool_org` when the work is complex, spans multiple domains, or has a high quality bar",
@@ -4244,7 +4278,7 @@ mod tests {
 
     #[test]
     fn main_prompt_requires_pool_for_quality_sensitive_multi_role_work() {
-        let prompt = build_main_chat_system_prompt("", "", false);
+        let prompt = build_main_chat_system_prompt("", "", false, "");
         assert!(
             prompt.contains(
                 "The task is complex, multi-domain, and quality-sensitive enough that explicit review, quality control, or specialist cross-checking should be separate from implementation"
@@ -4257,6 +4291,44 @@ mod tests {
             ),
             "main prompt must require checking the Koi roster before delegating complex multi-role work"
         );
+    }
+
+    #[test]
+    fn pisci_personal_prompt_is_applied_only_to_pisci_owned_prompts() {
+        let personal = "Always prefer concise status updates.";
+        let main = build_main_chat_system_prompt("", "", false, personal);
+        assert!(main.contains("## Personal Pisci Prompt"));
+        assert!(main.contains(personal));
+
+        let heartbeat = build_headless_scene_system_prompt(
+            SceneKind::HeartbeatSupervisor,
+            "heartbeat",
+            false,
+            personal,
+        );
+        assert!(heartbeat.contains(personal));
+
+        let pool = build_headless_scene_system_prompt(
+            SceneKind::PoolCoordinator,
+            "internal",
+            false,
+            personal,
+        );
+        assert!(pool.contains(personal));
+
+        let im = build_headless_scene_system_prompt(SceneKind::IMHeadless, "feishu", false, personal);
+        assert!(!im.contains(personal));
+        assert!(!im.contains("## Personal Pisci Prompt"));
+    }
+
+    #[test]
+    fn project_instructions_stay_out_of_im_and_koi_prompts() {
+        assert!(ScenePolicy::for_kind(SceneKind::MainChat).project_instructions_enabled(true));
+        assert!(ScenePolicy::for_kind(SceneKind::HeartbeatSupervisor)
+            .project_instructions_enabled(true));
+        assert!(ScenePolicy::for_kind(SceneKind::PoolCoordinator).project_instructions_enabled(true));
+        assert!(!ScenePolicy::for_kind(SceneKind::IMHeadless).project_instructions_enabled(true));
+        assert!(!ScenePolicy::for_kind(SceneKind::KoiTask).project_instructions_enabled(true));
     }
 
     #[test]

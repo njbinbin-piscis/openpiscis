@@ -102,6 +102,8 @@ export interface Settings {
   summary_model?: string | null;
   project_instruction_budget_chars: number;
   enable_project_instructions: boolean;
+  /** Personal prompt applied only to Pisci chat, heartbeat, pool coordination, and scheduled tasks. */
+  pisci_personal_prompt: string;
   llm_read_timeout_secs: number;
   koi_timeout_secs: number;
   heartbeat_enabled: boolean;

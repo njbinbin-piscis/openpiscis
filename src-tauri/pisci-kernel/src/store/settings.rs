@@ -426,6 +426,11 @@ pub struct Settings {
     /// should be discovered and injected into the system prompt.
     #[serde(default = "default_true")]
     pub enable_project_instructions: bool,
+    /// Personal Pisci-only prompt appended to Pisci-owned sessions.
+    /// This is guidance context for Pisci chat, heartbeat, pool coordination,
+    /// and scheduled tasks; it must not be injected into Koi or Fish prompts.
+    #[serde(default)]
+    pub pisci_personal_prompt: String,
     /// LLM read timeout in seconds (default 120). Increase for slow models.
     #[serde(default = "default_llm_read_timeout_secs")]
     pub llm_read_timeout_secs: u32,
@@ -728,6 +733,7 @@ impl Default for Settings {
             summary_model: None,
             project_instruction_budget_chars: default_project_instruction_budget_chars(),
             enable_project_instructions: true,
+            pisci_personal_prompt: String::new(),
             llm_read_timeout_secs: default_llm_read_timeout_secs(),
             koi_timeout_secs: default_koi_timeout_secs(),
             heartbeat_enabled: false,

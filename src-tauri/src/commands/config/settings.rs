@@ -265,6 +265,9 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
     if let Some(v) = updates["enable_project_instructions"].as_bool() {
         settings.enable_project_instructions = v;
     }
+    if let Some(v) = updates["pisci_personal_prompt"].as_str() {
+        settings.pisci_personal_prompt = v.to_string();
+    }
     if let Some(v) = updates["llm_read_timeout_secs"].as_u64() {
         settings.llm_read_timeout_secs = v.max(30) as u32; // minimum 30s
     }

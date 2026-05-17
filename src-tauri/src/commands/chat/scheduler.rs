@@ -7,6 +7,7 @@ use pisci_kernel::agent::messages::AgentEvent;
 use pisci_kernel::agent::tool::ToolContext;
 use pisci_kernel::llm::{build_client, LlmMessage, MessageContent};
 use pisci_kernel::policy::PolicyGate;
+use pisci_kernel::project_context::render_project_instruction_context;
 use serde::Serialize;
 use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -42,6 +43,15 @@ fn build_scheduler_session_title(task_name: Option<&str>, task_id: &str) -> Stri
             short_id
         });
     format!("[定时] {}", title)
+}
+
+fn render_pisci_personal_prompt(prompt: &str) -> String {
+    let trimmed = prompt.trim();
+    if trimmed.is_empty() {
+        String::new()
+    } else {
+        format!("\n\n## Personal Pisci Prompt\n{}\n", trimmed)
+    }
 }
 
 fn build_memory_consolidation_template() -> String {
@@ -686,6 +696,9 @@ pub async fn execute_task(
         max_iterations,
         builtin_tool_enabled,
         allow_outside_workspace,
+        project_instruction_budget_chars,
+        enable_project_instructions,
+        pisci_personal_prompt,
     ) = {
         let s = settings.lock().await;
         (
@@ -701,6 +714,9 @@ pub async fn execute_task(
             s.max_iterations,
             s.builtin_tool_enabled.clone(),
             s.allow_outside_workspace,
+            s.project_instruction_budget_chars,
+            s.enable_project_instructions,
+            s.pisci_personal_prompt.clone(),
         )
     };
     let effective_task_prompt = {
@@ -790,6 +806,22 @@ pub async fn execute_task(
         }
     };
 
+    let personal_prompt_section = render_pisci_personal_prompt(&pisci_personal_prompt);
+    let project_instruction_section = if enable_project_instructions {
+        match render_project_instruction_context(
+            std::path::Path::new(&workspace_root),
+            project_instruction_budget_chars as usize,
+        ) {
+            Ok(content) => content,
+            Err(error) => {
+                warn!("Scheduled task {} failed to load project instructions: {}", task_id, error);
+                String::new()
+            }
+        }
+    } else {
+        String::new()
+    };
+
     let system_prompt = format!(
         "You are Pisci, a Windows AI Agent running a scheduled task.\n\
          Task ID: {}\n\
@@ -800,9 +832,11 @@ pub async fn execute_task(
          2. if the required channel is disconnected: `im_channel_connect(channel=\"wechat\")`\n\
          3. `im_channel_binding_list(channel=\"wechat\", task_id=\"{0}\")`\n\
          4. `im_send_message(binding_key=\"<resolved binding_key>\", text=\"<short result summary>\")`\n\
-         If step 3 returns no candidates, state that there is no bound IM target for that channel instead of pretending the message was delivered.{}{}",
+         If step 3 returns no candidates, state that there is no bound IM target for that channel instead of pretending the message was delivered.{}{}{}{}",
         task_id,
         chrono::Utc::now().format("%Y-%m-%d"),
+        personal_prompt_section,
+        project_instruction_section,
         task_notify_targets_section,
         task_state_section
     );

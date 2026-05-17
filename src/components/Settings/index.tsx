@@ -110,6 +110,7 @@ const DEFAULT_SETTINGS: SettingsData = {
   summary_model: "",
   project_instruction_budget_chars: 8000,
   enable_project_instructions: true,
+  pisci_personal_prompt: "",
   llm_read_timeout_secs: 120,
   koi_timeout_secs: 600,
   heartbeat_enabled: false,
@@ -1266,6 +1267,20 @@ export default function Settings({ theme, setTheme, onOpenTools }: SettingsProps
             />
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
               {t("settings.projectInstructionBudgetDesc")}
+            </p>
+          </div>
+          <div className="form-group">
+            <label className="label">{t("settings.pisciPersonalPrompt")}</label>
+            <textarea
+              className="input"
+              rows={6}
+              value={form.pisci_personal_prompt ?? ""}
+              placeholder={t("settings.pisciPersonalPromptPlaceholder")}
+              onChange={(e) => update("pisci_personal_prompt", e.target.value)}
+              style={{ resize: "vertical", fontFamily: "inherit", lineHeight: 1.5 }}
+            />
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+              {t("settings.pisciPersonalPromptDesc")}
             </p>
           </div>
           <div className="form-group" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

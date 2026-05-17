@@ -237,6 +237,7 @@ impl Tool for AppControlTool {
                 "heartbeat_enabled": { "type": "boolean" },
                 "heartbeat_interval_mins": { "type": "integer" },
                 "heartbeat_prompt": { "type": "string" },
+                "pisci_personal_prompt": { "type": "string", "description": "Personal prompt applied only to Pisci chat, heartbeat, pool coordination, and scheduled task sessions. Does not affect Koi or Fish." },
                 "feishu_app_id": { "type": "string" },
                 "feishu_app_secret": { "type": "string" },
                 "feishu_domain": { "type": "string" },
@@ -606,6 +607,7 @@ impl AppControlTool {
              - heartbeat_enabled: {hb_enabled}\n\
              - heartbeat_interval_mins: {hb_interval}\n\
              - heartbeat_prompt: {hb_prompt}\n\
+             - pisci_personal_prompt: {pisci_prompt_status}\n\
              \nIM Gateways:\n\
              - feishu_enabled: {feishu_enabled}\n\
              - feishu_app_id: {feishu_app_id}\n\
@@ -649,6 +651,11 @@ impl AppControlTool {
             hb_enabled = s.heartbeat_enabled,
             hb_interval = s.heartbeat_interval_mins,
             hb_prompt = s.heartbeat_prompt,
+            pisci_prompt_status = if s.pisci_personal_prompt.trim().is_empty() {
+                "(not set)"
+            } else {
+                "(set)"
+            },
             feishu_enabled = s.feishu_enabled,
             feishu_app_id = configured(&s.feishu_app_id),
             feishu_app_secret = configured(&s.feishu_app_secret),
@@ -753,6 +760,7 @@ impl AppControlTool {
         apply_bool!(heartbeat_enabled, "heartbeat_enabled");
         apply_u32!(heartbeat_interval_mins, "heartbeat_interval_mins");
         apply_str!(heartbeat_prompt, "heartbeat_prompt");
+        apply_str!(pisci_personal_prompt, "pisci_personal_prompt");
         apply_str!(feishu_app_id, "feishu_app_id");
         apply_str!(feishu_app_secret, "feishu_app_secret");
         apply_str!(feishu_domain, "feishu_domain");
