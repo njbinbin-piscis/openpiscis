@@ -19,13 +19,15 @@ impl Tool for ScreenTool {
          Returns a base64-encoded image that Vision AI can analyze. \
          \
          Cross-platform UI automation workflow: \
-         1. Take a screenshot with grid=true — this overlays pixel coordinate labels \
+            1. Take a screenshot with grid=true — this overlays a 100x100 pixel grid with coordinate labels \
+                and, on Windows, marks the current mouse position with a crosshair \
          2. The Vision model identifies the target UI element in the image \
          3. Use desktop_automation.click(x, y) with the exact coordinates from the grid \
          \
          Use 'list_monitors' to discover available displays and their pixel extents. \
          Use 'find_element' to capture and ask Vision AI to locate a described element. \
-         Tip: grid_spacing=50 gives even finer labels (default 100)."
+            Tip: if the screenshot shows partial content, progress bars, skeleton loaders, or other obvious loading signals, treat that as a wait state: recapture using real elapsed time with exponential backoff (for example 1s, 2s, 4s, 8s, capped) before acting. \
+            Tip: grid_spacing=50 gives even finer labels (default 100)."
     }
 
     fn input_schema(&self) -> Value {
@@ -76,7 +78,7 @@ impl Tool for ScreenTool {
                 },
                 "grid": {
                     "type": "boolean",
-                    "description": "Overlay a coordinate grid on the screenshot. Grid lines every 100px with coordinate labels. Labels show absolute screen coordinates that can be used directly with desktop_automation click/drag/hotkey. Essential for Vision AI to precisely locate and interact with UI elements."
+                    "description": "Overlay a coordinate grid on the screenshot. Grid lines default to every 100px with coordinate labels. Labels show absolute screen coordinates that can be used directly with desktop_automation click/drag/hotkey. On Windows, the current mouse position is also marked with a crosshair. Essential for Vision AI to precisely locate and interact with UI elements."
                 },
                 "grid_spacing": {
                     "type": "integer",
@@ -139,6 +141,18 @@ pub(crate) fn encode_and_return_with_offset(
     origin_x: i32,
     origin_y: i32,
 ) -> Result<ToolResult> {
+    encode_and_return_with_cursor_offset(rgba, width, height, input, origin_x, origin_y, None)
+}
+
+pub(crate) fn encode_and_return_with_cursor_offset(
+    rgba: &[u8],
+    width: u32,
+    height: u32,
+    input: &Value,
+    origin_x: i32,
+    origin_y: i32,
+    cursor_pos: Option<(i32, i32)>,
+) -> Result<ToolResult> {
     let format = input["format"].as_str().unwrap_or("jpeg");
     let quality = input["quality"].as_u64().unwrap_or(75) as u8;
     let draw_grid = input["grid"].as_bool().unwrap_or(false);
@@ -159,6 +173,9 @@ pub(crate) fn encode_and_return_with_offset(
 
     if draw_grid {
         draw_coordinate_grid(&mut img, origin_x, origin_y, grid_spacing);
+        if let Some((cursor_x, cursor_y)) = cursor_pos {
+            draw_cursor_crosshair(&mut img, origin_x, origin_y, cursor_x, cursor_y);
+        }
         // Save a debug copy as PNG so we can inspect the grid visually
         #[cfg(debug_assertions)]
         {
@@ -197,13 +214,24 @@ pub(crate) fn encode_and_return_with_offset(
         {
             let target_tool = "uia";
             let grid_note = if draw_grid {
+                let cursor_note = cursor_pos
+                    .map(|(cx, cy)| {
+                        format!(
+                            "\nCrosshair: the mouse pointer was at absolute screen coordinates ({},{}) when the screenshot was taken.",
+                            cx, cy
+                        )
+                    })
+                    .unwrap_or_default();
                 format!(
                     "\n## Coordinate System (grid=true, spacing={}px)\n\
                     Image size: {}x{} px\n\
                     Origin (top-left): ({}, {}) in screen coordinates\n\
+                    Grid lines and cursor crosshair are drawn as high-contrast XOR-style overlays to preserve underlying content.\n\
+                    Coordinate labels are edge-aligned to reduce occlusion; labels are absolute screen pixels.\n\
                     To click an element: 1) visually identify it using grid labels 2) call {target_tool}.click(x, y) with the exact pixel from the label\n\
-                    Tip: for drag operations, use {target_tool}.drag(x, y, to_x, to_y)",
-                    grid_spacing, width, height, origin_x, origin_y
+                    Tip: if the screenshot shows incomplete content, loading spinners, or progress bars, treat that as a wait state and recapture using real elapsed time with exponential backoff before acting.\n\
+                    Tip: for drag operations, use {target_tool}.drag(x, y, to_x, to_y){}",
+                    grid_spacing, width, height, origin_x, origin_y, cursor_note
                 )
             } else {
                 String::new()
@@ -227,7 +255,10 @@ pub(crate) fn encode_and_return_with_offset(
                 format!(
                     "\n## Coordinate System (grid=true, spacing={grid_sp}x)\n\
                     Image: {w}x{h} px | Origin: ({ox},{oy}) screen coords\n\
-                    → Find element via grid labels, then: {tt}.click(x, y) | {tt}.drag(x, y, to_x, to_y) | {tt}.hotkey(keys)",
+                    Grid lines are drawn as high-contrast XOR-style overlays to preserve underlying content.\n\
+                    Coordinate labels are edge-aligned to reduce occlusion; labels are absolute screen pixels.\n\
+                    → Find element via grid labels, then: {tt}.click(x, y) | {tt}.drag(x, y, to_x, to_y) | {tt}.hotkey(keys)\n\
+                    Tip: if the screenshot shows incomplete content, loading spinners, or progress bars, treat that as a wait state and recapture using real elapsed time with exponential backoff before acting.",
                     grid_sp = grid_spacing, w = width, h = height, ox = origin_x, oy = origin_y, tt = target_tool
                 )
             } else {
@@ -291,9 +322,9 @@ fn draw_coordinate_grid(img: &mut image::RgbaImage, origin_x: i32, origin_y: i32
     let mut ix = first_x;
     while ix < w {
         for iy in 0..h {
-            blend_pixel(img, ix, iy, [255, 255, 255, 60]);
-            if ix > 0 {
-                blend_pixel(img, ix - 1, iy, [0, 0, 0, 30]);
+            xor_pixel(img, ix, iy);
+            if ix + 1 < w && iy % 2 == 0 {
+                xor_pixel(img, ix + 1, iy);
             }
         }
         ix += spacing;
@@ -303,35 +334,106 @@ fn draw_coordinate_grid(img: &mut image::RgbaImage, origin_x: i32, origin_y: i32
     let mut iy = first_y;
     while iy < h {
         for ix2 in 0..w {
-            blend_pixel(img, ix2, iy, [255, 255, 255, 60]);
-            if iy > 0 {
-                blend_pixel(img, ix2, iy - 1, [0, 0, 0, 30]);
+            xor_pixel(img, ix2, iy);
+            if iy + 1 < h && ix2 % 2 == 0 {
+                xor_pixel(img, ix2, iy + 1);
             }
         }
         iy += spacing;
     }
 
-    // Draw coordinate labels at grid intersections.
-    // When spacing is small (< 200px), label every 2nd line to prevent overlap.
+    // Draw coordinate labels on the image edges instead of every intersection.
+    // This keeps coordinates readable while reducing occlusion of page/app content.
     let label_interval = if spacing < 200 { 2 } else { 1 };
+    let label_margin = 2;
+
+    if first_x < w && first_y < h {
+        let corner_label = format!("{},{}", origin_x + first_x as i32, origin_y + first_y as i32);
+        draw_label(img, label_margin, label_margin, &corner_label);
+    }
+
     let mut lx = first_x;
     let mut xi = 0usize;
     while lx < w {
-        let mut ly = first_y;
-        let mut yi = 0usize;
-        while ly < h {
-            if xi % label_interval == 0 && yi % label_interval == 0 {
-                let screen_x = origin_x + lx as i32;
-                let screen_y = origin_y + ly as i32;
-                let label = format!("{},{}", screen_x, screen_y);
-                draw_label(img, lx + 2, ly + 2, &label);
-            }
-            ly += spacing;
-            yi += 1;
+        if xi != 0 && xi % label_interval == 0 {
+            let screen_x = origin_x + lx as i32;
+            draw_label(img, lx.saturating_add(label_margin), label_margin, &screen_x.to_string());
         }
         lx += spacing;
         xi += 1;
     }
+
+    let mut ly = first_y;
+    let mut yi = 0usize;
+    while ly < h {
+        if yi != 0 && yi % label_interval == 0 {
+            let screen_y = origin_y + ly as i32;
+            draw_label(img, label_margin, ly.saturating_add(label_margin), &screen_y.to_string());
+        }
+        ly += spacing;
+        yi += 1;
+    }
+}
+
+fn draw_cursor_crosshair(
+    img: &mut image::RgbaImage,
+    origin_x: i32,
+    origin_y: i32,
+    cursor_x: i32,
+    cursor_y: i32,
+) {
+    let local_x = cursor_x - origin_x;
+    let local_y = cursor_y - origin_y;
+    if local_x < 0 || local_y < 0 {
+        return;
+    }
+    let x = local_x as u32;
+    let y = local_y as u32;
+    if x >= img.width() || y >= img.height() {
+        return;
+    }
+
+    for ix in 0..img.width() {
+        xor_pixel(img, ix, y);
+    }
+    for iy in 0..img.height() {
+        xor_pixel(img, x, iy);
+    }
+
+    let radius = 10u32;
+    let left = x.saturating_sub(radius);
+    let right = (x + radius).min(img.width().saturating_sub(1));
+    let top = y.saturating_sub(radius);
+    let bottom = (y + radius).min(img.height().saturating_sub(1));
+    for ix in left..=right {
+        xor_pixel(img, ix, top);
+        xor_pixel(img, ix, bottom);
+    }
+    for iy in top..=bottom {
+        xor_pixel(img, left, iy);
+        xor_pixel(img, right, iy);
+    }
+
+    let label_x = (x + 12).min(img.width().saturating_sub(1));
+    let label_y = y.saturating_sub(28);
+    draw_label(img, label_x, label_y, &format!("{},{}", cursor_x, cursor_y));
+}
+
+fn xor_pixel(img: &mut image::RgbaImage, x: u32, y: u32) {
+    if x >= img.width() || y >= img.height() {
+        return;
+    }
+    let dst = *img.get_pixel(x, y);
+    img.put_pixel(
+        x,
+        y,
+        image::Rgba([
+            255u8.wrapping_sub(dst[0]),
+            255u8.wrapping_sub(dst[1]),
+            255u8.wrapping_sub(dst[2]),
+            255,
+        ]),
+    );
 }
 
 /// Alpha-blend a color onto a pixel (src-over).
@@ -357,10 +459,11 @@ fn draw_label(img: &mut image::RgbaImage, x: u32, y: u32, text: &str) {
     let pad = SCALE;
     let text_w = text.len() as u32 * char_w + pad * 2;
     let text_h = char_h + pad * 2;
-    // Dark semi-transparent background
+    // Dark semi-transparent background with lower opacity so labels stay readable
+    // without covering as much underlying content.
     for dy in 0..text_h {
         for dx in 0..text_w {
-            blend_pixel(img, x + dx, y + dy, [0, 0, 0, 200]);
+            blend_pixel(img, x + dx, y + dy, [0, 0, 0, 144]);
         }
     }
     // Draw each character

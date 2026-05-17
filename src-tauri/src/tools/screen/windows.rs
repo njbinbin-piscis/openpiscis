@@ -2,7 +2,7 @@ use anyhow::Result;
 use pisci_kernel::agent::tool::ToolResult;
 use serde_json::Value;
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
+use windows::Win32::Foundation::{BOOL, HWND, LPARAM, POINT, RECT};
 use windows::Win32::Graphics::Gdi::{
     BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateDCA, DeleteDC, DeleteObject,
     EnumDisplayMonitors, GetDC, GetDIBits, GetMonitorInfoW, MonitorFromWindow, ReleaseDC,
@@ -10,8 +10,8 @@ use windows::Win32::Graphics::Gdi::{
     MONITOR_DEFAULTTONEAREST, SRCCOPY,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, FindWindowW, GetAncestor, GetDesktopWindow, GetWindowRect, GetWindowTextW,
-    IsIconic, IsWindowVisible, GA_ROOT,
+    EnumWindows, FindWindowW, GetAncestor, GetCursorPos, GetDesktopWindow, GetWindowRect,
+    GetWindowTextW, IsIconic, IsWindowVisible, GA_ROOT,
 };
 
 pub async fn list_monitors() -> Result<ToolResult> {
@@ -190,7 +190,15 @@ pub async fn capture_full(input: &Value) -> Result<ToolResult> {
         let hdc = CreateDCA(display_name, None, None, None);
         let pixels = capture_dc_region(hdc, x, y, width, height)?;
         let _ = DeleteDC(hdc);
-        super::encode_and_return_with_offset(&pixels, width as u32, height as u32, input, x, y)
+        super::encode_and_return_with_cursor_offset(
+            &pixels,
+            width as u32,
+            height as u32,
+            input,
+            x,
+            y,
+            cursor_position(),
+        )
     }
 }
 
@@ -271,8 +279,14 @@ pub async fn capture_window(input: &Value) -> Result<ToolResult> {
         let _ = DeleteDC(mem_dc);
         ReleaseDC(hwnd, hdc_win);
 
-        super::encode_and_return_with_offset(
-            &pixels, w as u32, h as u32, input, rect.left, rect.top,
+        super::encode_and_return_with_cursor_offset(
+            &pixels,
+            w as u32,
+            h as u32,
+            input,
+            rect.left,
+            rect.top,
+            cursor_position(),
         )
     }
 }
@@ -294,7 +308,26 @@ pub async fn capture_region(input: &Value) -> Result<ToolResult> {
         let hdc = GetDC(hwnd);
         let pixels = capture_dc_region(hdc, x, y, w, h)?;
         ReleaseDC(hwnd, hdc);
-        super::encode_and_return_with_offset(&pixels, w as u32, h as u32, input, x, y)
+        super::encode_and_return_with_cursor_offset(
+            &pixels,
+            w as u32,
+            h as u32,
+            input,
+            x,
+            y,
+            cursor_position(),
+        )
+    }
+}
+
+fn cursor_position() -> Option<(i32, i32)> {
+    unsafe {
+        let mut point = POINT::default();
+        if GetCursorPos(&mut point).as_bool() {
+            Some((point.x, point.y))
+        } else {
+            None
+        }
     }
 }
 
