@@ -18,13 +18,13 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.7.19
+## 🆕 What's New in v0.7.20
 
-- **Explicit IM channel tooling**: agents can now list configured IM channels, connect them on demand, and resolve channel bindings explicitly instead of relying on hidden routing heuristics.
-- **Scheduler-to-IM continuity**: successful scheduled-task notifications now create missing IM sessions when needed and mirror outbound messages into the target IM history, so later replies keep full context.
-- **More reliable scheduled delivery**: scheduled jobs now deduplicate cron registrations across restarts, preventing one task from being restored multiple times and firing unexpectedly.
-- **Sharper desktop UX**: chat workspace switching now reflects the just-selected folder immediately, buffered streaming deltas flush correctly at segment boundaries, and IM connection badges refresh as soon as background connects succeed.
-- **Settings cleanup**: the Settings page now uses clearer provider labels and a safer built-in heartbeat default that does not depend on eager i18n initialization.
+- **Pisci personal prompt**: add a global prompt setting for Pisci-owned chat, heartbeat, pool coordination, and scheduled-task sessions without affecting Koi or Fish.
+- **Session Artifacts panel**: ordinary chat sessions now show an Artifacts tab beside Todo and Tools, collecting generated outputs for quick review after reloads and session switches.
+- **Artifact publishing tool**: Pisci can submit generated files or URLs through `app_control`, so outputs are visible both as chat links and in the session Artifacts summary.
+- **Runtime command handling**: improve system/runtime command behavior and diagnostics around desktop automation.
+- **Debug UI refresh**: update screen diagnostics surfaces for clearer inspection while troubleshooting automation.
 
 ## ✨ Key Features
 

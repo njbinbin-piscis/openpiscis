@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.20] - 2026-05-18
+
+### Added
+- **Pisci personal prompt context**: added a global personal prompt setting for Pisci-owned chat, heartbeat, pool coordination, and scheduled-task sessions, while keeping Koi and Fish prompts isolated.
+- **Session Artifacts panel**: ordinary chat sessions now include an Artifacts tab beside Todo and Tools, with persisted generated outputs that can be browsed after reloads and session switches.
+- **Pisci artifact submission**: `app_control` can now submit and list session artifacts, so generated file or URL outputs appear both in chat responses and in the session-level Artifacts summary.
+
+### Changed
+- **Debug screen diagnostics UI**: refreshed screen diagnostic surfaces for clearer runtime inspection.
+
+### Fixed
+- **Runtime system command handling**: improved command handling around runtime/system operations.
+
+---
+
 ## [0.7.19] - 2026-05-10
 
 ### Added
