@@ -342,7 +342,11 @@ fn draw_coordinate_grid(img: &mut image::RgbaImage, origin_x: i32, origin_y: i32
     let label_margin = 2;
 
     if first_x < w && first_y < h {
-        let corner_label = format!("{},{}", origin_x + first_x as i32, origin_y + first_y as i32);
+        let corner_label = format!(
+            "{},{}",
+            origin_x + first_x as i32,
+            origin_y + first_y as i32
+        );
         draw_label(img, label_margin, label_margin, &corner_label);
     }
 
@@ -351,7 +355,12 @@ fn draw_coordinate_grid(img: &mut image::RgbaImage, origin_x: i32, origin_y: i32
     while lx < w {
         if xi != 0 && xi % label_interval == 0 {
             let screen_x = origin_x + lx as i32;
-            draw_label(img, lx.saturating_add(label_margin), label_margin, &screen_x.to_string());
+            draw_label(
+                img,
+                lx.saturating_add(label_margin),
+                label_margin,
+                &screen_x.to_string(),
+            );
         }
         lx += spacing;
         xi += 1;
@@ -362,7 +371,12 @@ fn draw_coordinate_grid(img: &mut image::RgbaImage, origin_x: i32, origin_y: i32
     while ly < h {
         if yi != 0 && yi % label_interval == 0 {
             let screen_y = origin_y + ly as i32;
-            draw_label(img, label_margin, ly.saturating_add(label_margin), &screen_y.to_string());
+            draw_label(
+                img,
+                label_margin,
+                ly.saturating_add(label_margin),
+                &screen_y.to_string(),
+            );
         }
         ly += spacing;
         yi += 1;

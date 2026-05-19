@@ -106,7 +106,15 @@ pub async fn capture_full(input: &Value) -> Result<ToolResult> {
     let x = monitor.x().unwrap_or(0);
     let y = monitor.y().unwrap_or(0);
 
-    super::encode_and_return_with_cursor_offset(&rgba, width, height, input, x, y, cursor_position().await)
+    super::encode_and_return_with_cursor_offset(
+        &rgba,
+        width,
+        height,
+        input,
+        x,
+        y,
+        cursor_position().await,
+    )
 }
 
 pub async fn capture_window(input: &Value) -> Result<ToolResult> {
@@ -145,7 +153,15 @@ pub async fn capture_window(input: &Value) -> Result<ToolResult> {
     let x = win.x().unwrap_or(0);
     let y = win.y().unwrap_or(0);
 
-    super::encode_and_return_with_cursor_offset(&rgba, width, height, input, x, y, cursor_position().await)
+    super::encode_and_return_with_cursor_offset(
+        &rgba,
+        width,
+        height,
+        input,
+        x,
+        y,
+        cursor_position().await,
+    )
 }
 
 pub async fn capture_region(input: &Value) -> Result<ToolResult> {
@@ -177,5 +193,13 @@ pub async fn capture_region(input: &Value) -> Result<ToolResult> {
     let (width, height) = image.dimensions();
     let rgba = image.into_raw();
 
-    super::encode_and_return_with_cursor_offset(&rgba, width, height, input, x, y, cursor_position().await)
+    super::encode_and_return_with_cursor_offset(
+        &rgba,
+        width,
+        height,
+        input,
+        x,
+        y,
+        cursor_position().await,
+    )
 }
