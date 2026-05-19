@@ -592,7 +592,6 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
     command.args(["-Command", &ps]);
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
         command.creation_flags(CREATE_NO_WINDOW);
     }
     let output = command
@@ -621,7 +620,6 @@ async fn service_list() -> Result<ToolResult> {
     ]);
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
         command.creation_flags(CREATE_NO_WINDOW);
     }
     let output = command
@@ -657,7 +655,6 @@ async fn read_commands(commands: &[(&str, &[&str])]) -> Vec<String> {
             command.args(*args);
             #[cfg(target_os = "windows")]
             {
-                use std::os::windows::process::CommandExt;
                 command.creation_flags(CREATE_NO_WINDOW);
             }
             let output = command.output().await;

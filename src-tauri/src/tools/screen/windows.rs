@@ -323,7 +323,7 @@ pub async fn capture_region(input: &Value) -> Result<ToolResult> {
 fn cursor_position() -> Option<(i32, i32)> {
     unsafe {
         let mut point = POINT::default();
-        if GetCursorPos(&mut point).as_bool() {
+        if GetCursorPos(&mut point).is_ok() {
             Some((point.x, point.y))
         } else {
             None
