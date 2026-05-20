@@ -18,13 +18,11 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.7.20
+## 🆕 What's New in v0.7.23
 
-- **Pisci personal prompt**: add a global prompt setting for Pisci-owned chat, heartbeat, pool coordination, and scheduled-task sessions without affecting Koi or Fish.
-- **Session Artifacts panel**: ordinary chat sessions now show an Artifacts tab beside Todo and Tools, collecting generated outputs for quick review after reloads and session switches.
-- **Artifact publishing tool**: Pisci can submit generated files or URLs through `app_control`, so outputs are visible both as chat links and in the session Artifacts summary.
-- **Runtime command handling**: improve system/runtime command behavior and diagnostics around desktop automation.
-- **Debug UI refresh**: update screen diagnostics surfaces for clearer inspection while troubleshooting automation.
+- **WeChat inbound media now arrives as real files**: images, voice messages, files, and videos received through the iLink gateway are downloaded from WeChat CDN storage, decrypted locally, and passed into Pisci as real attachment bytes instead of placeholder notifications.
+- **WeChat outbound media is more compatible**: outbound CDN media payloads now follow the iLink SDK's `aes_key` encoding format, reducing cases where WeChat clients showed attachments as expired or already cleared.
+- **Cancelled streaming replies keep partial output**: if a user cancels a streaming LLM response after some text has already arrived, Pisci now preserves that partial assistant message in session history instead of dropping it.
 
 ## ✨ Key Features
 

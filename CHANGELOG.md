@@ -6,6 +6,11 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.23] - 2026-05-21
+
+### Fixed
+- **Cancelled streaming replies now keep partial assistant text**: if a streaming LLM response is cancelled after some tokens have already arrived, Pisci now preserves that partial assistant output in session history instead of dropping it, and a regression test covers this path.
+
 ## [0.7.22] - 2026-05-21
 
 ### Fixed

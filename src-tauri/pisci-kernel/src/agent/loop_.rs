@@ -1170,6 +1170,7 @@ async fn llm_call_unified(
     req: crate::llm::LlmRequest,
     enable_streaming: bool,
     event_tx: &mpsc::Sender<AgentEvent>,
+    partial_text: Option<Arc<Mutex<String>>>,
 ) -> Result<crate::llm::LlmResponse> {
     if !enable_streaming {
         return client.complete(req).await;
@@ -1188,6 +1189,9 @@ async fn llm_call_unified(
             match chunk {
                 crate::llm::LlmChunk::TextDelta(delta) => {
                     text.push_str(&delta);
+                    if let Some(ref partial) = partial_text {
+                        partial.lock().await.push_str(&delta);
+                    }
                     let _ = event_tx.send(AgentEvent::TextDelta { delta }).await;
                 }
                 crate::llm::LlmChunk::ToolUse { id, name, input } => {
@@ -2133,6 +2137,7 @@ impl AgentLoop {
             // req_messages is rebuilt inside the loop so that after compact_summarise
             // updates `messages`, the next attempt uses the compacted context.
             info!("calling LLM: model={}", self.model);
+            let mut cancelled_partial_text: Option<String> = None;
             let response = {
                 let models_to_try: Vec<String> = std::iter::once(self.model.clone())
                     .chain(self.fallback_models.iter().cloned())
@@ -2180,6 +2185,10 @@ impl AgentLoop {
                             break 'model_loop;
                         }
 
+                        let streaming_partial = self
+                            .enable_streaming
+                            .then(|| Arc::new(Mutex::new(String::new())));
+
                         // Race the LLM call against the cancel flag (200ms poll)
                         let cancel_for_llm = Arc::clone(&cancel);
                         let llm_result = tokio::select! {
@@ -2193,6 +2202,12 @@ impl AgentLoop {
                                 }
                             } => {
                                 info!("LLM call cancelled by user");
+                                if let Some(partial) = &streaming_partial {
+                                    let partial = partial.lock().await.clone();
+                                    if !partial.trim().is_empty() {
+                                        cancelled_partial_text = Some(partial);
+                                    }
+                                }
                                 break 'model_loop;
                             }
                             r = llm_call_unified(
@@ -2200,8 +2215,17 @@ impl AgentLoop {
                                 req.clone(),
                                 self.enable_streaming,
                                 &event_tx,
+                                streaming_partial.clone(),
                             ) => r,
                         };
+                        if cancel.load(Ordering::Relaxed) {
+                            if let Some(partial) = streaming_partial {
+                                let partial = partial.lock().await.clone();
+                                if !partial.trim().is_empty() {
+                                    cancelled_partial_text = Some(partial);
+                                }
+                            }
+                        }
 
                         match llm_result {
                             Ok(r) => {
@@ -2357,6 +2381,16 @@ impl AgentLoop {
                     None => {
                         // If cancelled, break the outer iteration loop cleanly
                         if cancel.load(Ordering::Relaxed) {
+                            if let Some(partial) = cancelled_partial_text.take() {
+                                let asst_msg = LlmMessage {
+                                    role: "assistant".into(),
+                                    content: MessageContent::text(&partial),
+                                };
+                                new_messages.push(asst_msg.clone());
+                                messages.push(asst_msg.clone());
+                                self.persist_message(&ctx.session_id, &asst_msg, turn_index)
+                                    .await;
+                            }
                             break;
                         }
                         return Err(last_err.unwrap_or_else(|| anyhow::anyhow!("LLM call failed")));
@@ -3144,15 +3178,17 @@ mod tests {
     use super::{
         build_request_messages, compact_summarise, compact_trim_tool_results,
         is_structural_schema_error, maybe_schema_correction_envelope,
-        serialize_tool_results_with_receipts, CTX_KEEP_RECENT_TOOL_CARRIERS,
-        CTX_PRESERVE_RECENT_TURNS, CTX_TRIM_HEAD, CTX_TRIM_TAIL,
+        serialize_tool_results_with_receipts, AgentLoop, ConfirmFlags,
+        CTX_KEEP_RECENT_TOOL_CARRIERS, CTX_PRESERVE_RECENT_TURNS, CTX_TRIM_HEAD, CTX_TRIM_TAIL,
     };
-    use crate::agent::tool::{Tool, ToolRegistry};
+    use crate::agent::tool::{Tool, ToolContext, ToolRegistry, ToolSettings};
     use crate::llm::{ContentBlock, LlmChunk, LlmMessage, LlmRequest, LlmResponse, MessageContent};
+    use crate::policy::PolicyGate;
     use anyhow::Result;
     use async_trait::async_trait;
     use serde_json::{json, Value};
-    use std::{borrow::Cow, collections::HashMap};
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::{borrow::Cow, collections::HashMap, path::PathBuf, sync::Arc};
 
     // ── Mock LLM clients ──────────────────────────────────────────────────────
 
@@ -3207,6 +3243,30 @@ mod tests {
         }
     }
 
+    struct StreamingCancelClient {
+        cancel: Arc<AtomicBool>,
+    }
+
+    #[async_trait]
+    impl crate::llm::LlmClient for StreamingCancelClient {
+        async fn stream(
+            &self,
+            _req: LlmRequest,
+            tx: tokio::sync::mpsc::Sender<LlmChunk>,
+        ) -> Result<()> {
+            tx.send(LlmChunk::TextDelta("partial answer".into()))
+                .await
+                .unwrap();
+            self.cancel.store(true, Ordering::SeqCst);
+            std::future::pending::<()>().await;
+            Ok(())
+        }
+
+        async fn complete(&self, _req: LlmRequest) -> Result<LlmResponse> {
+            unreachable!("streaming regression test should not call complete")
+        }
+    }
+
     struct SchemaTool;
 
     #[async_trait]
@@ -3258,6 +3318,57 @@ mod tests {
             role: role.to_string(),
             content: MessageContent::Text(text.to_string()),
         }
+    }
+
+    #[tokio::test]
+    async fn cancelled_streaming_response_keeps_partial_assistant_message() {
+        let cancel = Arc::new(AtomicBool::new(false));
+        let agent = AgentLoop {
+            client: Box::new(StreamingCancelClient {
+                cancel: cancel.clone(),
+            }),
+            registry: Arc::new(ToolRegistry::new()),
+            policy: Arc::new(PolicyGate::new(PathBuf::from("."))),
+            system_prompt: String::new(),
+            model: "test-model".into(),
+            max_tokens: 1024,
+            context_window: 8192,
+            fallback_models: vec![],
+            db: None,
+            plan_state: None,
+            confirmation_responses: None,
+            confirm_flags: ConfirmFlags {
+                confirm_shell: false,
+                confirm_file_write: false,
+            },
+            vision_override: Some(false),
+            notification_rx: None,
+            auto_compact_input_tokens_threshold: 0,
+            enable_streaming: true,
+        };
+        let (event_tx, _event_rx) = tokio::sync::mpsc::channel(16);
+        let ctx = ToolContext {
+            session_id: "cancel-stream-test".into(),
+            workspace_root: PathBuf::from("."),
+            bypass_permissions: false,
+            settings: Arc::new(ToolSettings::default()),
+            max_iterations: Some(1),
+            memory_owner_id: "pisci".into(),
+            pool_session_id: None,
+            cancel: cancel.clone(),
+        };
+
+        let (messages, _, _) = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            agent.run(vec![make_text_msg("user", "hello")], event_tx, cancel, ctx),
+        )
+        .await
+        .expect("agent run should observe cancellation")
+        .expect("cancelled run should return cleanly");
+
+        assert!(messages.iter().any(|message| {
+            message.role == "assistant" && message.content.as_text() == "partial answer"
+        }));
     }
 
     /// Assistant message with a ToolUse block (mirrors real DB tool_calls_json).
