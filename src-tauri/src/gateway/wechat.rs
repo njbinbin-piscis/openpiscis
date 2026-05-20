@@ -19,11 +19,12 @@ use super::{Channel, ChannelStatus, InboundMessage, MediaAttachment, OutboundMes
 use anyhow::Result;
 use async_trait::async_trait;
 use base64::Engine;
-use ecb::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyInit};
+use ecb::cipher::{block_padding::Pkcs7, BlockDecryptMut, BlockEncryptMut, KeyInit};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -39,13 +40,16 @@ use tracing::{info, warn};
 const SEEN_MESSAGE_TTL_SECS: u64 = 300;
 
 type Aes128EcbEnc = ecb::Encryptor<aes::Aes128>;
+type Aes128EcbDec = ecb::Decryptor<aes::Aes128>;
 
 const WECHAT_CDN_BASE_URL: &str = "https://novac2c.cdn.weixin.qq.com/c2c";
 const UPLOAD_MEDIA_TYPE_IMAGE: u8 = 1;
 const UPLOAD_MEDIA_TYPE_FILE: u8 = 3;
 const MESSAGE_ITEM_TYPE_TEXT: u8 = 1;
 const MESSAGE_ITEM_TYPE_IMAGE: u8 = 2;
+const MESSAGE_ITEM_TYPE_VOICE: u8 = 3;
 const MESSAGE_ITEM_TYPE_FILE: u8 = 4;
+const MESSAGE_ITEM_TYPE_VIDEO: u8 = 5;
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -444,6 +448,7 @@ async fn listen_ilink_updates(
                 );
                 continue;
             }
+            let inbound = hydrate_wechat_inbound_media(&client, inbound).await;
             let sender = inbound.sender.clone();
             let preview = inbound.content.chars().take(60).collect::<String>();
             info!("WeChat inbound from {}: {}", sender, preview);
@@ -599,6 +604,7 @@ async fn handle_getupdates(
     // The plugin sends user messages as part of the getupdates body when
     // `msgs` is present (push-style variant).
     cache_reply_contexts_from_payload(state, body).await;
+    let client = reqwest::Client::new();
     for inbound in extract_inbound_messages(body) {
         if !state.mark_message_fresh(&inbound.id).await {
             info!(
@@ -607,6 +613,7 @@ async fn handle_getupdates(
             );
             continue;
         }
+        let inbound = hydrate_wechat_inbound_media(&client, inbound).await;
         let _ = tx.send(inbound).await;
     }
 
@@ -1038,7 +1045,8 @@ async fn upload_encrypted_media_to_cdn(
 }
 
 fn build_media_message_item(media: &MediaAttachment, uploaded: &UploadedWechatMedia) -> Value {
-    let aes_key_b64 = base64::engine::general_purpose::STANDARD.encode(uploaded.aes_key);
+    let aes_key_b64 =
+        base64::engine::general_purpose::STANDARD.encode(hex::encode(uploaded.aes_key));
     if media.media_type.starts_with("image/") {
         json!({
             "type": MESSAGE_ITEM_TYPE_IMAGE,
@@ -1318,6 +1326,357 @@ fn wechat_media_placeholder(msg_id: &str, items: &[Value]) -> Option<MediaAttach
     None
 }
 
+async fn hydrate_wechat_inbound_media(
+    client: &reqwest::Client,
+    mut inbound: InboundMessage,
+) -> InboundMessage {
+    let Some(routing_state) = inbound.routing_state.as_ref() else {
+        return inbound;
+    };
+    let Some(items) = routing_state.get("item_list").and_then(|value| value.as_array()) else {
+        return inbound;
+    };
+
+    match download_wechat_media_attachment(client, &inbound.id, items).await {
+        Ok(Some(media)) => inbound.media = Some(media),
+        Ok(None) => {}
+        Err(err) => {
+            warn!(
+                "WeChat inbound media download failed for message {}: {}",
+                inbound.id, err
+            );
+        }
+    }
+
+    inbound
+}
+
+async fn download_wechat_media_attachment(
+    client: &reqwest::Client,
+    msg_id: &str,
+    items: &[Value],
+) -> Result<Option<MediaAttachment>> {
+    for item in items {
+        let item_type = item["type"].as_u64().unwrap_or(0) as u8;
+        match item_type {
+            MESSAGE_ITEM_TYPE_IMAGE => {
+                if let Some(media) = download_wechat_image_attachment(client, msg_id, item).await?
+                {
+                    return Ok(Some(media));
+                }
+            }
+            MESSAGE_ITEM_TYPE_VOICE => {
+                if let Some(media) = download_wechat_voice_attachment(client, msg_id, item).await?
+                {
+                    return Ok(Some(media));
+                }
+            }
+            MESSAGE_ITEM_TYPE_FILE => {
+                if let Some(media) = download_wechat_file_attachment(client, msg_id, item).await?
+                {
+                    return Ok(Some(media));
+                }
+            }
+            MESSAGE_ITEM_TYPE_VIDEO => {
+                if let Some(media) = download_wechat_video_attachment(client, msg_id, item).await?
+                {
+                    return Ok(Some(media));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(None)
+}
+
+async fn download_wechat_image_attachment(
+    client: &reqwest::Client,
+    msg_id: &str,
+    item: &Value,
+) -> Result<Option<MediaAttachment>> {
+    let image_item = match item.get("image_item") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let media_ref = match image_item.get("media") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let aes_key = image_item
+        .get("aeskey")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| {
+            media_ref
+                .get("aes_key")
+                .and_then(|value| value.as_str())
+                .filter(|value| !value.trim().is_empty())
+        });
+    let Some(aes_key) = aes_key else {
+        return Ok(None);
+    };
+    let bytes = download_wechat_cdn_media(client, media_ref, aes_key).await?;
+    let filename = image_item
+        .get("url")
+        .and_then(|value| value.as_str())
+        .and_then(guess_filename_from_url)
+        .unwrap_or_else(|| format!("wechat_image_{}.jpg", msg_id));
+
+    Ok(Some(MediaAttachment {
+        media_type: guess_image_media_type(&filename).to_string(),
+        url: media_ref
+            .get("full_url")
+            .and_then(|value| value.as_str())
+            .map(str::to_string),
+        data: Some(bytes),
+        filename: Some(filename),
+    }))
+}
+
+async fn download_wechat_voice_attachment(
+    client: &reqwest::Client,
+    msg_id: &str,
+    item: &Value,
+) -> Result<Option<MediaAttachment>> {
+    let voice_item = match item.get("voice_item") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let media_ref = match voice_item.get("media") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let aes_key = match media_ref
+        .get("aes_key")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.trim().is_empty())
+    {
+        Some(value) => value,
+        None => return Ok(None),
+    };
+    let bytes = download_wechat_cdn_media(client, media_ref, aes_key).await?;
+
+    Ok(Some(MediaAttachment {
+        media_type: "audio/silk".to_string(),
+        url: media_ref
+            .get("full_url")
+            .and_then(|value| value.as_str())
+            .map(str::to_string),
+        data: Some(bytes),
+        filename: Some(format!("wechat_voice_{}.silk", msg_id)),
+    }))
+}
+
+async fn download_wechat_file_attachment(
+    client: &reqwest::Client,
+    msg_id: &str,
+    item: &Value,
+) -> Result<Option<MediaAttachment>> {
+    let file_item = match item.get("file_item") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let media_ref = match file_item.get("media") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let aes_key = match media_ref
+        .get("aes_key")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.trim().is_empty())
+    {
+        Some(value) => value,
+        None => return Ok(None),
+    };
+    let bytes = download_wechat_cdn_media(client, media_ref, aes_key).await?;
+    let filename = file_item
+        .get("file_name")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("wechat_file_{}.bin", msg_id));
+
+    Ok(Some(MediaAttachment {
+        media_type: "application/octet-stream".to_string(),
+        url: media_ref
+            .get("full_url")
+            .and_then(|value| value.as_str())
+            .map(str::to_string),
+        data: Some(bytes),
+        filename: Some(filename),
+    }))
+}
+
+async fn download_wechat_video_attachment(
+    client: &reqwest::Client,
+    msg_id: &str,
+    item: &Value,
+) -> Result<Option<MediaAttachment>> {
+    let video_item = match item.get("video_item") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let media_ref = match video_item.get("media") {
+        Some(value) if value.is_object() => value,
+        _ => return Ok(None),
+    };
+    let aes_key = match media_ref
+        .get("aes_key")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.trim().is_empty())
+    {
+        Some(value) => value,
+        None => return Ok(None),
+    };
+    let bytes = download_wechat_cdn_media(client, media_ref, aes_key).await?;
+
+    Ok(Some(MediaAttachment {
+        media_type: "video/mp4".to_string(),
+        url: media_ref
+            .get("full_url")
+            .and_then(|value| value.as_str())
+            .map(str::to_string),
+        data: Some(bytes),
+        filename: Some(format!("wechat_video_{}.mp4", msg_id)),
+    }))
+}
+
+async fn download_wechat_cdn_media(
+    client: &reqwest::Client,
+    media_ref: &Value,
+    aes_key: &str,
+) -> Result<Vec<u8>> {
+    let download_url = build_wechat_download_url(media_ref)?;
+    let response = client
+        .get(&download_url)
+        .timeout(std::time::Duration::from_secs(60))
+        .send()
+        .await
+        .map_err(|e| anyhow::anyhow!("WeChat CDN download error: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(anyhow::anyhow!(
+            "WeChat CDN download HTTP {}: {}",
+            status,
+            text
+        ));
+    }
+
+    let ciphertext = response
+        .bytes()
+        .await
+        .map_err(|e| anyhow::anyhow!("WeChat CDN download body read failed: {}", e))?;
+    let key = decode_wechat_aes_key(aes_key)?;
+    decrypt_aes_128_ecb(ciphertext.as_ref(), &key)
+}
+
+fn build_wechat_download_url(media_ref: &Value) -> Result<String> {
+    if let Some(full_url) = media_ref
+        .get("full_url")
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return Ok(full_url.to_string());
+    }
+    let download_param = media_ref
+        .get("encrypt_query_param")
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| anyhow::anyhow!("WeChat media is missing encrypt_query_param"))?;
+    Ok(format!(
+        "{}/download?encrypted_query_param={}",
+        WECHAT_CDN_BASE_URL,
+        urlencoding::encode(download_param)
+    ))
+}
+
+fn decode_wechat_aes_key(encoded: &str) -> Result<[u8; 16]> {
+    if encoded.len() == 32 && encoded.chars().all(|ch| ch.is_ascii_hexdigit()) {
+        let bytes = hex::decode(encoded)
+            .map_err(|e| anyhow::anyhow!("WeChat AES key hex decode failed: {}", e))?;
+        return bytes_to_wechat_aes_key(&bytes);
+    }
+
+    let decoded = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(encoded))
+        .map_err(|e| anyhow::anyhow!("WeChat AES key base64 decode failed: {}", e))?;
+
+    if decoded.len() == 16 {
+        return bytes_to_wechat_aes_key(&decoded);
+    }
+
+    if decoded.len() == 32 {
+        let hex_key = std::str::from_utf8(&decoded)
+            .map_err(|_| anyhow::anyhow!("WeChat AES key decoded bytes are not UTF-8 hex"))?;
+        if hex_key.chars().all(|ch| ch.is_ascii_hexdigit()) {
+            let bytes = hex::decode(hex_key)
+                .map_err(|e| anyhow::anyhow!("WeChat AES key inner hex decode failed: {}", e))?;
+            return bytes_to_wechat_aes_key(&bytes);
+        }
+    }
+
+    Err(anyhow::anyhow!(
+        "WeChat AES key has unsupported decoded length {}",
+        decoded.len()
+    ))
+}
+
+fn bytes_to_wechat_aes_key(bytes: &[u8]) -> Result<[u8; 16]> {
+    bytes
+        .try_into()
+        .map_err(|_| anyhow::anyhow!("WeChat AES key length {} != 16", bytes.len()))
+}
+
+fn decrypt_aes_128_ecb(ciphertext: &[u8], key: &[u8; 16]) -> Result<Vec<u8>> {
+    if ciphertext.len() % 16 != 0 {
+        return Err(anyhow::anyhow!(
+            "WeChat AES-128-ECB ciphertext length {} is not a multiple of 16",
+            ciphertext.len()
+        ));
+    }
+
+    let mut buf = ciphertext.to_vec();
+    let decrypted = Aes128EcbDec::new(key.into())
+        .decrypt_padded_mut::<Pkcs7>(&mut buf)
+        .map_err(|e| anyhow::anyhow!("WeChat AES-128-ECB decrypt failed: {}", e))?;
+    Ok(decrypted.to_vec())
+}
+
+fn guess_filename_from_url(url: &str) -> Option<String> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let path = trimmed.split('?').next().unwrap_or(trimmed);
+    let name = Path::new(path).file_name()?.to_str()?.trim();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name.to_string())
+    }
+}
+
+fn guess_image_media_type(filename: &str) -> &'static str {
+    let ext = Path::new(filename)
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match ext.as_str() {
+        "png" => "image/png",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        _ => "image/jpeg",
+    }
+}
+
 // ── Minimal HTTP helpers ──────────────────────────────────────────────────────
 
 /// Find the byte offset of the start of the HTTP body (after `\r\n\r\n`).
@@ -1561,6 +1920,10 @@ mod tests {
             image["image_item"]["media"]["encrypt_query_param"],
             "dl-param"
         );
+        assert_eq!(
+            image["image_item"]["media"]["aes_key"],
+            base64::engine::general_purpose::STANDARD.encode("01010101010101010101010101010101")
+        );
         assert_eq!(image["image_item"]["len"], 42);
         assert_eq!(image["image_item"]["mid_size"], 48);
 
@@ -1577,6 +1940,59 @@ mod tests {
         assert_eq!(file["file_item"]["file_name"], "doc.pdf");
         assert_eq!(file["file_item"]["len"], 42);
         assert_eq!(file["file_item"]["mid_size"], 48);
+    }
+
+    #[test]
+    fn decodes_supported_wechat_aes_key_formats() {
+        let hex_key = "00112233445566778899aabbccddeeff";
+        let expected: [u8; 16] = hex::decode(hex_key).unwrap().try_into().unwrap();
+        let raw_b64 = base64::engine::general_purpose::STANDARD.encode(expected);
+        let hex_b64 = base64::engine::general_purpose::STANDARD.encode(hex_key);
+
+        assert_eq!(decode_wechat_aes_key(hex_key).unwrap(), expected);
+        assert_eq!(decode_wechat_aes_key(&raw_b64).unwrap(), expected);
+        assert_eq!(decode_wechat_aes_key(&hex_b64).unwrap(), expected);
+    }
+
+    #[test]
+    fn decrypts_wechat_cdn_ciphertext() {
+        let key = [7_u8; 16];
+        let ciphertext = encrypt_aes_128_ecb(b"hello wechat", &key).unwrap();
+        let plaintext = decrypt_aes_128_ecb(&ciphertext, &key).unwrap();
+        assert_eq!(plaintext, b"hello wechat");
+    }
+
+    #[test]
+    fn inbound_image_payload_keeps_item_list_for_media_hydration() {
+        let payload = json!({
+            "message_id": "img-1",
+            "from_user_id": "wx-user-1",
+            "session_id": "",
+            "message_type": 1,
+            "create_time_ms": 1700000000_u64,
+            "context_token": "ctx-img",
+            "item_list": [{
+                "type": 2,
+                "image_item": {
+                    "media": {
+                        "encrypt_query_param": "dl-param",
+                        "aes_key": "00112233445566778899aabbccddeeff"
+                    },
+                    "url": "https://cdn.example.com/path/pic.png"
+                }
+            }]
+        });
+
+        let inbound = weixin_message_to_inbound(&payload).unwrap();
+        assert_eq!(inbound.content, "[图片消息]");
+        let item_list = inbound
+            .routing_state
+            .as_ref()
+            .and_then(|value| value.get("item_list"))
+            .and_then(|value| value.as_array())
+            .expect("item_list retained");
+        assert_eq!(item_list.len(), 1);
+        assert_eq!(item_list[0]["type"], MESSAGE_ITEM_TYPE_IMAGE);
     }
 
     #[tokio::test]
