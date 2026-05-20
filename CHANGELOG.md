@@ -6,6 +6,11 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.22] - 2026-05-21
+
+### Fixed
+- **Release pipeline rustfmt regression**: formatted the WeChat iLink media gateway changes to match `cargo fmt --check`, unblocking CI and the tag-based release build for the real-media WeChat fix shipped in v0.7.21.
+
 ## [0.7.21] - 2026-05-21
 
 ### Fixed

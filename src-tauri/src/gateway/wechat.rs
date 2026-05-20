@@ -1333,7 +1333,10 @@ async fn hydrate_wechat_inbound_media(
     let Some(routing_state) = inbound.routing_state.as_ref() else {
         return inbound;
     };
-    let Some(items) = routing_state.get("item_list").and_then(|value| value.as_array()) else {
+    let Some(items) = routing_state
+        .get("item_list")
+        .and_then(|value| value.as_array())
+    else {
         return inbound;
     };
 
@@ -1360,26 +1363,22 @@ async fn download_wechat_media_attachment(
         let item_type = item["type"].as_u64().unwrap_or(0) as u8;
         match item_type {
             MESSAGE_ITEM_TYPE_IMAGE => {
-                if let Some(media) = download_wechat_image_attachment(client, msg_id, item).await?
-                {
+                if let Some(media) = download_wechat_image_attachment(client, msg_id, item).await? {
                     return Ok(Some(media));
                 }
             }
             MESSAGE_ITEM_TYPE_VOICE => {
-                if let Some(media) = download_wechat_voice_attachment(client, msg_id, item).await?
-                {
+                if let Some(media) = download_wechat_voice_attachment(client, msg_id, item).await? {
                     return Ok(Some(media));
                 }
             }
             MESSAGE_ITEM_TYPE_FILE => {
-                if let Some(media) = download_wechat_file_attachment(client, msg_id, item).await?
-                {
+                if let Some(media) = download_wechat_file_attachment(client, msg_id, item).await? {
                     return Ok(Some(media));
                 }
             }
             MESSAGE_ITEM_TYPE_VIDEO => {
-                if let Some(media) = download_wechat_video_attachment(client, msg_id, item).await?
-                {
+                if let Some(media) = download_wechat_video_attachment(client, msg_id, item).await? {
                     return Ok(Some(media));
                 }
             }
