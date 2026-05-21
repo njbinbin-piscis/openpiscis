@@ -937,27 +937,44 @@ pub async fn assign_koi(
     });
 
     // Wake the target Koi via the subagent runtime (fire-and-forget;
-    // the coordinator spawns its own tokio task so the mention path
+    // the coordinator spawns its own tokio task so the execution path
     // doesn't stall the tool response).
+    //
+    // IMPORTANT: We dispatch execute_todo_turn directly with the
+    // pre-created todo — NOT through handle_mention — to avoid creating
+    // a duplicate todo. handle_mention blindly creates a new todo for
+    // every @! mention, but assign_koi already created one above.
     if let Some(sub) = subagent {
-        if let Err(e) = coordinator::handle_mention(
-            store,
-            sink.clone(),
-            sub,
-            cfg,
-            "pisci",
-            &session.id,
-            &mention,
-        )
-        .await
-        {
-            tracing::warn!(
-                target: "pool::services",
-                pool_id = %session.id,
-                koi_id = %koi_id,
-                "assign_koi handle_mention failed: {e}"
-            );
-        }
+        let store = store.clone();
+        let sink = sink.clone();
+        let cfg = cfg.clone();
+        let koi_id_clone = koi_id.clone();
+        let todo_id = todo.id.clone();
+        let msg_id = msg.id;
+        let session_id = format!(
+            "koi_task_{}_{}",
+            koi_id_clone,
+            &todo_id[..8.min(todo_id.len())]
+        );
+        tokio::spawn(async move {
+            let args = coordinator::ExecuteTodoArgs {
+                koi_id: koi_id_clone.clone(),
+                todo_id,
+                assign_msg_id: Some(msg_id),
+                session_id,
+                extra_tool_profile: Vec::new(),
+                extra_system_context: None,
+            };
+            if let Err(e) =
+                coordinator::execute_todo_turn(&store, sink, sub, &cfg, args).await
+            {
+                tracing::warn!(
+                    target: "pool::services",
+                    koi_id = %koi_id_clone,
+                    "assign_koi execute_todo_turn failed: {e}"
+                );
+            }
+        });
     }
 
     Ok(json!({

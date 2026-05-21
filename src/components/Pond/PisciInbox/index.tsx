@@ -18,7 +18,7 @@ type PisciInboxProps = {
 
 function isKoiObserverSession(session: Session): boolean {
   const id = session.id ?? "";
-  return id.startsWith("koi_runtime_") || id.startsWith("koi_notify_");
+  return id.startsWith("koi_runtime_") || id.startsWith("koi_notify_") || id.startsWith("koi_task_");
 }
 
 function isCoordinationSession(session: Session): boolean {

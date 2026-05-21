@@ -10,7 +10,7 @@ Treat this run as triage/coordination only:
 - Read `pool_chat(action="read")` and `pool_org(action="get_todos", pool_id="{pool_id}")` to inspect the latest state.
 - Decide whether the message is actually actionable right now, or merely informational / future-looking / a status recap.
 - If it is only informational, do nothing and stop.
-- If work should exist on the board, create or update the right todo(s), or notify the right teammate with `@!Name` when you are explicitly delegating concrete work.
+- If work should exist on the board: first check `pool_org(action="get_todos")` whether a matching todo already exists. If one exists, decide whether to claim/update it. Only create a new todo (`pool_org(action="create_todo")`) if no matching one exists. Or notify the right teammate with `@!Name` when you are explicitly delegating concrete work.
 - Do NOT claim a todo, do NOT start implementation, and do NOT perform file-writing / shell-mutating work in this notification run. Plain `@mention` is for awareness and routing, not immediate forced execution.
 - Do not post acknowledgement-only messages. Post to pool_chat only when you have something genuinely new or actionable.
 

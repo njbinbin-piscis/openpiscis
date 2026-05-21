@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.24] - 2026-05-21
+
+### Fixed
+- **Koi duplicate todos (one done, one pending forever)**: `assign_koi` was creating a kanban todo AND then calling `handle_mention`, which unconditionally created a second todo for the `@!` mention. The Koi executed the duplicate while the original stayed "todo" forever. Fixed by dispatching `execute_todo_turn` directly with the pre-created todo instead of routing through `handle_mention`.
+- **Koi Observer (观察台) showing empty despite active/completed tasks**: the frontend `isKoiObserverSession` filter only matched `koi_runtime_` and `koi_notify_` session-ID prefixes, but all Koi task sessions actually use `koi_task_` prefix. Added `koi_task_` to the filter so work records are visible.
+- **Koi activation prompt now guards against duplicate todo creation**: `koi_activate_for_messages.txt` now instructs Kois to check `pool_org(action="get_todos")` for existing matching todos before creating a new one — a second layer of defense against future duplication bugs.
+
 ## [0.7.23] - 2026-05-21
 
 ### Fixed
