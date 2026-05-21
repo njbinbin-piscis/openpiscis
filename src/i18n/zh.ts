@@ -522,6 +522,10 @@ const zh = {
     fishSession: "小鱼会话",
     fishSessionHint: "正在与小鱼对话",
     fishNotActivated: "此小鱼尚未激活，请前往「小鱼」页面激活后再对话。",
+    workspaceLabel: "工作区",
+    workspaceBrowse: "浏览...",
+    workspaceBrowseTitle: "选择工作目录",
+    workspaceReset: "恢复默认",
   },
 
   // 记忆

@@ -522,6 +522,10 @@ const en = {
     fishSession: "Fish Session",
     fishSessionHint: "Chatting with a Fish agent",
     fishNotActivated: "This Fish is not activated. Please activate it on the Fish page before chatting.",
+    workspaceLabel: "Workspace",
+    workspaceBrowse: "Browse...",
+    workspaceBrowseTitle: "Select Workspace Directory",
+    workspaceReset: "Reset to Default",
   },
 
   // Memory
