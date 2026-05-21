@@ -965,9 +965,7 @@ pub async fn assign_koi(
                 extra_tool_profile: Vec::new(),
                 extra_system_context: None,
             };
-            if let Err(e) =
-                coordinator::execute_todo_turn(&store, sink, sub, &cfg, args).await
-            {
+            if let Err(e) = coordinator::execute_todo_turn(&store, sink, sub, &cfg, args).await {
                 tracing::warn!(
                     target: "pool::services",
                     koi_id = %koi_id_clone,
