@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.7.25] - 2026-05-21
+
+### Fixed
+- **`desktop_automation` PowerShell/cmd windows steal focus on Windows**: every `move_mouse`, `click`, `type_text`, `hotkey`, `list_windows`, `activate_window`, and `launch_app` invocation was spawning a visible console window, stealing focus and potentially obscuring screen captures. Added `CREATE_NO_WINDOW` (0x08000000) flag to the shared `run_cmd()` helper so all Windows subprocess launchers across `desktop_automation` run silently in the background.
+- **Vision model 400 error on DashScope / compatible APIs**: when images were present, the OpenAI message converter flushed `pending_vision` as a user message whose content array contained only `image_url` items without a leading `text` item. Some providers (e.g. DashScope compatible-mode) reject this with "Unexpected item type in content." Fixed by prepending a short text placeholder (`[Tool-generated image(s)]`) to any image-only content array.
+- **Missing i18n keys in chat workspace dropdown**: the chat input area's workspace directory selector now shows properly translated labels (`workspaceBrowse`, `workspaceLabel`, `workspaceReset`) instead of raw i18n keys.
+
 ## [0.7.24] - 2026-05-21
 
 ### Fixed

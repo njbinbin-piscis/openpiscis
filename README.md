@@ -18,11 +18,14 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.7.23
+## 🆕 What's New in v0.7.25
 
-- **WeChat inbound media now arrives as real files**: images, voice messages, files, and videos received through the iLink gateway are downloaded from WeChat CDN storage, decrypted locally, and passed into Pisci as real attachment bytes instead of placeholder notifications.
-- **WeChat outbound media is more compatible**: outbound CDN media payloads now follow the iLink SDK's `aes_key` encoding format, reducing cases where WeChat clients showed attachments as expired or already cleared.
-- **Cancelled streaming replies keep partial output**: if a user cancels a streaming LLM response after some text has already arrived, Pisci now preserves that partial assistant message in session history instead of dropping it.
+- **Silent desktop automation on Windows**: `desktop_automation` actions (`move_mouse`, `click`, `type_text`, etc.) no longer flash visible PowerShell/cmd windows — they now run silently in the background, preventing focus theft and obscured screen captures.
+- **Vision model 400 error fixed**: when using a vision model with DashScope or similar OpenAI-compatible providers, image-only content arrays now include a leading text placeholder so the API accepts the request without "Unexpected item type in content" errors.
+- **Koi duplicate-todo fix**: `assign_koi` no longer creates a duplicate todo when delegating work to a Koi. Each task assignment now produces exactly one todo that moves through the Kanban lifecycle.
+- **Koi Observer now shows task sessions**: the Koi Observer tab in the Pond UI now correctly displays Koi task runtime sessions (previously only notification and internal sessions were visible).
+- **Koi activation prompt hardened**: when a Koi is @mentioned and wakes up, it now checks existing todos first before creating new ones — a second-layer defense against duplicate work.
+- **Workspace dropdown i18n fix**: the chat input area's workspace directory dropdown now shows proper translated labels instead of raw i18n keys.
 
 ## ✨ Key Features
 
