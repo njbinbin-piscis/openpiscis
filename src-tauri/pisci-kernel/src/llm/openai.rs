@@ -337,9 +337,16 @@ impl OpenAiClient {
                     pending_vision.len(),
                     m.role
                 );
+                // Some API providers (e.g. DashScope) reject content arrays
+                // that contain only image items without a leading text item.
+                // Prepend a short text placeholder to keep the array valid.
+                let mut flushed = std::mem::take(&mut pending_vision);
+                if !flushed.iter().any(|v| v["type"] == "text") {
+                    flushed.insert(0, json!({"type": "text", "text": "[Tool-generated image(s)]"}));
+                }
                 result.push(json!({
                     "role": "user",
-                    "content": std::mem::take(&mut pending_vision)
+                    "content": flushed
                 }));
             }
 
@@ -484,6 +491,11 @@ impl OpenAiClient {
                                 continue;
                             }
                         }
+                        // Some providers reject content arrays with only image items.
+                        // Prepend a short text placeholder if no text item exists.
+                        if !parts.is_empty() && !parts.iter().any(|v| v["type"] == "text") {
+                            parts.insert(0, json!({"type": "text", "text": "[Image(s)]"}));
+                        }
                         result.push(json!({"role": m.role, "content": parts}));
                     }
                 }
@@ -492,9 +504,14 @@ impl OpenAiClient {
 
         // Flush any remaining pending vision images
         if !pending_vision.is_empty() {
+            // Same as above: prepend text placeholder for providers that
+            // reject content arrays containing only image items.
+            if !pending_vision.iter().any(|v| v["type"] == "text") {
+                pending_vision.insert(0, json!({"type": "text", "text": "[Tool-generated image(s)]"}));
+            }
             result.push(json!({
                 "role": "user",
-                "content": pending_vision
+                "content": std::mem::take(&mut pending_vision)
             }));
         }
 
