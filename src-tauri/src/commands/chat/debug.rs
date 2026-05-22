@@ -1777,25 +1777,25 @@ fn summarize_input(tool_name: &str, input: &serde_json::Value) -> String {
 }
 
 fn read_log_tail(n: usize) -> Vec<String> {
-    let log_dir = {
-        #[cfg(target_os = "windows")]
-        {
-            dirs::data_local_dir()
-                .map(|d| d.join("pisci").join("logs"))
-                .unwrap_or_else(|| std::path::PathBuf::from("logs"))
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            std::path::PathBuf::from("logs")
-        }
-    };
+    let log_dir = crate::app::logging::log_dir();
 
     let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
     let log_file = log_dir.join(format!("pisci.log.{}", today));
 
-    if !log_file.exists() {
-        return vec![format!("Log file not found: {}", log_file.display())];
-    }
+    // Fallback: if the dated JSON log doesn't exist, try pisci.latest.log
+    let log_file = if log_file.exists() {
+        log_file
+    } else {
+        let latest = log_dir.join("pisci.latest.log");
+        if latest.exists() {
+            latest
+        } else {
+            return vec![format!(
+                "Log file not found: {} (also checked pisci.latest.log)",
+                log_file.display()
+            )];
+        }
+    };
 
     match std::fs::read_to_string(&log_file) {
         Ok(content) => {
