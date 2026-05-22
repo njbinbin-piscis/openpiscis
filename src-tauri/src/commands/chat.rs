@@ -735,9 +735,9 @@ pub async fn chat_send(
         allow_outside_workspace,
         vision_enabled,
         vision_use_main_llm,
-        vision_provider,
-        vision_model,
-        vision_api_key,
+        _,
+        _,
+        _,
         llm_read_timeout_secs,
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
@@ -829,13 +829,14 @@ pub async fn chat_send(
     // Resolve attachment: convert FrontendAttachment → MediaAttachment
     // For non-vision models or non-image files, we append the path to the message text.
     // For vision models + image data, we pass through as MediaAttachment for inline injection.
-    // vision_capable: user setting AND model auto-detection must both agree.
-    // vision_enabled alone is not enough — text-only models (e.g. qwen3.7-max)
-    // would reject image content arrays with 400 errors.
+    // vision_capable controls vision_override on the MAIN LLM.
+    // - vision_use_main_llm=true: both user setting AND model support required.
+    // - vision_use_main_llm=false: main LLM never gets vision (images are handled
+    //   by the separate vision model via vision_context tool delegation).
     let vision_capable = if vision_use_main_llm {
         vision_enabled && model_supports_vision(&provider, &model)
     } else {
-        !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
+        false
     };
     let (effective_content, media_attachment): (String, Option<crate::gateway::MediaAttachment>) =
         if let Some(att) = attachment {
@@ -1353,9 +1354,9 @@ pub async fn run_agent_headless(
         allow_outside_workspace,
         vision_setting,
         vision_use_main_llm,
-        vision_provider,
-        vision_model,
-        vision_api_key,
+        _,
+        _,
+        _,
         llm_read_timeout_secs,
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
@@ -1443,12 +1444,14 @@ pub async fn run_agent_headless(
         resolve_headless_scene_kind(channel, &desired_session_source, options.as_ref());
     let scene_policy = ScenePolicy::for_kind(scene_kind);
 
-    // vision_capable: user setting AND model auto-detection must both agree.
-    // Also accounts for separate vision model when vision_use_main_llm is false.
+    // vision_capable controls vision_override on the MAIN LLM.
+    // - vision_use_main_llm=true: both user setting AND model support required.
+    // - vision_use_main_llm=false: main LLM never gets vision (images are handled
+    //   by the separate vision model via vision_context tool delegation).
     let vision_capable = if vision_use_main_llm {
         vision_setting && model_supports_vision(&provider, &model)
     } else {
-        !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
+        false
     };
 
     // Build the effective user message text, handling inbound media.
