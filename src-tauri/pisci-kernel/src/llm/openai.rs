@@ -27,9 +27,10 @@ pub fn model_supports_vision(model: &str) -> bool {
         || m.contains("gpt-4-vision")
         || m.contains("gpt-4-turbo")
         || m.contains("o3")
-        // Qwen — all qwen3+ and qwen-vl support vision
+        // Qwen — qwen-vl and qwen*-vl models support vision;
+        // plain "qwen3" text models (e.g. qwen3-235b-a22b) do NOT.
         || m.contains("qwen-vl")
-        || m.contains("qwen3")
+        || m.contains("qwen3-vl")
         || m.contains("qwen2.5-vl")
         || m.contains("qvq")
         // Claude 3+ (all support vision)
@@ -105,6 +106,52 @@ impl OpenAiClient {
             sources.join(" | "),
             err
         )
+    }
+
+    /// Log diagnostic information when an OpenAI-compatible API returns a 400 error.
+    /// Dumps the message sequence summary (role + content type) to help identify
+    /// content-format issues (e.g. DashScope "Unexpected item type in content").
+    fn log_400_diagnostic(
+        status: reqwest::StatusCode,
+        body: &Value,
+        model: &str,
+        url: &str,
+        response_text: &str,
+    ) {
+        if status.as_u16() != 400 {
+            return;
+        }
+        let msg_summary: Vec<String> = body["messages"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .enumerate()
+                    .map(|(i, m)| {
+                        let role = m["role"].as_str().unwrap_or("?");
+                        let content_kind = if m["content"].is_string() {
+                            "string".to_string()
+                        } else if let Some(a) = m["content"].as_array() {
+                            let types: Vec<&str> =
+                                a.iter().filter_map(|v| v["type"].as_str()).collect();
+                            format!("array[{}]", types.join(","))
+                        } else if m["content"].is_null() {
+                            "null".to_string()
+                        } else {
+                            "other".to_string()
+                        };
+                        let has_tc = m.get("tool_calls").is_some();
+                        format!("[{i}] {role} content={content_kind} tc={has_tc}")
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        tracing::error!(
+            "OpenAI API 400 — model={} url={}\n  messages: {}\n  response: {}",
+            model,
+            url,
+            msg_summary.join(" → "),
+            response_text,
+        );
     }
 
     /// Convert an Image block to a safe text placeholder.
@@ -570,6 +617,58 @@ impl OpenAiClient {
             }
         }
 
+        // ── Defensive sanitization of content arrays ─────────────────────────
+        // 1. If a content array has NO image items, collapse to a plain string.
+        //    Some providers (DashScope text-only models) reject content arrays
+        //    entirely, even [{type: "text", text: "..."}].
+        // 2. If a content array has images but no text item, prepend a text
+        //    placeholder (DashScope requires at least one text item).
+        if let Some(arr) = body["messages"].as_array_mut() {
+            for msg in arr.iter_mut() {
+                let role_str = msg["role"].as_str().unwrap_or("?").to_string();
+                let needs_fix = msg.get("content").and_then(|c| c.as_array()).is_some();
+                if !needs_fix {
+                    continue;
+                }
+                let items = msg["content"].as_array().unwrap();
+                let has_image = items.iter().any(|v| v["type"] == "image_url");
+
+                if !has_image {
+                    // No images — collapse to plain text string
+                    let text: String = items
+                        .iter()
+                        .filter_map(|v| {
+                            if v["type"] == "text" {
+                                v["text"].as_str()
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    if !text.is_empty() {
+                        tracing::debug!(
+                            "build_body: sanitization — collapsing text-only content array to string (role={})",
+                            role_str
+                        );
+                        msg["content"] = json!(text);
+                    }
+                } else {
+                    // Has images — ensure a text item exists
+                    let has_text = items.iter().any(|v| v["type"] == "text");
+                    if !has_text {
+                        tracing::warn!(
+                            "build_body: sanitization — prepending text placeholder to image-only content array (role={})",
+                            role_str
+                        );
+                        if let Some(arr) = msg["content"].as_array_mut() {
+                            arr.insert(0, json!({"type": "text", "text": "[Image(s)]"}));
+                        }
+                    }
+                }
+            }
+        }
+
         if !req.tools.is_empty() {
             let tools: Vec<Value> = req
                 .tools
@@ -632,6 +731,7 @@ impl LlmClient for OpenAiClient {
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
+            Self::log_400_diagnostic(status, &body, &req_stream.model, &url, &text);
             return Err(anyhow!("OpenAI API error {}: {}", status, text));
         }
 
@@ -748,6 +848,7 @@ impl LlmClient for OpenAiClient {
         if !response.status().is_success() {
             let status = response.status();
             let text = response.text().await.unwrap_or_default();
+            Self::log_400_diagnostic(status, &body, &req_no_stream.model, &url, &text);
             return Err(anyhow!("OpenAI API error {}: {}", status, text));
         }
 

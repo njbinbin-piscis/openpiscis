@@ -1208,7 +1208,12 @@ pub fn model_supports_vision(provider: &str, model: &str) -> bool {
         return true;
     }
     // Qwen VL models
-    if m.contains("qwen-vl") || m.contains("qwen2-vl") || m.contains("qvq") {
+    if m.contains("qwen-vl")
+        || m.contains("qwen2-vl")
+        || m.contains("qwen2.5-vl")
+        || m.contains("qwen3-vl")
+        || m.contains("qvq")
+    {
         return true;
     }
     // Kimi / Moonshot vision models
