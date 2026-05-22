@@ -567,9 +567,9 @@ impl CallKoiTool {
             allow_outside_workspace,
             vision_enabled,
             vision_use_main_llm,
-            _,
-            _,
-            _,
+            vision_provider,
+            vision_model,
+            vision_api_key,
             auto_compact_input_tokens_threshold,
             loop_max_iterations,
         ) = {
@@ -656,7 +656,7 @@ impl CallKoiTool {
         let vision_capable = if vision_use_main_llm {
             vision_enabled && crate::commands::chat::model_supports_vision(&provider, &model)
         } else {
-            false
+            !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
         };
 
         let cancel = Arc::new(AtomicBool::new(false));

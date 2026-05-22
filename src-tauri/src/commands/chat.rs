@@ -735,9 +735,9 @@ pub async fn chat_send(
         allow_outside_workspace,
         vision_enabled,
         vision_use_main_llm,
-        _,
-        _,
-        _,
+        vision_provider,
+        vision_model,
+        vision_api_key,
         llm_read_timeout_secs,
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
@@ -830,13 +830,17 @@ pub async fn chat_send(
     // For non-vision models or non-image files, we append the path to the message text.
     // For vision models + image data, we pass through as MediaAttachment for inline injection.
     // vision_capable controls vision_override on the MAIN LLM.
-    // - vision_use_main_llm=true: both user setting AND model support required.
-    // - vision_use_main_llm=false: main LLM never gets vision (images are handled
-    //   by the separate vision model via vision_context tool delegation).
+    // When vision_use_main_llm=true: both user setting AND model support must agree
+    //   (prevents forcing vision on text-only models like qwen3.7-max).
+    // When vision_use_main_llm=false: vision_capable is still true if a separate
+    //   vision model is configured, because the main LLM's vision pipeline is needed
+    //   for the screen_capture → vision_context → inject_selected_context workflow.
+    //   Images are injected into the main LLM's messages by the vision artifact
+    //   system; stripping them would make the agent permanently blind.
     let vision_capable = if vision_use_main_llm {
         vision_enabled && model_supports_vision(&provider, &model)
     } else {
-        false
+        !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
     };
     let (effective_content, media_attachment): (String, Option<crate::gateway::MediaAttachment>) =
         if let Some(att) = attachment {
@@ -1354,9 +1358,9 @@ pub async fn run_agent_headless(
         allow_outside_workspace,
         vision_setting,
         vision_use_main_llm,
-        _,
-        _,
-        _,
+        vision_provider,
+        vision_model,
+        vision_api_key,
         llm_read_timeout_secs,
         auto_compact_input_tokens_threshold,
         project_instruction_budget_chars,
@@ -1445,13 +1449,14 @@ pub async fn run_agent_headless(
     let scene_policy = ScenePolicy::for_kind(scene_kind);
 
     // vision_capable controls vision_override on the MAIN LLM.
-    // - vision_use_main_llm=true: both user setting AND model support required.
-    // - vision_use_main_llm=false: main LLM never gets vision (images are handled
-    //   by the separate vision model via vision_context tool delegation).
+    // When vision_use_main_llm=true: both user setting AND model support must agree.
+    // When vision_use_main_llm=false: vision_capable is still true if a separate
+    //   vision model is configured — the main LLM's vision pipeline is needed for
+    //   the screen_capture → vision_context → inject workflow.
     let vision_capable = if vision_use_main_llm {
         vision_setting && model_supports_vision(&provider, &model)
     } else {
-        false
+        !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
     };
 
     // Build the effective user message text, handling inbound media.
