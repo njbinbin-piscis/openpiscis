@@ -2282,7 +2282,25 @@ impl AgentLoop {
                     // and there are image blocks in the messages, send them to the
                     // vision model for analysis and replace with text descriptions.
                     let req_messages = if let Some(ref vision_client) = self.vision_delegate {
-                        Self::delegate_vision_analysis(&req_messages, vision_client.as_ref()).await
+                        let delegated =
+                            Self::delegate_vision_analysis(&req_messages, vision_client.as_ref())
+                                .await;
+                        // Safety net: strip any remaining image blocks that the delegate
+                        // didn't process (e.g. from older tool results kept by strip_images).
+                        // The main LLM must NEVER see image content.
+                        delegated
+                            .into_iter()
+                            .map(|mut m| {
+                                if let crate::llm::MessageContent::Blocks(ref mut blocks) =
+                                    m.content
+                                {
+                                    blocks.retain(|b| {
+                                        !matches!(b, crate::llm::ContentBlock::Image { .. })
+                                    });
+                                }
+                                m
+                            })
+                            .collect()
                     } else {
                         req_messages
                     };
