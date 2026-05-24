@@ -8,7 +8,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
-## [0.7.36] - 2026-05-24
+## [0.7.37] - 2026-05-24
+
+### Fixed
+- **Vision image re-injection loop: same screenshot re-processed every iteration causing LLM to output identical content**: `inject_selected_context` injects selected vision artifacts into `req_messages` (a per-call local variable). Since `req_messages` is discarded after each LLM call, the persistent `messages` vector never received the vision analysis text. On every subsequent iteration, the same selected images were re-injected, the vision delegate (or main model) produced the same description, and the main LLM saw an identical context — causing it to output the same response repeatedly. Fixed by calling `vision::clear_selection()` immediately after images have been consumed by `inject_selected_context`, for both the vision-delegate path and the main-model-as-vision path. Agents can re-select via `vision_context(action="select")` if they need to examine an image again.
+- **Todo reminder injection loop: agent loops indefinitely when it has unfinished todos but emits no tool calls**: when the LLM returned a text-only response with unfinished plan todos, the loop injected a reminder message and continued — but there was no upper bound, so if the model kept producing text without tool calls the reminder was injected forever. Added `TODO_REMINDER_MAX = 3` cap: after 3 consecutive reminder injections the loop exits normally.
+- **Vision validation test image rejected by Qwen/Alibaba models**: the 1×1 transparent PNG used to probe vision support was rejected by Qwen3.6-plus with "image length and width do not meet model restrictions" (minimum 10×10). Replaced the test image with the project's own pisci icon (512×512, embedded via `include_bytes!`). Also added an `is_image_size_error` guard so image-dimension rejection is correctly interpreted as "model supports vision" rather than "model does not support vision".
+- **`tauri.conf.json` version not bumped to match release tag**: Tauri reads `version` from `tauri.conf.json` to name build artefacts (e.g. `OpenPisci_0.7.35_amd64.deb`). This field was left at 0.7.35 when the v0.7.36 tag was cut, so all artefact filenames showed the wrong version. Now kept in sync with `package.json` and `Cargo.toml`.
 
 ### Fixed
 - **Vision model delegation broken: separate vision model ignored, "missing model parameter" error**: when a non-vision main model was paired with a separate vision model (e.g. DeepSeek + qwen3.6-plus), the vision model name was never passed to the API — `delegate_vision_analysis()` always used `model: ""` in the request, causing providers to reject it. Additionally, `vision_base_url` was never forwarded to the vision delegate client, breaking custom endpoints (DashScope, etc.). Fixed by:
