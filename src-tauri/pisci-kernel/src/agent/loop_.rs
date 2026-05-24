@@ -1961,6 +1961,11 @@ impl AgentLoop {
         let mut rolling_summary = String::new();
         let mut seen_notifications: HashSet<String> =
             restored_seen_notifications.unwrap_or_default();
+        // Guard: limit how many times we re-prompt for unfinished todos.
+        // After this many consecutive text-only (no tool call) responses with
+        // unfinished todos, stop injecting reminders and exit gracefully.
+        const TODO_REMINDER_MAX: usize = 2;
+        let mut todo_reminder_count: usize = 0;
         let mut rolling_summary_version = 0i64;
         let mut cumulative_input_tokens = 0i64;
         let mut cumulative_output_tokens = 0i64;
@@ -2611,11 +2616,14 @@ impl AgentLoop {
                     vec![]
                 };
 
-                if !unfinished_todos.is_empty() {
+                if !unfinished_todos.is_empty() && todo_reminder_count < TODO_REMINDER_MAX {
                     // Inject a reminder and continue the loop instead of breaking
+                    todo_reminder_count += 1;
                     warn!(
-                        "LLM tried to exit with {} unfinished todo(s), injecting reminder",
-                        unfinished_todos.len()
+                        "LLM tried to exit with {} unfinished todo(s), injecting reminder ({}/{})",
+                        unfinished_todos.len(),
+                        todo_reminder_count,
+                        TODO_REMINDER_MAX
                     );
                     let asst_msg = LlmMessage {
                         role: "assistant".into(),
@@ -2656,6 +2664,8 @@ impl AgentLoop {
             // ── Per-tool loop detection (before execution) ──────────────────
             // Check each tool call against the sliding window history.
             // Critical = block the tool call; Warning = inject hint but continue.
+            // Reset the todo reminder counter since the LLM is making progress.
+            todo_reminder_count = 0;
             let mut blocked_tool_ids: Vec<String> = Vec::new();
             let mut warning_messages: Vec<String> = Vec::new();
             for (id, name, input) in &tool_calls {
