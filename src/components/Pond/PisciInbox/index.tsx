@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChatMessage, Session, sessionsApi, poolApi, openPath } from "../../../services/tauri";
+import { ChatMessage, Session, sessionsApi, poolApi, koiApi, openPath } from "../../../services/tauri";
+import type { KoiWithStats } from "../../../services/tauri/pool";
+import { RootState, koiActions } from "../../../store";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import { isInternalSession } from "../../../utils/session";
 import ConfirmDialog from "../../ConfirmDialog";
@@ -19,6 +22,28 @@ type PisciInboxProps = {
 function isKoiObserverSession(session: Session): boolean {
   const id = session.id ?? "";
   return id.startsWith("koi_runtime_") || id.startsWith("koi_notify_") || id.startsWith("koi_task_");
+}
+
+/**
+ * Extract the koi id embedded in a koi-observer session id.
+ * Session id formats produced by the backend:
+ *   koi_runtime_{koi_id}_{pool_id}
+ *   koi_notify_{koi_id}_{pool_id}
+ *   koi_task_{koi_id}_{first8_of_todo_id}
+ * Koi ids are UUIDs (contain hyphens but no underscores), so the koi id is
+ * the segment between the prefix and the trailing pool/todo suffix.
+ */
+function extractKoiIdFromSessionId(sessionId: string): string | null {
+  const prefixes = ["koi_runtime_", "koi_notify_", "koi_task_"];
+  for (const prefix of prefixes) {
+    if (sessionId.startsWith(prefix)) {
+      const rest = sessionId.slice(prefix.length);
+      // The koi id is everything up to the last underscore.
+      const lastUnderscore = rest.lastIndexOf("_");
+      return lastUnderscore > 0 ? rest.slice(0, lastUnderscore) : rest;
+    }
+  }
+  return null;
 }
 
 function isCoordinationSession(session: Session): boolean {
@@ -71,10 +96,17 @@ function inboxMessageRoleLabel(
   t: (key: string) => string,
   mode: InboxMode,
   role: ChatMessage["role"],
+  koiName?: string | null,
+  koiIcon?: string | null,
 ): string {
   if (mode === "koiObserver") {
     switch (role) {
       case "assistant":
+        // Prefer the real Koi name (with icon if available) over the generic
+        // "Koi" label so users can tell which Koi sent which message.
+        if (koiName) {
+          return koiIcon ? `${koiIcon} ${koiName}` : koiName;
+        }
         return t("pond.observerRoleAssistant");
       case "user":
         return t("pond.observerRoleUser");
@@ -108,6 +140,8 @@ function sessionKindLabel(t: (key: string) => string, mode: InboxMode, session: 
 
 export default function PisciInbox({ mode = "coordination" }: PisciInboxProps) {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const kois = useSelector((s: RootState) => s.koi.kois) as KoiWithStats[];
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -182,6 +216,14 @@ export default function PisciInbox({ mode = "coordination" }: PisciInboxProps) {
   useEffect(() => {
     loadSessions().catch(console.error);
   }, [loadSessions]);
+
+  // Load the Koi registry once so we can resolve the real Koi name/icon for
+  // assistant messages shown in the koi observer.
+  useEffect(() => {
+    if (mode !== "koiObserver") return;
+    if (kois.length > 0) return;
+    koiApi.list().then((list) => dispatch(koiActions.setKois(list))).catch(() => {});
+  }, [mode, kois.length, dispatch]);
 
   useEffect(() => {
     if (!activeSessionId) {
@@ -272,6 +314,15 @@ export default function PisciInbox({ mode = "coordination" }: PisciInboxProps) {
       };
 
   const activeSession = internalSessions.find((session) => session.id === activeSessionId) ?? null;
+
+  // Resolve the Koi backing the currently active observer session so we can
+  // label assistant messages with the real Koi name + icon.
+  const activeKoi = useMemo<KoiWithStats | null>(() => {
+    if (mode !== "koiObserver" || !activeSession) return null;
+    const koiId = extractKoiIdFromSessionId(activeSession.id);
+    if (!koiId) return null;
+    return kois.find((k) => k.id === koiId) ?? null;
+  }, [mode, activeSession, kois]);
 
   return (
     <div className="pisci-inbox">
@@ -372,7 +423,7 @@ export default function PisciInbox({ mode = "coordination" }: PisciInboxProps) {
                 <div key={message.id} className={`pisci-inbox-message pisci-inbox-message--${message.role}`}>
                   <div className="pisci-inbox-message-header">
                     <span className="pisci-inbox-message-role">
-                      {inboxMessageRoleLabel(t, mode, message.role)}
+                      {inboxMessageRoleLabel(t, mode, message.role, activeKoi?.name, activeKoi?.icon)}
                     </span>
                     <span className="pisci-inbox-message-time">{formatTime(message.created_at)}</span>
                   </div>

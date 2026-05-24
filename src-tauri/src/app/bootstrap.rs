@@ -329,6 +329,8 @@ fn run_impl() {
                 scheduled_job_ids: state.scheduled_job_ids.clone(),
                 gateway: state.gateway.clone(),
                 pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                terminals: state.terminals.clone(),
+                file_watchers: state.file_watchers.clone(),
             };
             app.manage(managed_state);
 
@@ -357,6 +359,8 @@ fn run_impl() {
                 let app_h = app_handle.clone();
                 let sched = state.scheduler.clone();
                 let pisci_heartbeat_cursor = state.pisci_heartbeat_cursor.clone();
+                let terminals = state.terminals.clone();
+                let file_watchers = state.file_watchers.clone();
                 let im_session_locks: std::sync::Arc<
                     tokio::sync::Mutex<
                         std::collections::HashMap<
@@ -406,6 +410,8 @@ fn run_impl() {
                                         scheduled_job_ids: scheduled_job_ids.clone(),
                                         gateway: gateway.clone(),
                                         pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                        terminals: terminals.clone(),
+                                        file_watchers: file_watchers.clone(),
                                     },
                                 )
                                 .await
@@ -568,6 +574,8 @@ fn run_impl() {
                                     scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                    terminals: terminals.clone(),
+                                    file_watchers: file_watchers.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -640,6 +648,8 @@ fn run_impl() {
                                     scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                    terminals: terminals.clone(),
+                                    file_watchers: file_watchers.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -778,6 +788,8 @@ fn run_impl() {
                 let scheduled_job_ids_arc = state.scheduled_job_ids.clone();
                 let gateway_arc = state.gateway.clone();
                 let pisci_heartbeat_cursor_arc = state.pisci_heartbeat_cursor.clone();
+                let terminals_arc = state.terminals.clone();
+                let file_watchers_arc = state.file_watchers.clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
                         let (enabled, interval_mins, prompt) = {
@@ -819,6 +831,8 @@ fn run_impl() {
                             scheduled_job_ids: scheduled_job_ids_arc.clone(),
                             gateway: gateway_arc.clone(),
                             pisci_heartbeat_cursor: pisci_heartbeat_cursor_arc.clone(),
+                            terminals: terminals_arc.clone(),
+                            file_watchers: file_watchers_arc.clone(),
                         };
                         let _ = crate::pisci::heartbeat::dispatch_heartbeat(
                             &state_ref,
@@ -1090,6 +1104,8 @@ fn run_impl() {
                     scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                    terminals: state.terminals.clone(),
+                    file_watchers: state.file_watchers.clone(),
                 };
                 let startup_trial_state = store::AppState {
                     db: state.db.clone(),
@@ -1104,6 +1120,8 @@ fn run_impl() {
                     scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                    terminals: state.terminals.clone(),
+                    file_watchers: state.file_watchers.clone(),
                 };
 
                 if let Ok(prompt) = std::env::var("PISCI_HEADLESS_PROMPT") {
@@ -1322,6 +1340,29 @@ fn run_impl() {
             commands::pool::board::complete_koi_todo,
             commands::pool::board::resume_koi_todo,
             commands::pool::board::delete_koi_todo,
+            // ide/
+            commands::ide::ide_list_files,
+            commands::ide::ide_read_file,
+            commands::ide::ide_write_file,
+            commands::ide::ide_file_action,
+            commands::ide::ide_search_files,
+            commands::ide::ide_git_status,
+            commands::ide::ide_git_diff,
+            commands::ide::ide_git_branches,
+            commands::ide::ide_git_file_at_ref,
+            commands::ide::ide_git_add,
+            commands::ide::ide_git_reset,
+            commands::ide::ide_git_add_all,
+            commands::ide::ide_git_reset_all,
+            commands::ide::ide_git_commit,
+            commands::ide::ide_git_checkout,
+            commands::ide::ide_git_create_branch,
+            commands::ide::ide_terminal_create,
+            commands::ide::ide_terminal_write,
+            commands::ide::ide_terminal_resize,
+            commands::ide::ide_terminal_destroy,
+            commands::ide::ide_start_watcher,
+            commands::ide::ide_stop_watcher,
             // platform/
             commands::platform::system::get_vm_status,
             commands::platform::system::get_runtime_capabilities,

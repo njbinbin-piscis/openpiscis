@@ -19,5 +19,6 @@
 
 pub mod chat;
 pub mod config;
+pub mod ide;
 pub mod platform;
 pub mod pool;

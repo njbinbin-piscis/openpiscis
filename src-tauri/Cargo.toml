@@ -39,7 +39,7 @@ pisci-cli = { path = "pisci-cli" }
 
 [package]
 name = "pisci-desktop"
-version = "0.7.37"
+version = "0.8.0"
 autobins = false
 default-run = "pisci-desktop"
 description = "OpenPisci - Open-source Windows AI Agent Desktop"
@@ -137,6 +137,12 @@ encoding_rs = "0.8.35"
 aes = "0.8.4"
 ecb = "0.1.2"
 md5 = "0.8.0"
+
+# File system watcher (for IDE file change bridge)
+notify = "7"
+
+# PTY for embedded IDE terminal
+portable-pty = "0.8"
 
 # Linux-specific (conditional)
 # (no additional crates needed; mouse movement uses C helper binary)

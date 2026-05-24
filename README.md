@@ -18,12 +18,28 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.7.36
+## 🆕 What's New in v0.8.0
 
-- **Vision model delegation fixed**: separate vision models (e.g. qwen3.6-plus) now properly receive the model name and base URL in API requests — previously the model was silently dropped, causing \"missing model parameter\" errors. The vision delegate pipeline (`HarnessConfig` → `AgentLoop` → `delegate_vision_analysis`) now threads the configured vision model end-to-end.
-- **Real API validation at save time**: when you configure a vision model, Pisci now makes a real API call with a test image to verify the model actually supports vision before saving. No more silent misconfiguration.
-- **Vision logic respects user intent**: the `vision_capable` flag now strictly follows your `vision_enabled` checkbox — no more silent auto-detection that could enable vision on text-only models when you explicitly left it off.
-- **Better model detection**: `model_supports_vision()` now recognizes `qwen3.6-plus`, `qwen3-plus`, `qwen-omni`, `o4`, and `claude-4` in addition to previously supported models.
+A major release that brings a **fully embedded VS Code-style IDE** into the Pond workspace, so Pisci, Koi and you can edit code side-by-side in the same window.
+
+### 🧑‍💻 Embedded Monaco IDE (new `Pond → IDE` tab)
+- **Activity-bar layout**: Explorer / Search / Source Control sidebars + Monaco editor + integrated terminal, all themed to match the violet/black Pisci palette.
+- **Live file watcher**: backed by the `notify` crate — any edit a Koi makes through `file_write` / `file_edit` immediately refreshes the file tree, the git status badges and the currently open editor tab (dirty local edits are preserved).
+- **Integrated terminal**: real PTY via `portable-pty`, xterm.js front-end, auto-focus on open, and the listener is registered **before** the PTY starts so the shell's first prompt is never lost.
+- **In-file search**: ripgrep when available with a native Rust fallback; surfaces backend errors inline instead of silently returning zero results.
+- **Source Control**: stage / unstage individual files or all at once (atomic `git add -A` / `git reset HEAD --` — no more partial staging from concurrent index-lock collisions), commit with message, view & checkout branches, create new branches from HEAD, with a special **Koi Branches** section showing worktree branches owned by your agents.
+
+### 🔭 Pond improvements
+- **Koi Observer** now labels each assistant message with the **real Koi name + icon** (resolved from the session id) instead of the generic “Koi” label, so multi-agent transcripts are readable at a glance.
+- **Chat input auto-focuses** as soon as an iteration finishes — no extra mouse click needed before typing the next prompt.
+
+### 🛠️ Quality of life
+- Sidebar resize handle has a sane minimum width and the commit message input shrinks with the panel instead of pushing the Commit button off-screen.
+- Welcome screen uses the real Pisci logo with a violet gradient backdrop and properly stacked title/hint.
+
+## 🕘 Previous releases
+
+- **v0.7.36 / v0.7.37** — Vision model delegation fixed: separate vision models (e.g. qwen3.6-plus) now properly receive the model name and base URL in API requests; real API validation at save time; `vision_capable` strictly follows the user toggle; `model_supports_vision()` now recognizes `qwen3.6-plus`, `qwen3-plus`, `qwen-omni`, `o4`, and `claude-4`.
 
 ## ✨ Key Features
 

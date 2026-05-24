@@ -38,6 +38,10 @@ pub struct AppState {
     pub gateway: Arc<crate::gateway::GatewayManager>,
     /// Per-pool heartbeat cursor: pool_id -> last processed pool_message.id
     pub pisci_heartbeat_cursor: Arc<Mutex<std::collections::HashMap<String, i64>>>,
+    /// IDE terminal session registry
+    pub terminals: Arc<Mutex<crate::commands::ide::TerminalRegistry>>,
+    /// IDE file watcher registry: project_dir -> notify watcher handle
+    pub file_watchers: Arc<Mutex<std::collections::HashMap<String, notify::RecommendedWatcher>>>,
 }
 
 impl AppState {
@@ -88,6 +92,8 @@ impl AppState {
             interactive_responses: Arc::new(Mutex::new(std::collections::HashMap::new())),
             gateway: Arc::new(crate::gateway::GatewayManager::new()),
             pisci_heartbeat_cursor: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            terminals: Arc::new(Mutex::new(crate::commands::ide::TerminalRegistry::new())),
+            file_watchers: Arc::new(Mutex::new(std::collections::HashMap::new())),
         })
     }
 }

@@ -666,6 +666,15 @@ export default function Chat() {
         setTaskPanelTab("artifacts");
       }
     }
+    // When a run finishes (true → false), automatically re-focus the chat
+    // input so the user can keep typing without an extra mouse click.
+    if (!running && prevRunningRef.current) {
+      // The textarea is briefly `disabled` while running; defer one tick so
+      // the browser re-enables it before we focus.
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    }
     prevRunningRef.current = running;
   }, [running, activePlan.length, steps.length, activeArtifacts.length]);
   useEffect(() => {

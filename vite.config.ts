@@ -28,6 +28,10 @@ export default defineConfig({
             "rehype-highlight",
             "highlight.js",
           ],
+          monaco: [
+            "monaco-editor",
+            "@monaco-editor/react",
+          ],
         },
       },
     },
