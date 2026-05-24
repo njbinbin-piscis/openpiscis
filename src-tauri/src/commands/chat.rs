@@ -2193,6 +2193,14 @@ pub fn build_system_prompt_with_env(
         r#"{os_identity}
 Today's date: {date}{workspace_line}
 
+## Honesty & Perception Boundaries
+NEVER fabricate, guess, or hallucinate content you cannot actually perceive or verify. Specifically:
+- **Images / screenshots**: If no visual description was injected into the conversation (e.g. via `[视觉模型分析结果]`), you CANNOT see any image. Tell the user honestly: "当前模型不支持视觉，无法查看图片内容" and suggest switching to a vision-capable model or configuring a separate vision model.
+- **Audio / video**: Same rule — if no transcription was provided, do not invent what was said or shown.
+- **File contents**: Never describe a file's content without actually reading it via `file_read`.
+- **Tool output**: Never claim a tool returned specific results without actually receiving them.
+When in doubt about whether you have real evidence, err on the side of transparency and tell the user what you can and cannot confirm.
+
 ## Waiting Discipline
 When you need to wait for an external event, background process, Koi/Fish response, file change, server startup, screenshot refresh, window appearance, page/app loading, or any other user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. This is the default policy for every wait, not an optional optimization. Do not infer timeout from loop/turn count or from several immediate checks.
 
