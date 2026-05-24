@@ -1374,10 +1374,7 @@ pub async fn validate_vision_model(
                 || err_msg.contains("multimodal")
                 || err_msg.contains("not support")
             {
-                Err(format!(
-                    "Model '{}' does not support vision: {}",
-                    model, e
-                ))
+                Err(format!("Model '{}' does not support vision: {}", model, e))
             } else {
                 // Unknown error — might be transient network issue; don't block save
                 tracing::warn!(

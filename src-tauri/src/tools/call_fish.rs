@@ -214,7 +214,8 @@ When you need to wait for an external event, background process, Koi/Fish respon
         let vision_capable = if vision_use_main_llm {
             vision_enabled
         } else {
-            if !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty() {
+            if !vision_provider.is_empty() && !vision_model.is_empty() && !vision_api_key.is_empty()
+            {
                 true
             } else {
                 vision_enabled
