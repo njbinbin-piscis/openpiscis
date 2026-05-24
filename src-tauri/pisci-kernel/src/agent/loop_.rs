@@ -32,20 +32,22 @@ const LLM_MAX_RETRIES: u32 = 3;
 const READ_TOOL_MAX_CONCURRENCY: usize = 4;
 
 // ── Runtime guard thresholds ─────────────────────────────────────────────────
-// Purpose: prevent infinite loops where the agent is stuck making zero progress
-// with identical input+output. Agents must still be free to iterate through
-// multi-step workflows (browser navigation, desktop automation, search, etc.)
-// so thresholds are high enough not to nag on legitimate exploration, but low
-// enough to catch real loops within reasonable time (~10-20 iterations, not 60+).
-const TOOL_CALL_HISTORY_SIZE: usize = 40;
-const WARNING_THRESHOLD: usize = 8;
-const CRITICAL_THRESHOLD: usize = 16;
-const CIRCUIT_BREAKER_THRESHOLD: usize = 12;
-const RESEARCH_WARNING_THRESHOLD: usize = 6;
-const RESEARCH_CRITICAL_THRESHOLD: usize = 12;
-const RESEARCH_RECENT_WINDOW: usize = 16;
-const PING_PONG_WARNING: usize = 8;
-const PING_PONG_CRITICAL: usize = 16;
+// Purpose: ONLY prevent true infinite loops / dead loops where the agent is
+// stuck making zero progress with identical input+output.  We do NOT restrict
+// exploration — agents must be free to try, fail, retry, and iterate through
+// multi-step workflows (browser navigation, desktop automation, search
+// refinement, etc.).  Thresholds are deliberately high so they only fire as
+// a last-resort safety net, never as a premature "you called this too many
+// times" nag.
+const TOOL_CALL_HISTORY_SIZE: usize = 128;
+const WARNING_THRESHOLD: usize = 64;
+const CRITICAL_THRESHOLD: usize = 128;
+const CIRCUIT_BREAKER_THRESHOLD: usize = 64;
+const RESEARCH_WARNING_THRESHOLD: usize = 64;
+const RESEARCH_CRITICAL_THRESHOLD: usize = 128;
+const RESEARCH_RECENT_WINDOW: usize = 64;
+const PING_PONG_WARNING: usize = 64;
+const PING_PONG_CRITICAL: usize = 128;
 const TOOL_RESULT_HARD_MAX_CHARS: usize = 48_000;
 const CONTEXT_SINGLE_RESULT_SHARE: f64 = 0.5;
 const CHECKPOINT_MAX_BYTES: usize = 8_000_000;
@@ -2296,6 +2298,13 @@ impl AgentLoop {
                             &self.vision_model,
                         )
                         .await;
+                        // Clear selection after delegation so the same images are not
+                        // re-injected on the next iteration.  The vision analysis text
+                        // is already embedded in req_messages for this LLM call; the
+                        // LLM's response will reference what it learned.  If the agent
+                        // needs to examine images again, it can re-select via
+                        // vision_context.
+                        vision::clear_selection(&ctx.session_id).await;
                         // Safety net: strip any remaining image blocks that the delegate
                         // didn't process (e.g. from older tool results kept by strip_images).
                         // The main LLM must NEVER see image content.
