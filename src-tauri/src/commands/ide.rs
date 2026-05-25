@@ -1010,6 +1010,11 @@ pub async fn ide_terminal_create(
         })
         .map_err(|e| format!("Failed to open PTY: {}", e))?;
 
+    // On Windows the $SHELL variable is not set (and bash requires WSL).
+    // Fall back to PowerShell which is always available on Windows 10/11.
+    #[cfg(windows)]
+    let shell = "powershell.exe".to_string();
+    #[cfg(not(windows))]
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "bash".to_string());
     let mut cmd = CommandBuilder::new(shell);
     cmd.cwd(&root);
@@ -1172,10 +1177,17 @@ pub async fn ide_start_watcher(
                                 .to_string_lossy()
                                 .to_string();
 
-                            // Skip git internal and node_modules
-                            if rel.starts_with(".git/")
-                                || rel.contains("/node_modules/")
-                                || rel.contains("/.koi-worktrees/")
+                            // Skip git internal and node_modules.
+                            // Normalize to forward slashes so the check works on
+                            // Windows (where paths use backslashes) and avoids a
+                            // feedback loop where `git status` writes to .git\
+                            // which the watcher picks up and triggers another
+                            // git status, causing an infinite process storm.
+                            let rel_norm = rel.replace('\\', "/");
+                            if rel_norm == ".git"
+                                || rel_norm.starts_with(".git/")
+                                || rel_norm.contains("/node_modules/")
+                                || rel_norm.contains("/.koi-worktrees/")
                             {
                                 continue;
                             }
@@ -1231,10 +1243,25 @@ pub async fn ide_stop_watcher(
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
+/// Build a `git` command that never opens a console window on Windows.
+#[cfg(windows)]
+fn new_git_cmd() -> Command {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    let mut cmd = Command::new("git");
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    cmd
+}
+
+#[cfg(not(windows))]
+fn new_git_cmd() -> Command {
+    Command::new("git")
+}
+
 async fn run_git_cmd(dir: &Path, args: &[&str]) -> Result<String, String> {
     let output = timeout(
         Duration::from_secs(30),
-        Command::new("git")
+        new_git_cmd()
             .args(args)
             .current_dir(dir)
             .stdout(Stdio::piped())
