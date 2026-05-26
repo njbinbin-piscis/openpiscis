@@ -8,9 +8,12 @@
 use anyhow::Result;
 use std::path::PathBuf;
 use std::time::Duration;
-#[cfg(not(target_os = "windows"))]
-use tokio::process::Command;
 use tokio::time::{sleep, timeout};
+
+#[cfg(target_os = "linux")]
+use crate::proc::std_command;
+#[cfg(not(target_os = "windows"))]
+use crate::proc::tokio_command;
 
 #[cfg(target_os = "windows")]
 use windows::core::PCWSTR;
@@ -193,7 +196,7 @@ pub async fn run_elevated_shell(
 
     let result = timeout(
         Duration::from_secs(timeout_secs),
-        Command::new("osascript").args(["-e", &script]).output(),
+        tokio_command("osascript").args(["-e", &script]).output(),
     )
     .await;
 
@@ -216,7 +219,7 @@ pub async fn run_elevated_shell(
     let paths = write_unix_wrapper(command, cwd, env)?;
     let result = timeout(
         Duration::from_secs(timeout_secs),
-        Command::new("pkexec")
+        tokio_command("pkexec")
             .args(["/bin/sh", &paths.script_path.to_string_lossy()])
             .output(),
     )
@@ -369,7 +372,7 @@ fn apple_script_escape(value: &str) -> String {
 
 #[cfg(target_os = "linux")]
 fn command_exists(cmd: &str) -> bool {
-    std::process::Command::new("which")
+    std_command("which")
         .arg(cmd)
         .output()
         .map(|output| output.status.success())

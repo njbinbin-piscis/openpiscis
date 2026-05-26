@@ -16,6 +16,7 @@ pub mod memory;
 pub mod notify;
 pub mod policy;
 pub mod pool;
+pub mod proc;
 pub mod project_context;
 pub mod scheduler;
 pub mod security;

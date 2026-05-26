@@ -8,6 +8,7 @@
 //! separate `McpProxyTool` in the tool registry.
 
 use crate::agent::tool::{Tool, ToolContext, ToolResult};
+use crate::proc::tokio_command;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -65,18 +66,14 @@ struct StdioTransport {
 
 impl StdioTransport {
     async fn spawn(config: &McpServerConfig) -> Result<Self> {
-        let mut cmd = tokio::process::Command::new(&config.command);
+        let mut cmd = tokio_command(&config.command);
         cmd.args(&config.args)
             .envs(&config.env)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::null())
             .kill_on_drop(true);
-        #[cfg(windows)]
-        {
-            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-            cmd.creation_flags(CREATE_NO_WINDOW);
-        }
+        // `tokio_command` already applied CREATE_NO_WINDOW on Windows.
 
         let mut child = cmd
             .spawn()

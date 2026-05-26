@@ -3,12 +3,12 @@
 ///
 /// Cross-platform: PowerShell on Windows, pgrep/pkill/ps/kill on Linux/macOS.
 use crate::agent::tool::{Tool, ToolContext, ToolResult};
+use crate::proc::tokio_command;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 #[cfg(not(target_os = "windows"))]
 use tokio::time::sleep;
 use tokio::time::timeout;
@@ -133,11 +133,9 @@ impl ProcessControlTool {
             })
             .unwrap_or_default();
 
-        // CREATE_NO_WINDOW: prevents a console window from flashing when running CLI tools
-        #[cfg(target_os = "windows")]
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-        let mut cmd = Command::new(path);
+        // `tokio_command` applies CREATE_NO_WINDOW on Windows so a launched
+        // CLI tool never flashes a console window — even when `wait=false`.
+        let mut cmd = tokio_command(path);
         cmd.args(&args);
 
         if let Some(cwd) = input["cwd"].as_str() {
@@ -145,9 +143,6 @@ impl ProcessControlTool {
         }
 
         if wait {
-            // When waiting for output, always hide the console window
-            #[cfg(target_os = "windows")]
-            cmd.creation_flags(CREATE_NO_WINDOW);
             cmd.stdout(Stdio::piped())
                 .stderr(Stdio::piped())
                 .kill_on_drop(true);
@@ -225,7 +220,7 @@ impl ProcessControlTool {
 
         if let Some(pid) = input["pid"].as_u64() {
             let signal = if force { "-9" } else { "-15" };
-            let output = Command::new("kill")
+            let output = tokio_command("kill")
                 .args([signal, &pid.to_string()])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -244,7 +239,7 @@ impl ProcessControlTool {
             }
         } else if let Some(name) = input["name"].as_str() {
             let signal = if force { "-9" } else { "-15" };
-            let output = Command::new("pkill")
+            let output = tokio_command("pkill")
                 .args([signal, "-x", name])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -308,7 +303,7 @@ impl ProcessControlTool {
     async fn is_running(&self, input: &Value) -> Result<ToolResult> {
         if let Some(pid) = input["pid"].as_u64() {
             // Check if PID exists using ps -p
-            let output = Command::new("ps")
+            let output = tokio_command("ps")
                 .args(["-p", &pid.to_string(), "-o", "comm="])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -325,7 +320,7 @@ impl ProcessControlTool {
             Ok(ToolResult::ok(result.to_string()))
         } else if let Some(name) = input["name"].as_str() {
             // Use pgrep to find processes by exact name
-            let output = Command::new("pgrep")
+            let output = tokio_command("pgrep")
                 .args(["-x", name])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -373,7 +368,7 @@ impl ProcessControlTool {
 
         if filter.is_empty() {
             // List top processes by CPU usage
-            let output = Command::new("ps")
+            let output = tokio_command("ps")
                 .args(["-eo", "pid,ppid,pcpu,pmem,rss,comm", "--sort=-pcpu"])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -385,7 +380,7 @@ impl ProcessControlTool {
             Ok(ToolResult::ok(result.join("\n")))
         } else {
             // Use pgrep with -a to get PID and command line
-            let output = Command::new("pgrep")
+            let output = tokio_command("pgrep")
                 .args(["-a", "-i", filter])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -469,7 +464,7 @@ if (-not $found) {{
         let start = std::time::Instant::now();
 
         while start.elapsed() < deadline {
-            match Command::new("xdotool")
+            match tokio_command("xdotool")
                 .args(["search", "--name", title])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
@@ -521,7 +516,7 @@ if (-not $found) {{
                 "tell application \"System Events\" to get name of every window of every process whose name contains \"{}\"",
                 title.replace('"', "\\\"")
             );
-            match Command::new("osascript")
+            match tokio_command("osascript")
                 .args(["-e", &script])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
@@ -562,16 +557,14 @@ async fn run_ps(command: &str) -> Result<String> {
          chcp 65001 | Out-Null; {}",
         command
     );
-    // CREATE_NO_WINDOW: prevents a blue console window from flashing on screen
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
-    let mut ps_cmd = Command::new("powershell");
+    // `tokio_command` applies CREATE_NO_WINDOW so no console window flashes.
+    let mut ps_cmd = tokio_command("powershell");
     ps_cmd
         .args(["-NoProfile", "-NonInteractive", "-Command", &utf8_cmd])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    ps_cmd.creation_flags(CREATE_NO_WINDOW);
 
     let output = ps_cmd.output().await?;
 

@@ -9,10 +9,10 @@ use async_trait::async_trait;
 /// - A single PowerShell process handles the full operation (open → modify → save → quit).
 /// - Batch write operations accept JSON arrays for efficient multi-cell/multi-slide writes.
 use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use pisci_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 use tokio::time::timeout;
 
 const OFFICE_TIMEOUT_SECS: u64 = 120;
@@ -1189,14 +1189,12 @@ $result | ConvertTo-Json -Depth 3
             std::path::PathBuf::from("C:\\")
         };
 
-        let mut cmd = Command::new("powershell");
+        let mut cmd = tokio_command("powershell");
         cmd.args(["-NoProfile", "-NonInteractive", "-Command", &full_script])
             .current_dir(&safe_cwd)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true);
-        #[cfg(target_os = "windows")]
-        cmd.creation_flags(0x0800_0000);
 
         tracing::debug!(
             "office PS script (first 200 chars): {}",

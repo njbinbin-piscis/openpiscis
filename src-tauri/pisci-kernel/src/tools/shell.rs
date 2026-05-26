@@ -1,10 +1,12 @@
 use crate::agent::tool::{Tool, ToolContext, ToolResult};
+use crate::proc::tokio_command;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::borrow::Cow;
 use std::process::Stdio;
 use std::time::Duration;
+#[cfg(target_os = "windows")]
 use tokio::process::Command;
 use tokio::time::timeout;
 
@@ -221,7 +223,7 @@ impl Tool for ShellTool {
 
         #[cfg(not(target_os = "windows"))]
         let mut cmd = {
-            let mut c = Command::new("sh");
+            let mut c = tokio_command("sh");
             c.args(["-c", command]);
             c
         };
@@ -380,33 +382,29 @@ fn build_windows_cmd(interpreter: &str, command: &str) -> Command {
                          $OutputEncoding=[System.Text.Encoding]::UTF8;\
                          chcp 65001 | Out-Null; ";
 
-    // CREATE_NO_WINDOW: prevents a blue console window from flashing on screen
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
+    // `tokio_command` applies CREATE_NO_WINDOW so no console window flashes.
     match interpreter {
         "powershell32" => {
             // 32-bit PowerShell — required for legacy COM/ActiveX (WOW6432Node) components
             let ps32 = r"C:\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe";
             let full_cmd = format!("{}{}", utf8_preamble, command);
-            let mut c = Command::new(ps32);
-            c.args(["-NoProfile", "-NonInteractive", "-Command", &full_cmd])
-                .creation_flags(CREATE_NO_WINDOW);
+            let mut c = tokio_command(ps32);
+            c.args(["-NoProfile", "-NonInteractive", "-Command", &full_cmd]);
             c
         }
         "cmd" => {
             // cmd.exe — best for dir, reg, findstr, where, assoc, ftype, etc.
             // Wrap in chcp 65001 for UTF-8
             let full_cmd = format!("chcp 65001 >nul 2>&1 & {}", command);
-            let mut c = Command::new("cmd");
-            c.args(["/C", &full_cmd]).creation_flags(CREATE_NO_WINDOW);
+            let mut c = tokio_command("cmd");
+            c.args(["/C", &full_cmd]);
             c
         }
         _ => {
             // Default: 64-bit PowerShell
             let full_cmd = format!("{}{}", utf8_preamble, command);
-            let mut c = Command::new("powershell");
-            c.args(["-NoProfile", "-NonInteractive", "-Command", &full_cmd])
-                .creation_flags(CREATE_NO_WINDOW);
+            let mut c = tokio_command("powershell");
+            c.args(["-NoProfile", "-NonInteractive", "-Command", &full_cmd]);
             c
         }
     }

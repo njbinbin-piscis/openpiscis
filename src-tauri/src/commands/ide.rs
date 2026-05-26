@@ -3,6 +3,7 @@
 //!
 //! All commands are registered as Tauri commands by `app::bootstrap`.
 
+use pisci_kernel::proc::tokio_command;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -471,7 +472,7 @@ async fn try_ripgrep(
     case_sensitive: bool,
     max_results: usize,
 ) -> Result<Vec<SearchResult>, String> {
-    let mut cmd = Command::new("rg");
+    let mut cmd = tokio_command("rg");
     cmd.arg("--json")
         .arg("--max-count")
         .arg("5")
@@ -1244,18 +1245,11 @@ pub async fn ide_stop_watcher(
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 /// Build a `git` command that never opens a console window on Windows.
-#[cfg(windows)]
+///
+/// Thin wrapper over [`pisci_kernel::proc::tokio_command`] kept as a named
+/// helper so all git invocations remain grep-able.
 fn new_git_cmd() -> Command {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    let mut cmd = Command::new("git");
-    cmd.creation_flags(CREATE_NO_WINDOW);
-    cmd
-}
-
-#[cfg(not(windows))]
-fn new_git_cmd() -> Command {
-    Command::new("git")
+    tokio_command("git")
 }
 
 async fn run_git_cmd(dir: &Path, args: &[&str]) -> Result<String, String> {

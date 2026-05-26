@@ -1,6 +1,7 @@
 use crate::browser::download;
 use crate::host::DesktopHostTools;
 use crate::store::{AppState, Settings};
+use pisci_kernel::proc::std_command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tauri::State;
@@ -791,10 +792,7 @@ fn execute_dependency_action(action: &SystemDependencyAction) -> Result<(), Stri
             #[cfg(target_os = "windows")]
             {
                 let command = action.command.as_deref().unwrap_or("services.msc");
-                use std::os::windows::process::CommandExt;
-                const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-                let mut process = std::process::Command::new("cmd");
-                process.creation_flags(CREATE_NO_WINDOW);
+                let mut process = std_command("cmd");
                 process
                     .args(["/C", "start", "", command])
                     .spawn()
@@ -817,10 +815,7 @@ fn execute_dependency_action(action: &SystemDependencyAction) -> Result<(), Stri
 fn open_with_system(target: &str) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        let mut process = std::process::Command::new("cmd");
-        process.creation_flags(CREATE_NO_WINDOW);
+        let mut process = std_command("cmd");
         process
             .args(["/C", "start", "", target])
             .spawn()
@@ -835,7 +830,7 @@ fn open_with_system(target: &str) -> Result<(), String> {
         } else {
             "xdg-open"
         };
-        std::process::Command::new(cmd)
+        std_command(cmd)
             .arg(target)
             .spawn()
             .map_err(|e| format!("Failed to open target: {e}"))?;
@@ -859,7 +854,7 @@ fn launch_terminal_command(command: &str) -> Result<(), String> {
                 continue;
             }
 
-            let mut process = std::process::Command::new(terminal);
+            let mut process = std_command(terminal);
             process.args(prefix);
             if terminal == "xfce4-terminal" {
                 process.arg(format!(
@@ -884,7 +879,7 @@ fn launch_terminal_command(command: &str) -> Result<(), String> {
             "tell application \"Terminal\" to do script \"{}\"\nactivate",
             apple_script_escape(&format!("{}; exec $SHELL", command))
         );
-        std::process::Command::new("osascript")
+        std_command("osascript")
             .args(["-e", &script])
             .spawn()
             .map_err(|e| format!("Failed to open Terminal.app: {e}"))?;
@@ -893,10 +888,7 @@ fn launch_terminal_command(command: &str) -> Result<(), String> {
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        let mut process = std::process::Command::new("powershell");
-        process.creation_flags(CREATE_NO_WINDOW);
+        let mut process = std_command("powershell");
         process
             .args(["-NoProfile", "-NonInteractive", "-Command", command])
             .spawn()
@@ -918,17 +910,14 @@ fn apple_script_escape(value: &str) -> String {
 fn command_exists(cmd: &str) -> bool {
     #[cfg(target_os = "windows")]
     let mut command = {
-        let mut command = std::process::Command::new("where");
+        let mut command = std_command("where");
         command.arg(cmd);
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
         command
     };
 
     #[cfg(not(target_os = "windows"))]
     let mut command = {
-        let mut command = std::process::Command::new("which");
+        let mut command = std_command("which");
         command.arg(cmd);
         command
     };
@@ -940,15 +929,8 @@ fn command_exists(cmd: &str) -> bool {
 }
 
 fn probe_command(cmd: &str, args: &[&str]) -> Option<String> {
-    let mut command = std::process::Command::new(cmd);
+    let mut command = std_command(cmd);
     command.args(args);
-    // CREATE_NO_WINDOW: prevents a console window from flashing during runtime detection
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
     let output = command.output().ok()?;
     if output.status.success() {
         let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();

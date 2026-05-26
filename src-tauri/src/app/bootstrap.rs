@@ -230,16 +230,12 @@ fn open_path(path: String) -> Result<(), String> {
     {
         let p = std::path::Path::new(&path);
         if p.is_dir() {
-            std::process::Command::new("explorer")
+            pisci_kernel::proc::std_command("explorer")
                 .arg(&path)
                 .spawn()
                 .map_err(|e| format!("Failed to open directory in Explorer: {e}"))?;
         } else {
-            use std::os::windows::process::CommandExt;
-            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-            let mut process = std::process::Command::new("cmd");
-            process.creation_flags(CREATE_NO_WINDOW);
-            process
+            pisci_kernel::proc::std_command("cmd")
                 .args(["/c", "start", "", &path])
                 .spawn()
                 .map_err(|e| format!("Failed to open file: {e}"))?;
@@ -253,7 +249,7 @@ fn open_path(path: String) -> Result<(), String> {
         } else {
             "xdg-open"
         };
-        std::process::Command::new(cmd)
+        pisci_kernel::proc::std_command(cmd)
             .arg(&path)
             .spawn()
             .map_err(|e| format!("Failed to open path: {e}"))?;

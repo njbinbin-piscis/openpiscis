@@ -4,6 +4,7 @@
 ///           add_watermark, encrypt, decrypt, fill_form, add_annotation, to_images,
 ///           render_page_image, render_region_image.
 use crate::agent::tool::{Tool, ToolContext, ToolResult};
+use crate::proc::std_command;
 use anyhow::Result;
 use async_trait::async_trait;
 use base64::Engine;
@@ -493,7 +494,7 @@ fn merge(input: &Value, workspace: &Path) -> Result<ToolResult> {
             args.push(p.to_str().unwrap_or("").to_string());
         }
 
-        let result = std::process::Command::new(&gs_path).args(&args).output();
+        let result = std_command(&gs_path).args(&args).output();
 
         match result {
             Ok(out) if out.status.success() => {
@@ -524,7 +525,7 @@ fn merge(input: &Value, workspace: &Path) -> Result<ToolResult> {
         args.push("output".to_string());
         args.push(output.to_str().unwrap_or("").to_string());
 
-        let result = std::process::Command::new(&pdftk).args(&args).output();
+        let result = std_command(&pdftk).args(&args).output();
 
         match result {
             Ok(out) if out.status.success() => {
@@ -984,7 +985,7 @@ fn to_images(input: &Value, workspace: &Path) -> Result<ToolResult> {
 
     if let Some(pdftoppm_path) = pdftoppm {
         let prefix = out_dir.join("page");
-        let output = std::process::Command::new(&pdftoppm_path)
+        let output = std_command(&pdftoppm_path)
             .args([
                 "-r",
                 &dpi.to_string(),
@@ -1019,7 +1020,7 @@ fn to_images(input: &Value, workspace: &Path) -> Result<ToolResult> {
 
     if let Some(gs_path) = gs {
         let out_pattern = out_dir.join("page-%04d.png");
-        let output = std::process::Command::new(&gs_path)
+        let output = std_command(&gs_path)
             .args([
                 "-dNOPAUSE",
                 "-dBATCH",
@@ -1195,7 +1196,7 @@ fn render_pdf_page_png_bytes(path: &Path, page: u32, dpi: u32) -> anyhow::Result
 
         if let Some(pdftoppm_path) = pdftoppm {
             let prefix = temp_dir.join("page");
-            let output = std::process::Command::new(&pdftoppm_path)
+            let output = std_command(&pdftoppm_path)
                 .args([
                     "-f",
                     &page.to_string(),
@@ -1224,7 +1225,7 @@ fn render_pdf_page_png_bytes(path: &Path, page: u32, dpi: u32) -> anyhow::Result
 
         if let Some(gs_path) = gs {
             let out_file = temp_dir.join("page.png");
-            let output = std::process::Command::new(&gs_path)
+            let output = std_command(&gs_path)
                 .args([
                     "-dNOPAUSE",
                     "-dBATCH",
@@ -1262,7 +1263,7 @@ fn render_pdf_page_png_bytes(path: &Path, page: u32, dpi: u32) -> anyhow::Result
 
 fn which_tool(name: &str) -> Option<PathBuf> {
     // Check PATH for the tool
-    if let Ok(output) = std::process::Command::new("where").arg(name).output() {
+    if let Ok(output) = crate::proc::std_command("where").arg(name).output() {
         if output.status.success() {
             let path_str = String::from_utf8_lossy(&output.stdout);
             let first = path_str.lines().next()?.trim().to_string();
@@ -1270,7 +1271,7 @@ fn which_tool(name: &str) -> Option<PathBuf> {
         }
     }
     // Unix fallback
-    if let Ok(output) = std::process::Command::new("which").arg(name).output() {
+    if let Ok(output) = crate::proc::std_command("which").arg(name).output() {
         if output.status.success() {
             let path_str = String::from_utf8_lossy(&output.stdout);
             let first = path_str.lines().next()?.trim().to_string();

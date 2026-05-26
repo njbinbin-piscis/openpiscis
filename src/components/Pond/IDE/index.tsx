@@ -120,6 +120,21 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
   );
 
   // ─── Initialize ──────────────────────────────────────────────────
+  // Debounce file-change refreshes: bursty external edits (Koi agents,
+  // formatters, watch-mode builds) used to fire `loadFileTree`+`loadGitStatus`
+  // dozens of times per second, which on Windows compounded the popup-loop
+  // bug that v0.8.0 fixed at the watcher level. 250 ms trailing-edge is
+  // slow enough to coalesce a save-burst yet fast enough to feel live.
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      loadFileTree();
+      loadGitStatus();
+    }, 250);
+  }, [loadFileTree, loadGitStatus]);
+
   useEffect(() => {
     if (!projectDir) return;
     loadFileTree();
@@ -131,9 +146,8 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
     // Listen for file changes (from Koi agents or external edits)
     const unlistenPromise = onFileChanged((evt) => {
       if (evt.project_dir === projectDir) {
-        // Refresh file tree and git status
-        loadFileTree();
-        loadGitStatus();
+        // Refresh file tree and git status (debounced)
+        scheduleRefresh();
 
         // If the changed file is open, reload its content
         setTabs((prev) =>
@@ -158,10 +172,14 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
     });
 
     return () => {
+      if (refreshTimer.current) {
+        clearTimeout(refreshTimer.current);
+        refreshTimer.current = null;
+      }
       unlistenPromise.then((fn) => fn());
       ideApi.stopWatcher(projectDir).catch(() => {});
     };
-  }, [projectDir, loadFileTree, loadGitStatus]);
+  }, [projectDir, loadFileTree, loadGitStatus, scheduleRefresh]);
 
   // ─── Open a file ─────────────────────────────────────────────────
   const openFile = useCallback(

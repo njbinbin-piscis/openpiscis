@@ -2716,14 +2716,8 @@ fn extract_skill_md_from_zip(zip_bytes: &[u8]) -> anyhow::Result<String> {
 }
 
 fn probe_command(cmd: &str, args: &[&str]) -> Option<String> {
-    let mut command = std::process::Command::new(cmd);
+    let mut command = pisci_kernel::proc::std_command(cmd);
     command.args(args);
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
     let output = command.output().ok()?;
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();

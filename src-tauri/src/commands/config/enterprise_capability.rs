@@ -8,11 +8,11 @@ use crate::commands::config::mcp::{
 };
 use crate::store::{AppState, Settings};
 use crate::tools::mcp::{McpServerConfig, McpToolInfo};
+use pisci_kernel::proc::tokio_command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Stdio;
 use tauri::State;
-use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
 const FEISHU_PLATFORM: &str = "feishu";
@@ -392,7 +392,7 @@ fn upsert_mcp_server(servers: &mut Vec<McpServerConfig>, server: McpServerConfig
 }
 
 async fn test_wecom_cli() -> Result<(), String> {
-    let mut command = Command::new(if cfg!(windows) { "npx.cmd" } else { "npx" });
+    let mut command = tokio_command(if cfg!(windows) { "npx.cmd" } else { "npx" });
     command
         .args(["-y", "@wecom/cli", "--help"])
         .stdin(Stdio::null())

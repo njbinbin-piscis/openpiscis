@@ -3,10 +3,10 @@ use async_trait::async_trait;
 /// WMI (Windows Management Instrumentation) query tool.
 /// Executes WQL queries via PowerShell Get-CimInstance for structured system data.
 use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use pisci_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 use tokio::time::timeout;
 
 const WMI_TIMEOUT_SECS: u64 = 30;
@@ -131,7 +131,7 @@ impl WmiTool {
             max
         );
 
-        let mut cmd = Command::new("powershell");
+        let mut cmd = tokio_command("powershell");
         // Use workspace root as cwd if it exists, otherwise fall back to system temp dir
         // to avoid ERROR_INVALID_NAME (os error 123) when workspace_root is empty/invalid.
         let safe_cwd = if cwd.exists() {
@@ -144,9 +144,6 @@ impl WmiTool {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true);
-        // CREATE_NO_WINDOW: prevents a blue console window from flashing on screen
-        #[cfg(target_os = "windows")]
-        cmd.creation_flags(0x0800_0000);
 
         let result = timeout(Duration::from_secs(WMI_TIMEOUT_SECS), cmd.output()).await;
 

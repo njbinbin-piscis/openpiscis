@@ -18,25 +18,21 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 
 ---
 
-## 🆕 v0.8.0 更新摘要
+## 🆕 v0.8.2 更新摘要
 
-一个重要版本：将**完整的 VS Code 风格 IDE 嵌入 Pond 工作区**，让 Pisci、Koi 与你在同一个窗口中并肩编写代码。
+专注可靠性的修订版本，彻底消除 Windows 控制台弹窗并止住文件变更引起的进程风暴。
 
-### 🧑‍💻 嵌入式 Monaco IDE（新增 `Pond → IDE` 选项卡）
-- **活动栏布局**：资源管理器 / 搜索 / 版本控制侧边栏 + Monaco 编辑器 + 集成终端，整体紫色/黑色主题与 Pisci 主调一致。
-- **实时文件监听器**：基于 `notify` crate——Koi 通过 `file_write` / `file_edit` 的任何修改都会立即刷新文件树、Git 状态徽标和当前打开的编辑器页签（本地未保存的修改会被保留）。
-- **集成终端**：基于 `portable-pty` 的真实 PTY + xterm.js 前端，打开即获得键盘焦点；输出监听器在 PTY 启动**之前**注册，避免 shell 首个提示符丢失。
-- **文件内搜索**：优先使用 ripgrep，未安装时回退到 Rust 原生递归搜索；后端错误会被直接呈现在面板上，不再静默返回空结果。
-- **版本控制**：逐个或一键全部暂存 / 取消暂存（以原子的 `git add -A` / `git reset HEAD --` 实现，不再因并发 index lock 冲突造成部分暂存）、提交信息、查看并切换分支、从 HEAD 创建新分支；单独提供 **Koi 分支** 分区，展示 Agent 拥有的 worktree 分支。
+### 🔕 零控制台弹窗
+- **集中式无弹窗子进程助手**（`pisci_kernel::proc::tokio_command` / `std_command`）：应用内所有子进程现在通过同一个模块统一在 Windows 上添加 `CREATE_NO_WINDOW` 标志。已将 `pisci-kernel` 和 `pisci-desktop` 中约 50 处调用点全部迁移，包含 v0.8.0 遗漏的两处（IDE 搜索用到的 `rg` 与企业能力检测用到的 `npx`）。
+- **工作区 `clippy::disallowed_methods` 规则**：裸调 `Command::new` 现在是编译时错误，杜绝未来贡献者再次引入弹窗问题。
 
-### 🔭 Pond 完善
-- **Koi 观察室** 在展示 assistant 消息时会从 session id 中解析出真实的 **Koi 名称 + 图标**，不再统一显示为“Koi”，多 Agent 会话很容易辨认谁是谁。
-- **主会话输入框迭代结束后自动获得焦点**——不需要再用鼠标点一下才能继续输入下一个问题。
+### ⚡ 文件变更刷新防抖（250 ms）
+IDE 文件监听器现在对高频保存事件进行 250 ms 尾部防抖聚合。Koi Agent 批量写入数十个文件时，文件树与 Git 状态只刷新一次而非每文件刷新一次，消除了之前看起来像"不断调用 shell"的现象。
 
-### 🛠️ 体验优化
-- 侧边栏拖动最小宽度合理，提交消息输入框会随面板一起收缩，不再把 Commit 按钮顶出可视区。
-- 欢迎页使用真正的 Pisci 图标，配上紫色渐变背景，标题与提示文字上下排列。
+## 🕘 历史版本
 
+- **v0.8.1**——Windows IDE 弹窗死循环修复：`ide_start_watcher` 现在在路径统一转换斜杠后过滤 `.git/`、`node_modules/`、`.koi-worktrees/`，断开 `git status → .git/index 写入 → watcher → git status` 的反馈回路。
+- **v0.8.0**——在 Pond 工作区内嵌入完整的 VS Code 风格 IDE。
 ## 🕘 历史版本
 
 - **v0.7.36 / v0.7.37**——独立视觉模型委派修复：独立视觉模型（如 qwen3.6-plus）现会正确传递模型名和 Base URL；保存时进行真实 API 验证；`vision_capable` 严格遵循用户勾选；`model_supports_vision()` 新增识别 `qwen3.6-plus`、`qwen3-plus`、`qwen-omni`、`o4`、`claude-4`。

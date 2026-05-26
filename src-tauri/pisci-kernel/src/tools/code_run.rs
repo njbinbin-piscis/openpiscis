@@ -1,4 +1,5 @@
 use crate::agent::tool::{Tool, ToolContext, ToolResult};
+use crate::proc::tokio_command;
 use anyhow::Result;
 use async_trait::async_trait;
 use serde_json::{json, Value};
@@ -274,18 +275,18 @@ fn diagnose(output: &str, command: &str) -> Option<String> {
 
 #[cfg(target_os = "windows")]
 fn build_cmd(command: &str) -> Command {
-    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     // Use cmd.exe so PATH-based tools (cargo, python, npm, git) resolve correctly
-    // without needing PowerShell profile overhead.
+    // without needing PowerShell profile overhead. `tokio_command` applies
+    // CREATE_NO_WINDOW to suppress the console-window flash.
     let full = format!("chcp 65001 >nul 2>&1 & {}", command);
-    let mut c = Command::new("cmd");
-    c.args(["/C", &full]).creation_flags(CREATE_NO_WINDOW);
+    let mut c = tokio_command("cmd");
+    c.args(["/C", &full]);
     c
 }
 
 #[cfg(not(target_os = "windows"))]
 fn build_cmd(command: &str) -> Command {
-    let mut c = Command::new("sh");
+    let mut c = tokio_command("sh");
     c.args(["-c", command]);
     c
 }

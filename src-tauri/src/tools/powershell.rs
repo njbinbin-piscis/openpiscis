@@ -3,10 +3,10 @@ use async_trait::async_trait;
 /// PowerShell structured query tool.
 /// Returns JSON output for AI to parse directly, unlike shell.rs which returns raw text.
 use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use pisci_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 use tokio::time::timeout;
 
 const QUERY_TIMEOUT_SECS: u64 = 30;
@@ -231,19 +231,12 @@ impl PowerShellTool {
             "powershell"
         };
 
-        // CREATE_NO_WINDOW: prevents a blue console window from flashing on screen
-        #[cfg(target_os = "windows")]
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-        let mut cmd = Command::new(ps_exe);
+        let mut cmd = tokio_command(ps_exe);
         cmd.args(["-NoProfile", "-NonInteractive", "-Command", &utf8_command])
             .current_dir("C:\\")
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .kill_on_drop(true);
-
-        #[cfg(target_os = "windows")]
-        cmd.creation_flags(CREATE_NO_WINDOW);
 
         let result = timeout(Duration::from_secs(QUERY_TIMEOUT_SECS), cmd.output()).await;
 

@@ -154,7 +154,7 @@ pub fn find_system_chrome() -> Option<PathBuf> {
             "chromium-browser",
             "brave-browser",
         ] {
-            if let Ok(output) = std::process::Command::new("which").arg(name).output() {
+            if let Ok(output) = pisci_kernel::proc::std_command("which").arg(name).output() {
                 if output.status.success() {
                     let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
                     if !path.is_empty() {

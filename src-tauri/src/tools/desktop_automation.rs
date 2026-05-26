@@ -122,7 +122,7 @@ impl Tool for DesktopAutomationTool {
 
 // ─── Platform implementations ─────────────────────────────────────────────────
 
-use tokio::process::Command;
+use pisci_kernel::proc::{std_command, tokio_command};
 
 // ── Common helpers ────────────────────────────────────────────────────────────
 
@@ -152,17 +152,8 @@ fn require_coords(input: &Value) -> anyhow::Result<(i32, i32)> {
 async fn run_cmd(program: &str, args: &[&str]) -> Result<ToolResult> {
     let args_display = args.join(" ");
     tracing::info!("run_cmd: {} {}", program, args_display);
-    let mut cmd = Command::new(program);
+    let mut cmd = tokio_command(program);
     cmd.args(args);
-    #[cfg(target_os = "windows")]
-    {
-        // CREATE_NO_WINDOW: prevents a blue console window from flashing
-        // on screen during desktop automation (move_mouse, type_text, etc.).
-        // Without this, every PowerShell/cmd invocation steals focus and can
-        // obscure screen captures.
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        cmd.creation_flags(CREATE_NO_WINDOW);
-    }
     let output = cmd
         .output()
         .await
@@ -225,7 +216,7 @@ fn xi_helper_path() -> String {
 #[cfg(target_os = "linux")]
 fn xi_move_mouse(x: i32, y: i32) -> Result<()> {
     let helper = xi_helper_path();
-    let output = std::process::Command::new(&helper)
+    let output = std_command(&helper)
         .args(["move", &x.to_string(), &y.to_string()])
         .output();
     match output {
@@ -235,7 +226,7 @@ fn xi_move_mouse(x: i32, y: i32) -> Result<()> {
         _ => {
             // Fallback to xdotool if XIWarpPointer helper is unavailable
             tracing::warn!("xi_helper unavailable, falling back to xdotool mousemove");
-            let out = std::process::Command::new("xdotool")
+            let out = std_command("xdotool")
                 .args(["mousemove", "--sync", &x.to_string(), &y.to_string()])
                 .output()
                 .map_err(|e| anyhow::anyhow!("xdotool mousemove failed: {}", e))?;
@@ -258,7 +249,7 @@ fn xi_click(x: i32, y: i32, button: u8, repeat: u8) -> Result<()> {
     std::thread::sleep(std::time::Duration::from_millis(20));
     let btn_str = button.to_string();
     let repeat_str = repeat.to_string();
-    let output = std::process::Command::new("xdotool")
+    let output = std_command("xdotool")
         .args(["click", "--repeat", &repeat_str, &btn_str])
         .output()
         .map_err(|e| anyhow::anyhow!("xdotool click failed: {}", e))?;
@@ -285,7 +276,7 @@ fn xi_drag(sx: i32, sy: i32, ex: i32, ey: i32) -> Result<()> {
     // This matches the Windows UIA drag_drop behavior (20-step smooth movement)
     // and is required for WebKit/Chromium to detect the drag gesture.
     let helper = xi_helper_path();
-    let output = std::process::Command::new(&helper)
+    let output = std_command(&helper)
         .args([
             "drag",
             &sx.to_string(),
@@ -304,7 +295,7 @@ fn xi_drag(sx: i32, sy: i32, ex: i32, ey: i32) -> Result<()> {
             xi_move_mouse(sx, sy)?;
             std::thread::sleep(std::time::Duration::from_millis(30));
 
-            let out = std::process::Command::new("xdotool")
+            let out = std_command("xdotool")
                 .args(["mousedown", "1"])
                 .output()
                 .map_err(|e| anyhow::anyhow!("xdotool mousedown failed: {}", e))?;
@@ -320,13 +311,13 @@ fn xi_drag(sx: i32, sy: i32, ex: i32, ey: i32) -> Result<()> {
             for i in 1..=steps {
                 let ix = sx + (ex - sx) * i / steps;
                 let iy = sy + (ey - sy) * i / steps;
-                let _ = std::process::Command::new("xdotool")
+                let _ = std_command("xdotool")
                     .args(["mousemove", "--sync", &ix.to_string(), &iy.to_string()])
                     .output();
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
 
-            let out = std::process::Command::new("xdotool")
+            let out = std_command("xdotool")
                 .args(["mouseup", "1"])
                 .output()
                 .map_err(|e| anyhow::anyhow!("xdotool mouseup failed: {}", e))?;
@@ -453,7 +444,7 @@ mod imp {
     }
 
     async fn get_cursor_pos() -> Result<(i32, i32)> {
-        let output = Command::new("xdotool")
+        let output = tokio_command("xdotool")
             .args(["getmouselocation", "--shell"])
             .output()
             .await
@@ -479,7 +470,7 @@ mod imp {
     }
 
     pub async fn get_cursor_position() -> Result<ToolResult> {
-        let output = Command::new("xdotool")
+        let output = tokio_command("xdotool")
             .args(["getmouselocation", "--shell"])
             .output()
             .await
@@ -505,7 +496,7 @@ mod imp {
         };
         // Use clipboard+paste approach for reliable text input (handles CJK/IME)
         // First, copy text to clipboard, then paste
-        let mut child = Command::new("xclip")
+        let mut child = tokio_command("xclip")
             .args(["-selection", "clipboard", "-in"])
             .stdin(std::process::Stdio::piped())
             .spawn()
@@ -520,7 +511,7 @@ mod imp {
             .map_err(|e| anyhow::anyhow!("xclip wait: {}", e))?;
         if !status.success() {
             // xclip not available, fall back to xdotool type
-            let output = Command::new("xdotool")
+            let output = tokio_command("xdotool")
                 .args(["type", "--", text])
                 .output()
                 .await
@@ -533,7 +524,7 @@ mod imp {
             }
         } else {
             // Paste from clipboard
-            Command::new("xdotool")
+            tokio_command("xdotool")
                 .args(["key", "ctrl+v"])
                 .output()
                 .await
@@ -567,7 +558,7 @@ mod imp {
     }
 
     pub async fn list_windows() -> Result<ToolResult> {
-        let output = Command::new("wmctrl")
+        let output = tokio_command("wmctrl")
             .args(["-l", "-G"]) // -G for geometry
             .output()
             .await
@@ -607,7 +598,7 @@ mod imp {
             None => return Ok(ToolResult::err("Missing required parameter: window_title")),
         };
         // Try exact match first, then partial
-        let output = Command::new("wmctrl")
+        let output = tokio_command("wmctrl")
             .args(["-a", title])
             .output()
             .await
@@ -616,7 +607,7 @@ mod imp {
             Ok(ToolResult::ok(format!("Activated window '{}'", title)))
         } else {
             // Try fuzzy: list windows, find partial match
-            let list = Command::new("wmctrl")
+            let list = tokio_command("wmctrl")
                 .args(["-l"])
                 .output()
                 .await
@@ -633,7 +624,7 @@ mod imp {
                 .map(|s| s.to_string());
 
             if let Some(id) = matched {
-                let output = Command::new("wmctrl")
+                let output = tokio_command("wmctrl")
                     .args(["-i", "-a", &id])
                     .output()
                     .await
@@ -690,7 +681,7 @@ mod imp {
         };
 
         // Try gtk-launch first (XDG desktop file)
-        let gtk_result = Command::new("gtk-launch").arg(app_name).output().await;
+        let gtk_result = tokio_command("gtk-launch").arg(app_name).output().await;
 
         if let Ok(out) = &gtk_result {
             if out.status.success() {
@@ -702,7 +693,7 @@ mod imp {
         }
 
         // Try xdg-open
-        let xdg_result = Command::new("xdg-open").arg(app_name).output().await;
+        let xdg_result = tokio_command("xdg-open").arg(app_name).output().await;
 
         if let Ok(out) = &xdg_result {
             if out.status.success() {
@@ -714,7 +705,7 @@ mod imp {
         }
 
         // Try as direct command via sh
-        let sh_result = Command::new("sh")
+        let sh_result = tokio_command("sh")
             .args(["-c", &format!("which {} && exec {}", app_name, app_name)])
             .output()
             .await;
@@ -822,7 +813,7 @@ mod imp {
     }
 
     pub async fn get_cursor_position() -> Result<ToolResult> {
-        let output = Command::new("osascript")
+        let output = tokio_command("osascript")
             .args([
                 "-e",
                 "tell application \"System Events\" to get position of mouse",
@@ -880,7 +871,7 @@ mod imp {
     }
 
     pub async fn list_windows() -> Result<ToolResult> {
-        let output = Command::new("osascript")
+        let output = tokio_command("osascript")
             .args(["-e", "tell application \"System Events\" to get {name, position, size} of every window of every process whose visible is true"])
             .output()
             .await

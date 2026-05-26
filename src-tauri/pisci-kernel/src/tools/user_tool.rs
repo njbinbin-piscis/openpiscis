@@ -181,14 +181,10 @@ impl Tool for UserTool {
                 let args = args.clone();
                 let dir = self.tool_dir.clone();
                 move || {
-                    let mut cmd = std::process::Command::new(&program);
+                    // `std_command` applies CREATE_NO_WINDOW on Windows so user
+                    // tools never flash a blue console window.
+                    let mut cmd = crate::proc::std_command(&program);
                     cmd.args(&args).current_dir(&dir);
-                    // CREATE_NO_WINDOW: prevents a console window from flashing on screen
-                    #[cfg(target_os = "windows")]
-                    {
-                        use std::os::windows::process::CommandExt;
-                        cmd.creation_flags(0x0800_0000);
-                    }
                     cmd.output()
                 }
             }),

@@ -8,7 +8,17 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
-## [0.7.37] - 2026-05-24
+## [0.8.2] - 2026-05-25
+
+### Fixed
+- **Windows console popup on every IDE Search / enterprise capability check**: `rg` (search) and `npx`/`npx.cmd` (enterprise node check) were spawned without `CREATE_NO_WINDOW`, causing a blue console window to flash on every keystroke in the Search panel and every time the enterprise settings page was opened. Both sites now use the new centralised spawn helper.
+
+### Added
+- **`pisci_kernel::proc::{tokio_command, std_command}` — centralised popup-safe spawn helpers**: a single module now applies `CREATE_NO_WINDOW = 0x0800_0000` on Windows for every child process spawned by the application. All call sites across `pisci-kernel` and `pisci-desktop` (~50 sites) have been migrated.
+- **`clippy::disallowed_methods` workspace lint**: `src-tauri/clippy.toml` bans `tokio::process::Command::new` and `std::process::Command::new` with a clear error message. This makes a missing-`CREATE_NO_WINDOW` mistake structurally impossible going forward and will be caught in CI. Build scripts and integration-test binaries are properly opted out via `#[allow(clippy::disallowed_methods)]`.
+- **Frontend file-change refresh debounce (250 ms)**: `IDE/index.tsx` now coalesces `ide-file-changed` events with a 250 ms trailing-edge debounce. A save-burst of 50 files from Koi agents now triggers one pair of `loadFileTree + loadGitStatus` instead of 50, eliminating the process storm that previously caused the agent to appear to be looping.
+
+
 
 ### Fixed
 - **Vision image re-injection loop: same screenshot re-processed every iteration causing LLM to output identical content**: `inject_selected_context` injects selected vision artifacts into `req_messages` (a per-call local variable). Since `req_messages` is discarded after each LLM call, the persistent `messages` vector never received the vision analysis text. On every subsequent iteration, the same selected images were re-injected, the vision delegate (or main model) produced the same description, and the main LLM saw an identical context — causing it to output the same response repeatedly. Fixed by calling `vision::clear_selection()` immediately after images have been consumed by `inject_selected_context`, for both the vision-delegate path and the main-model-as-vision path. Agents can re-select via `vision_context(action="select")` if they need to examine an image again.

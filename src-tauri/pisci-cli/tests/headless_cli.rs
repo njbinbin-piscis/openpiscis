@@ -13,6 +13,8 @@
 //! the kernel/CLI wiring, not the agent loop. A separate opt-in smoke test
 //! (gated on `OPENPISCI_TEST_API_KEY`) covers the full end-to-end turn.
 
+// Integration tests spawn the pisci-cli binary directly; raw Command::new is appropriate here.
+#![allow(clippy::disallowed_methods)]
 use std::path::PathBuf;
 use std::process::Command;
 

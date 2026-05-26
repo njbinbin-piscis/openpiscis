@@ -26,6 +26,8 @@ fn build_xi_helper() {
     let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR not set");
     let out_path = std::path::Path::new(&out_dir).join("pisci-xi-helper");
 
+    // Build script runs at compile time and cannot depend on pisci_kernel; allow raw Command::new here.
+    #[allow(clippy::disallowed_methods)]
     let status = std::process::Command::new("gcc")
         .args([
             src.to_str().unwrap(),

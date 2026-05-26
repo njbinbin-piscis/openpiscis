@@ -18,28 +18,21 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.8.0
+## 🆕 What's New in v0.8.2
 
-A major release that brings a **fully embedded VS Code-style IDE** into the Pond workspace, so Pisci, Koi and you can edit code side-by-side in the same window.
+A targeted reliability release that eliminates every remaining Windows console-popup source and stops the file-change process storm.
 
-### 🧑‍💻 Embedded Monaco IDE (new `Pond → IDE` tab)
-- **Activity-bar layout**: Explorer / Search / Source Control sidebars + Monaco editor + integrated terminal, all themed to match the violet/black Pisci palette.
-- **Live file watcher**: backed by the `notify` crate — any edit a Koi makes through `file_write` / `file_edit` immediately refreshes the file tree, the git status badges and the currently open editor tab (dirty local edits are preserved).
-- **Integrated terminal**: real PTY via `portable-pty`, xterm.js front-end, auto-focus on open, and the listener is registered **before** the PTY starts so the shell's first prompt is never lost.
-- **In-file search**: ripgrep when available with a native Rust fallback; surfaces backend errors inline instead of silently returning zero results.
-- **Source Control**: stage / unstage individual files or all at once (atomic `git add -A` / `git reset HEAD --` — no more partial staging from concurrent index-lock collisions), commit with message, view & checkout branches, create new branches from HEAD, with a special **Koi Branches** section showing worktree branches owned by your agents.
+### 🔕 Zero console popups — everywhere
+- **Centralised popup-safe spawn helper** (`pisci_kernel::proc::tokio_command` / `std_command`): every child process spawned by the app now applies `CREATE_NO_WINDOW` on Windows through one module. All ~50 call sites across `pisci-kernel` and `pisci-desktop` have been migrated, including the two that were missed in v0.8.0 (`rg` search and `npx` enterprise check).
+- **Workspace `clippy::disallowed_methods` lint**: raw `Command::new` is now a compile-time error across the workspace — future contributors can't accidentally re-introduce the popup bug.
 
-### 🔭 Pond improvements
-- **Koi Observer** now labels each assistant message with the **real Koi name + icon** (resolved from the session id) instead of the generic “Koi” label, so multi-agent transcripts are readable at a glance.
-- **Chat input auto-focuses** as soon as an iteration finishes — no extra mouse click needed before typing the next prompt.
-
-### 🛠️ Quality of life
-- Sidebar resize handle has a sane minimum width and the commit message input shrinks with the panel instead of pushing the Commit button off-screen.
-- Welcome screen uses the real Pisci logo with a violet gradient backdrop and properly stacked title/hint.
+### ⚡ 250 ms debounce on file-change refresh
+The IDE file watcher now coalesces rapid save-bursts with a 250 ms trailing-edge debounce. When Koi agents write dozens of files in a batch, the file-tree and git-status refresh fires once instead of once-per-file, removing the visible "shell keeps being called" behaviour.
 
 ## 🕘 Previous releases
 
-- **v0.7.36 / v0.7.37** — Vision model delegation fixed: separate vision models (e.g. qwen3.6-plus) now properly receive the model name and base URL in API requests; real API validation at save time; `vision_capable` strictly follows the user toggle; `model_supports_vision()` now recognizes `qwen3.6-plus`, `qwen3-plus`, `qwen-omni`, `o4`, and `claude-4`.
+- **v0.8.1** — Windows IDE popup-loop fix: `ide_start_watcher` now filters `.git/`, `node_modules/`, `.koi-worktrees/` after normalising backslash paths, breaking the `git status → .git/index touch → watcher → git status` feedback cycle.
+- **v0.8.0** — Fully embedded VS Code-style IDE in the Pond workspace.
 
 ## ✨ Key Features
 

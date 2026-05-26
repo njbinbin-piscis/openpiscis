@@ -101,7 +101,7 @@ pub async fn check_skill_compatibility(skill: &SkillDefinition) -> Compatibility
             continue;
         }
 
-        let found = tokio::process::Command::new("where")
+        let found = pisci_kernel::proc::tokio_command("where")
             .arg(&exe)
             .output()
             .await

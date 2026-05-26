@@ -1,11 +1,11 @@
 use anyhow::Result;
 use pisci_kernel::agent::tool::ToolResult;
+use pisci_kernel::proc::tokio_command;
 use serde_json::Value;
-use tokio::process::Command;
 use xcap::{Monitor, Window};
 
 async fn cursor_position() -> Option<(i32, i32)> {
-    let output = Command::new("osascript")
+    let output = tokio_command("osascript")
         .args([
             "-e",
             "tell application \"System Events\" to get position of mouse",

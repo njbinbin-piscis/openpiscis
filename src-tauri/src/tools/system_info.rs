@@ -2,11 +2,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 /// Cross-platform system information query — replaces wmi/powershell_query on Linux/macOS.
 use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use pisci_kernel::proc::tokio_command;
 use serde_json::{json, Value};
-use tokio::process::Command;
-
-#[cfg(target_os = "windows")]
-const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub struct SystemInfoTool;
 
@@ -253,7 +250,7 @@ async fn gpu_info() -> String {
 
 #[cfg(target_os = "linux")]
 async fn process_list(top_n: usize) -> Result<ToolResult> {
-    let output = Command::new("ps")
+    let output = tokio_command("ps")
         .args(["aux", "--sort=-%mem"])
         .output()
         .await
@@ -279,7 +276,7 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
 #[cfg(target_os = "linux")]
 async fn service_list() -> Result<ToolResult> {
     // Try systemctl first, fall back to service --status-all
-    let output = Command::new("sh")
+    let output = tokio_command("sh")
         .args(["-c", "systemctl list-units --type=service --all --no-pager 2>/dev/null | head -40 || service --status-all 2>/dev/null | head -40"])
         .output()
         .await
@@ -423,7 +420,7 @@ async fn gpu_info() -> String {
 
 #[cfg(target_os = "macos")]
 async fn process_list(top_n: usize) -> Result<ToolResult> {
-    let output = Command::new("ps")
+    let output = tokio_command("ps")
         .args(["aux", "-r"])
         .output()
         .await
@@ -447,7 +444,7 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
 
 #[cfg(target_os = "macos")]
 async fn service_list() -> Result<ToolResult> {
-    let output = Command::new("launchctl")
+    let output = tokio_command("launchctl")
         .args(["list"])
         .output()
         .await
@@ -588,12 +585,8 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
         "Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First {} Name,Id,CPU,WorkingSet | Format-Table -AutoSize",
         top_n
     );
-    let mut command = Command::new("powershell");
+    let mut command = tokio_command("powershell");
     command.args(["-Command", &ps]);
-    #[cfg(target_os = "windows")]
-    {
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
     let output = command
         .output()
         .await
@@ -613,15 +606,11 @@ async fn process_list(top_n: usize) -> Result<ToolResult> {
 
 #[cfg(target_os = "windows")]
 async fn service_list() -> Result<ToolResult> {
-    let mut command = Command::new("powershell");
+    let mut command = tokio_command("powershell");
     command.args([
         "-Command",
         "Get-Service | Select-Object Name,Status,DisplayName | Format-Table -AutoSize",
     ]);
-    #[cfg(target_os = "windows")]
-    {
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
     let output = command
         .output()
         .await
@@ -651,12 +640,8 @@ async fn read_commands(commands: &[(&str, &[&str])]) -> Vec<String> {
     let futures: Vec<_> = commands
         .iter()
         .map(|(cmd, args)| async move {
-            let mut command = Command::new(*cmd);
+            let mut command = tokio_command(*cmd);
             command.args(*args);
-            #[cfg(target_os = "windows")]
-            {
-                command.creation_flags(CREATE_NO_WINDOW);
-            }
             let output = command.output().await;
             match output {
                 Ok(o) => String::from_utf8_lossy(&o.stdout).to_string(),
