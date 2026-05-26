@@ -327,6 +327,7 @@ fn run_impl() {
                 pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
                 terminals: state.terminals.clone(),
                 file_watchers: state.file_watchers.clone(),
+                lsp_manager: state.lsp_manager.clone(),
             };
             app.manage(managed_state);
 
@@ -357,6 +358,7 @@ fn run_impl() {
                 let pisci_heartbeat_cursor = state.pisci_heartbeat_cursor.clone();
                 let terminals = state.terminals.clone();
                 let file_watchers = state.file_watchers.clone();
+                let lsp_manager = state.lsp_manager.clone();
                 let im_session_locks: std::sync::Arc<
                     tokio::sync::Mutex<
                         std::collections::HashMap<
@@ -408,6 +410,7 @@ fn run_impl() {
                                         pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                         terminals: terminals.clone(),
                                         file_watchers: file_watchers.clone(),
+                                        lsp_manager: lsp_manager.clone(),
                                     },
                                 )
                                 .await
@@ -572,6 +575,7 @@ fn run_impl() {
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
+                                    lsp_manager: lsp_manager.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -646,6 +650,7 @@ fn run_impl() {
                                     pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
+                                    lsp_manager: lsp_manager.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -786,6 +791,7 @@ fn run_impl() {
                 let pisci_heartbeat_cursor_arc = state.pisci_heartbeat_cursor.clone();
                 let terminals_arc = state.terminals.clone();
                 let file_watchers_arc = state.file_watchers.clone();
+                let lsp_manager_arc = state.lsp_manager.clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
                         let (enabled, interval_mins, prompt) = {
@@ -829,6 +835,7 @@ fn run_impl() {
                             pisci_heartbeat_cursor: pisci_heartbeat_cursor_arc.clone(),
                             terminals: terminals_arc.clone(),
                             file_watchers: file_watchers_arc.clone(),
+                            lsp_manager: lsp_manager_arc.clone(),
                         };
                         let _ = crate::pisci::heartbeat::dispatch_heartbeat(
                             &state_ref,
@@ -1102,6 +1109,7 @@ fn run_impl() {
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
                     terminals: state.terminals.clone(),
                     file_watchers: state.file_watchers.clone(),
+                    lsp_manager: state.lsp_manager.clone(),
                 };
                 let startup_trial_state = store::AppState {
                     db: state.db.clone(),
@@ -1118,6 +1126,7 @@ fn run_impl() {
                     pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
                     terminals: state.terminals.clone(),
                     file_watchers: state.file_watchers.clone(),
+                    lsp_manager: state.lsp_manager.clone(),
                 };
 
                 if let Ok(prompt) = std::env::var("PISCI_HEADLESS_PROMPT") {
@@ -1314,6 +1323,7 @@ fn run_impl() {
             commands::pool::get_pool_org_spec,
             commands::pool::update_pool_org_spec,
             commands::pool::update_pool_session_config,
+            commands::pool::update_pool_session_dir,
             commands::pool::dispatch_koi_task,
             commands::pool::cancel_koi_task,
             commands::pool::handle_pool_mention,
@@ -1359,6 +1369,9 @@ fn run_impl() {
             commands::ide::ide_terminal_destroy,
             commands::ide::ide_start_watcher,
             commands::ide::ide_stop_watcher,
+            commands::ide::ide_lsp_list_languages,
+            commands::ide::ide_lsp_start,
+            commands::ide::ide_lsp_stop,
             // platform/
             commands::platform::system::get_vm_status,
             commands::platform::system::get_runtime_capabilities,

@@ -18,20 +18,27 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 
 ---
 
-## 🆕 What's New in v0.8.2
+## 🆕 What's New in v0.8.3
 
-A targeted reliability release that eliminates every remaining Windows console-popup source and stops the file-change process storm.
+First-class **Language Server Protocol** integration brings real code intelligence to both the embedded IDE and the agent toolset.
 
-### 🔕 Zero console popups — everywhere
-- **Centralised popup-safe spawn helper** (`pisci_kernel::proc::tokio_command` / `std_command`): every child process spawned by the app now applies `CREATE_NO_WINDOW` on Windows through one module. All ~50 call sites across `pisci-kernel` and `pisci-desktop` have been migrated, including the two that were missed in v0.8.0 (`rg` search and `npx` enterprise check).
-- **Workspace `clippy::disallowed_methods` lint**: raw `Command::new` is now a compile-time error across the workspace — future contributors can't accidentally re-introduce the popup bug.
+### 🔬 LSP-powered IDE
+- **Per-language LSP sessions** are spawned and lifecycle-managed by the new Rust `LspManager` (rust-analyzer, typescript-language-server, pyright, clangd) — auto-detected from `PATH`.
+- **Monaco ↔ LSP WebSocket bridge** delivers diagnostics, hover, completion, go-to-definition, references, and rename inside the embedded IDE editor.
 
-### ⚡ 250 ms debounce on file-change refresh
-The IDE file watcher now coalesces rapid save-bursts with a 250 ms trailing-edge debounce. When Koi agents write dozens of files in a batch, the file-tree and git-status refresh fires once instead of once-per-file, removing the visible "shell keeps being called" behaviour.
+### 🩺 New `read_lints` agent tool
+Mirroring Cursor's ReadLints, the agent can now ask the running LSP servers for compiler / type / lint diagnostics on one or more files in a single call:
+
+```json
+{ "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
+```
+
+Use it AFTER edits to verify code without running a full build. Pairs with the `lsp` tool (hover / completion / definition / references / rename) for end-to-end code understanding inside Pisci/Koi loops.
 
 ## 🕘 Previous releases
 
-- **v0.8.1** — Windows IDE popup-loop fix: `ide_start_watcher` now filters `.git/`, `node_modules/`, `.koi-worktrees/` after normalising backslash paths, breaking the `git status → .git/index touch → watcher → git status` feedback cycle.
+- **v0.8.2** — Centralised popup-safe spawn helper + 250 ms file-change debounce.
+- **v0.8.1** — Windows IDE popup-loop fix.
 - **v0.8.0** — Fully embedded VS Code-style IDE in the Pond workspace.
 
 ## ✨ Key Features

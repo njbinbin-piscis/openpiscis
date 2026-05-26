@@ -51,7 +51,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
+  // Defensively append Z if timezone info is absent so new Date() treats
+  // the value as UTC rather than local time.
+  let dateStr = iso;
+  if (!/[Zz]$/.test(dateStr) && !/[+-]\d{2}:\d{2}$/.test(dateStr)) {
+    dateStr = iso + "Z";
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return iso;
   const now = new Date();
   const sameDay =
     d.getFullYear() === now.getFullYear() &&
@@ -332,7 +339,7 @@ export default function ChatPool() {
     if (!name) return;
     try {
       setCreating(true);
-      const session = await poolApi.createSession(name, newTaskTimeoutSecs);
+      const session = await poolApi.createSession(name, undefined, newTaskTimeoutSecs);
       dispatch(poolActions.addPoolSession(session));
       dispatch(poolActions.setActivePoolSession(session.id));
       setNewName("");

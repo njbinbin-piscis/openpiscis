@@ -15,6 +15,7 @@ use tauri::{AppHandle, Emitter, State};
 use tokio::process::Command;
 use tokio::time::timeout;
 
+use crate::lsp::manager::LspManager;
 use crate::store::AppState;
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -1272,4 +1273,51 @@ async fn run_git_cmd(dir: &Path, args: &[&str]) -> Result<String, String> {
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+// ─── LSP Commands ──────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LspLanguageInfo {
+    pub language_id: String,
+    pub name: String,
+    pub extensions: Vec<String>,
+    pub server_command: String,
+    pub available: bool,
+}
+
+/// List all supported LSP languages with their availability status.
+#[tauri::command]
+pub async fn ide_lsp_list_languages() -> Result<Vec<LspLanguageInfo>, String> {
+    Ok(LspManager::supported_languages()
+        .into_iter()
+        .map(|l| LspLanguageInfo {
+            language_id: l.language_id,
+            name: l.name,
+            extensions: l.extensions,
+            server_command: l.server_command,
+            available: l.available,
+        })
+        .collect())
+}
+
+/// Start an LSP server for the given project directory and language.
+/// Returns the WebSocket port the Monaco Editor can connect to.
+#[tauri::command]
+pub async fn ide_lsp_start(
+    state: tauri::State<'_, crate::store::AppState>,
+    project_dir: String,
+    language: String,
+) -> Result<u16, String> {
+    state.lsp_manager.start(&project_dir, &language).await
+}
+
+/// Stop an LSP session for the given project + language.
+#[tauri::command]
+pub async fn ide_lsp_stop(
+    state: tauri::State<'_, crate::store::AppState>,
+    project_dir: String,
+    language: String,
+) -> Result<(), String> {
+    state.lsp_manager.stop(&project_dir, &language).await
 }

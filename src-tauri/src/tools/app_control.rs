@@ -2433,6 +2433,18 @@ fn builtin_tool_catalog() -> Vec<BuiltinToolInfo> {
             icon: "🧩".into(),
             windows_only: true,
         },
+        BuiltinToolInfo {
+            name: "lsp".into(),
+            description: "Access LSP code intelligence — diagnostics, hover, completions, goto-definition, references, rename.".into(),
+            icon: "🔬".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "read_lints".into(),
+            description: "Read compiler / type / lint diagnostics for one or more files via the running LSP servers. Use after edits to verify code quickly.".into(),
+            icon: "🩺".into(),
+            windows_only: false,
+        },
     ]
 }
 

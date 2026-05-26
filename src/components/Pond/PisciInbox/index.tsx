@@ -86,7 +86,12 @@ function InboxMessageContent({ content }: { content: string }) {
 
 function formatTime(value: string): string {
   try {
-    return new Date(value).toLocaleString();
+    // Defensively append Z if timezone info is absent
+    let dateStr = value;
+    if (!/[Zz]$/.test(dateStr) && !/[+-]\d{2}:\d{2}$/.test(dateStr)) {
+      dateStr = value + "Z";
+    }
+    return new Date(dateStr).toLocaleString();
   } catch {
     return value;
   }

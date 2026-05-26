@@ -88,11 +88,16 @@ pub async fn list_pool_sessions(state: State<'_, AppState>) -> Result<Vec<PoolSe
 pub async fn create_pool_session(
     state: State<'_, AppState>,
     name: String,
+    project_dir: Option<String>,
     task_timeout_secs: Option<u32>,
 ) -> Result<PoolSession, String> {
     let db = state.db.lock().await;
-    db.create_pool_session(&name, task_timeout_secs.unwrap_or(0))
-        .map_err(|e| e.to_string())
+    db.create_pool_session_with_dir(
+        &name,
+        project_dir.as_deref(),
+        task_timeout_secs.unwrap_or(0),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -198,6 +203,17 @@ pub async fn update_pool_session_config(
 ) -> Result<(), String> {
     let db = state.db.lock().await;
     db.update_pool_session_config(&id, task_timeout_secs)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_pool_session_dir(
+    state: State<'_, AppState>,
+    id: String,
+    project_dir: String,
+) -> Result<(), String> {
+    let db = state.db.lock().await;
+    db.update_pool_session_dir(&id, &project_dir)
         .map_err(|e| e.to_string())
 }
 

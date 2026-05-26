@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.3] - 2026-05-26
+
+### Added
+- **First-class Language Server Protocol (LSP) integration**:
+  - New `pisci-desktop` `lsp` module: `LspManager` spawns and lifecycle-manages per-project+language LSP processes (rust-analyzer, typescript-language-server, pyright, clangd) auto-detected from `PATH`. Each session gets its own WebSocket bridge that frames LSP JSON-RPC for the front-end.
+  - Monaco IDE wires to the bridge through `monaco-languageclient` + `vscode-ws-jsonrpc`, delivering diagnostics, hover, completion, go-to-definition, references, document symbols, and rename inside the embedded editor.
+  - New Tauri commands `ide_lsp_list_languages` / `ide_lsp_start` / `ide_lsp_stop`.
+- **`lsp` agent tool**: actions `diagnostics`, `hover`, `complete`, `definition`, `references`, `rename`. The agent can now navigate and understand code without grepping.
+- **`read_lints` agent tool** (Cursor's ReadLints parity): batch multi-file diagnostics with `severity` filter (`error` / `warning` / `all`) and tunable `wait_ms`. Use it after edits to verify code quickly via the running LSP servers.
+
 ---
 
 ## [0.8.2] - 2026-05-25

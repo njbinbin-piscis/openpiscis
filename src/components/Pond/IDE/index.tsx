@@ -417,6 +417,7 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
             <CodeEditor
               tab={activeTab}
               theme="violet"
+              projectDir={projectDir}
               onChange={handleEditorChange}
             />
           ) : (

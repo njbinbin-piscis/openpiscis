@@ -9,6 +9,8 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
 
+use crate::lsp::manager::LspManager;
+
 /// Global application state managed by Tauri
 pub struct AppState {
     pub db: Arc<Mutex<Database>>,
@@ -42,6 +44,8 @@ pub struct AppState {
     pub terminals: Arc<Mutex<crate::commands::ide::TerminalRegistry>>,
     /// IDE file watcher registry: project_dir -> notify watcher handle
     pub file_watchers: Arc<Mutex<std::collections::HashMap<String, notify::RecommendedWatcher>>>,
+    /// LSP (Language Server Protocol) session manager
+    pub lsp_manager: Arc<LspManager>,
 }
 
 impl AppState {
@@ -94,6 +98,7 @@ impl AppState {
             pisci_heartbeat_cursor: Arc::new(Mutex::new(std::collections::HashMap::new())),
             terminals: Arc::new(Mutex::new(crate::commands::ide::TerminalRegistry::new())),
             file_watchers: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            lsp_manager: Arc::new(LspManager::new()),
         })
     }
 }

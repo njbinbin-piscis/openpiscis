@@ -39,7 +39,7 @@ pisci-cli = { path = "pisci-cli" }
 
 [package]
 name = "pisci-desktop"
-version = "0.8.2"
+version = "0.8.3"
 autobins = false
 default-run = "pisci-desktop"
 description = "OpenPisci - Open-source Windows AI Agent Desktop"
@@ -81,8 +81,12 @@ futures = "0.3"
 # HTTP client (LLM API calls) - use rustls to avoid openssl dependency
 reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls", "multipart", "gzip", "deflate", "brotli"], default-features = false }
 
-# WebSocket client for Feishu long connection
+# WebSocket client & server (Feishu long connection + LSP bridge)
 tokio-tungstenite = { version = "0.24", features = ["rustls-tls-native-roots", "connect"], default-features = false }
+tungstenite = "0.24"
+
+# LSP protocol types (Language Server Protocol)
+lsp-types = "0.97"
 
 # Serialization
 serde = { workspace = true }

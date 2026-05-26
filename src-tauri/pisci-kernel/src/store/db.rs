@@ -3625,6 +3625,15 @@ impl Database {
         Ok(())
     }
 
+    pub fn update_pool_session_dir(&self, id: &str, project_dir: &str) -> Result<()> {
+        let now = Utc::now().to_rfc3339();
+        self.conn.execute(
+            "UPDATE pool_sessions SET project_dir = ?2, updated_at = ?3 WHERE id = ?1",
+            params![id, project_dir, now],
+        )?;
+        Ok(())
+    }
+
     pub fn delete_pool_session(&self, id: &str) -> Result<()> {
         let internal_session_ids = self.internal_session_ids_for_pool(id)?;
         for session_id in &internal_session_ids {

@@ -7,10 +7,12 @@ pub mod chat_ui;
 pub mod desktop_automation;
 pub mod im_channel;
 pub mod im_send;
+pub mod lsp;
 #[cfg(target_os = "windows")]
 pub mod office;
 #[cfg(target_os = "windows")]
 pub mod powershell;
+pub mod read_lints;
 pub mod skill_list;
 pub mod system_info;
 #[cfg(target_os = "windows")]

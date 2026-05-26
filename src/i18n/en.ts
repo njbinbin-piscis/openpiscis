@@ -63,6 +63,7 @@ const en = {
   // Pond
   pond: {
     title: "Pond",
+    tabCollab: "Collab",
     tabKois: "Koi",
     tabPool: "Chat Pool",
     tabBoard: "Board",
@@ -134,6 +135,7 @@ const en = {
   // Koi management
   koi: {
     title: "Koi Management",
+    pisciDesc: "Main coordinator - delegate via @!Pisci, orchestrates all Koi collaboration",
     createBtn: "Create Koi",
     editBtn: "Reassign",
     deleteBtn: "Delete",
@@ -201,14 +203,15 @@ const en = {
 
   // Chat Pool
   pool: {
-    title: "Agent Chat Pool",
-    newSession: "New Chat Room",
-    sessionName: "Room Name",
+    title: "Agent Collab Project",
+    projects: "Projects",
+    newSession: "New Project",
+    sessionName: "Project Name",
     sessionPlaceholder: "e.g. Project Alpha",
     participants: "Participants",
     mainAgent: "Main Agent",
     readonlyHint: "Agent collaboration space — observe only",
-    noSessions: "No chat rooms yet",
+    noSessions: "No projects yet",
     noMessages: "No messages yet",
     deleteSession: "Delete Project",
     sessionActions: "Project Actions",
@@ -227,6 +230,14 @@ const en = {
     confirmResumeMessage: "Resume project \"{{name}}\"? Pisci will be notified to continue coordination.",
     confirmArchiveTitle: "Archive Project",
     confirmArchiveMessage: "Archive project \"{{name}}\"? It becomes read-only and Koi will no longer accept new tasks. You can reactivate it by resuming.",
+    orgSpec: "Project Spec",
+    selectProjectDir: "Working Directory",
+    selectProjectDirBrowse: "Browse...",
+    projectDirRequired: "Please select a working directory for this project",
+    bindProjectDir: "Associate / Create Project Directory",
+    messageInputPlaceholder: "Type a message... @!name to delegate (Enter to send)",
+    mustMention: "Message requires a recipient. Use @name to mention someone, or @all to send to everyone.",
+    mentionAll: "Everyone",
   },
 
   // Board
@@ -358,6 +369,7 @@ const en = {
         desc_desktop_automation: "Cross-platform mouse, keyboard, and window automation",
     desc_com: "Interact with Windows apps via COM/OLE interface",
     desc_memory_store: "Save important information to long-term memory for future conversations",
+    desc_lsp: "Access LSP code intelligence — diagnostics, hover, completions, goto-definition, references, and rename",
   },
 
   // Debug Panel

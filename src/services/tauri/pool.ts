@@ -294,8 +294,8 @@ export const koiApi = {
 
 export const poolApi = {
   listSessions: () => invoke<PoolSession[]>("list_pool_sessions"),
-  createSession: (name: string, taskTimeoutSecs?: number) =>
-    invoke<PoolSession>("create_pool_session", { name, taskTimeoutSecs }),
+  createSession: (name: string, projectDir?: string, taskTimeoutSecs?: number) =>
+    invoke<PoolSession>("create_pool_session", { name, projectDir, taskTimeoutSecs }),
   deleteSession: (id: string) => invoke<void>("delete_pool_session", { id }),
   pauseSession: (id: string) => invoke<void>("pause_pool_session", { id }),
   resumeSession: (id: string) => invoke<void>("resume_pool_session", { id }),
@@ -314,6 +314,8 @@ export const poolApi = {
     invoke<void>("update_pool_org_spec", { id, orgSpec }),
   updateConfig: (id: string, taskTimeoutSecs?: number) =>
     invoke<void>("update_pool_session_config", { id, taskTimeoutSecs }),
+  updateSessionDir: (id: string, projectDir: string) =>
+    invoke<void>("update_pool_session_dir", { id, projectDir }),
   dispatchTask: (koiId: string, task: string, poolSessionId?: string, priority?: string, timeoutSecs?: number) =>
     invoke<{ success: boolean; reply: string; result_message_id?: number }>(
       "dispatch_koi_task", { koiId, task, poolSessionId, priority, timeoutSecs }

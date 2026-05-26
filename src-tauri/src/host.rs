@@ -31,6 +31,7 @@ use tokio::sync::oneshot;
 use tokio::sync::Mutex;
 
 use crate::browser::SharedBrowserManager;
+use crate::lsp::manager::LspManager;
 use crate::runtime::koi::DesktopInProcessSubagentRuntime;
 use crate::skills::loader::SkillLoader;
 use crate::store::{AppState, Database, Settings};
@@ -352,6 +353,8 @@ pub struct DesktopHostTools {
     /// degrade gracefully (UI-only notifications) or refuse to register
     /// at all (`im_send_message`).
     pub gateway: Option<Arc<crate::gateway::GatewayManager>>,
+    /// LSP (Language Server Protocol) session manager for agent tools
+    pub lsp_manager: Option<Arc<LspManager>>,
 }
 
 fn resolve_desktop_coordinator_config(app: Option<&AppHandle>) -> CoordinatorConfig {
@@ -571,6 +574,22 @@ impl HostTools for DesktopHostTools {
             registry.register(Box::new(system_info::SystemInfoTool));
         }
 
+        if self.is_enabled("lsp") {
+            if let Some(ref lsp_manager) = self.lsp_manager {
+                registry.register(Box::new(crate::tools::lsp::LspTool {
+                    lsp_manager: lsp_manager.clone(),
+                }));
+            }
+        }
+
+        if self.is_enabled("read_lints") {
+            if let Some(ref lsp_manager) = self.lsp_manager {
+                registry.register(Box::new(crate::tools::read_lints::ReadLintsTool {
+                    lsp_manager: lsp_manager.clone(),
+                }));
+            }
+        }
+
         // 3) Windows-only tools.
         #[cfg(target_os = "windows")]
         {
@@ -723,6 +742,7 @@ impl DesktopHost {
             subagent_runtime: Some(subagent_runtime),
             coordinator_config: resolve_desktop_coordinator_config(Some(&app)),
             gateway: Some(state.gateway.clone()),
+            lsp_manager: Some(state.lsp_manager.clone()),
         });
         let secrets = Arc::new(DesktopSecretsStore::new(state.settings.clone()));
         Self {

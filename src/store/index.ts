@@ -35,6 +35,7 @@ export type {
 } from "./slices/chat";
 export { POOL_DEFAULT_CAPACITY } from "./slices/pool";
 export type { PondSubTab } from "./slices/pool";
+export { parseMentions, hasMentions } from "./slices/pool";
 
 // ---------------------------------------------------------------------------
 // Store

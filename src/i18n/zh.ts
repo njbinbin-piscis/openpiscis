@@ -63,6 +63,7 @@ const zh = {
   // 鱼池
   pond: {
     title: "鱼池",
+    tabCollab: "研讨室",
     tabKois: "Koi",
     tabPool: "聊天室",
     tabBoard: "看板",
@@ -134,6 +135,7 @@ const zh = {
   // Koi 管理
   koi: {
     title: "Koi 管理",
+    pisciDesc: "主协调者 - 接收 @!Pisci 委派，统筹所有 Koi 协作",
     createBtn: "创建新 Koi",
     editBtn: "换岗",
     deleteBtn: "删除",
@@ -201,14 +203,15 @@ const zh = {
 
   // 聊天室
   pool: {
-    title: "Agent 聊天室",
-    newSession: "新建聊天室",
-    sessionName: "聊天室名称",
+    title: "Agent 协作项目",
+    projects: "项目列表",
+    newSession: "新建项目",
+    sessionName: "项目名称",
     sessionPlaceholder: "例如：项目 Alpha",
     participants: "参与者",
     mainAgent: "主 Agent",
     readonlyHint: "Agent 协作空间 — 仅供观察",
-    noSessions: "暂无聊天室",
+    noSessions: "暂无项目",
     noMessages: "暂无消息",
     deleteSession: "删除项目",
     sessionActions: "项目操作",
@@ -227,6 +230,14 @@ const zh = {
     confirmResumeMessage: "恢复项目「{{name}}」？Pisci 将被通知继续协调工作。",
     confirmArchiveTitle: "归档项目",
     confirmArchiveMessage: "归档项目「{{name}}」？项目将变为只读，Koi 不再接受新任务。可通过恢复重新激活。",
+    orgSpec: "项目规约",
+    selectProjectDir: "工作目录",
+    selectProjectDirBrowse: "浏览...",
+    projectDirRequired: "请选择项目工作目录",
+    bindProjectDir: "关联/创建项目目录",
+    messageInputPlaceholder: "输入消息... @!名称 委派任务 (Enter 发送)",
+    mustMention: "无法发送无对象消息，请使用 @名称 指定接收者，或使用 @all 发送所有人",
+    mentionAll: "所有人",
   },
 
   // 看板
@@ -358,6 +369,7 @@ const zh = {
         desc_desktop_automation: "跨平台鼠标、键盘和窗口自动化操作",
     desc_com: "通过 COM/OLE 接口与 Windows 应用程序交互",
     desc_memory_store: "将重要信息保存到长期记忆，供未来对话使用",
+    desc_lsp: "通过 LSP（语言服务器协议）获取代码智能——诊断、悬停类型、自动补全、跳转定义、查找引用和重命名",
   },
 
   // 调试面板

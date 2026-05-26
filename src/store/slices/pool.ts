@@ -16,6 +16,23 @@ import type {
 } from "../../services/tauri";
 
 // ---------------------------------------------------------------------------
+// Mention parsing helper
+// ---------------------------------------------------------------------------
+
+/** Parse @mention recipients from message text.
+ *  Returns an array of recipient IDs (koi id, "pisci", or "all"). */
+export function parseMentions(text: string): string[] {
+  const matches = text.match(/@(\S+)/g);
+  if (!matches) return [];
+  return matches.map((m) => m.slice(1).replace(/[,\.;:!?]+$/, ""));
+}
+
+/** Check if a message contains any @mention (including @all). */
+export function hasMentions(text: string): boolean {
+  return /@(\S+)/.test(text);
+}
+
+// ---------------------------------------------------------------------------
 // Koi slice
 // ---------------------------------------------------------------------------
 
@@ -98,6 +115,10 @@ export const poolSlice = createSlice({
     updatePoolSessionStatus: (state, action: PayloadAction<{ id: string; status: string }>) => {
       const s = state.sessions.find((s) => s.id === action.payload.id);
       if (s) s.status = action.payload.status;
+    },
+    updatePoolSessionDir: (state, action: PayloadAction<{ id: string; projectDir: string }>) => {
+      const s = state.sessions.find((s) => s.id === action.payload.id);
+      if (s) s.project_dir = action.payload.projectDir;
     },
     setActivePoolSession: (state, action: PayloadAction<string | null>) => {
       state.activeSessionId = action.payload;

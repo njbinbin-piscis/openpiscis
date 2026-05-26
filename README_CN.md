@@ -18,22 +18,28 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 
 ---
 
-## 🆕 v0.8.2 更新摘要
+## 🆕 v0.8.3 更新摘要
 
-专注可靠性的修订版本，彻底消除 Windows 控制台弹窗并止住文件变更引起的进程风暴。
+**Language Server Protocol（LSP）** 一等公民集成，给嵌入式 IDE 和 Agent 工具同时带来真正的代码智能。
 
-### 🔕 零控制台弹窗
-- **集中式无弹窗子进程助手**（`pisci_kernel::proc::tokio_command` / `std_command`）：应用内所有子进程现在通过同一个模块统一在 Windows 上添加 `CREATE_NO_WINDOW` 标志。已将 `pisci-kernel` 和 `pisci-desktop` 中约 50 处调用点全部迁移，包含 v0.8.0 遗漏的两处（IDE 搜索用到的 `rg` 与企业能力检测用到的 `npx`）。
-- **工作区 `clippy::disallowed_methods` 规则**：裸调 `Command::new` 现在是编译时错误，杜绝未来贡献者再次引入弹窗问题。
+### 🔬 LSP 驱动的 IDE
+- **按语言托管的 LSP 进程**：新增的 Rust `LspManager` 负责生命周期管理（rust-analyzer、typescript-language-server、pyright、clangd），从 `PATH` 自动探测。
+- **Monaco ↔ LSP WebSocket 桥接**：在嵌入式 IDE 中提供诊断、悬停、补全、跳转定义、查找引用、重命名等能力。
 
-### ⚡ 文件变更刷新防抖（250 ms）
-IDE 文件监听器现在对高频保存事件进行 250 ms 尾部防抖聚合。Koi Agent 批量写入数十个文件时，文件树与 Git 状态只刷新一次而非每文件刷新一次，消除了之前看起来像"不断调用 shell"的现象。
+### 🩺 新增 `read_lints` Agent 工具
+参考 Cursor 的 ReadLints，Agent 现在可以一次性查询运行中的 LSP 服务器，拿到一组文件的编译器 / 类型 / Lint 诊断：
+
+```json
+{ "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
+```
+
+建议在改完文件后调用，作为编译前的快速验证，**不要**每次读文件都触发。与 `lsp` 工具（悬停 / 补全 / 跳转定义 / 引用 / 重命名）配合，构成 Pisci / Koi 循环中的端到端代码理解能力。
 
 ## 🕘 历史版本
 
-- **v0.8.1**——Windows IDE 弹窗死循环修复：`ide_start_watcher` 现在在路径统一转换斜杠后过滤 `.git/`、`node_modules/`、`.koi-worktrees/`，断开 `git status → .git/index 写入 → watcher → git status` 的反馈回路。
-- **v0.8.0**——在 Pond 工作区内嵌入完整的 VS Code 风格 IDE。
-- **v0.7.36 / v0.7.37**——独立视觉模型委派修复：独立视觉模型（如 qwen3.6-plus）现会正确传递模型名和 Base URL；保存时进行真实 API 验证；`vision_capable` 严格遵循用户勾选；`model_supports_vision()` 新增识别 `qwen3.6-plus`、`qwen3-plus`、`qwen-omni`、`o4`、`claude-4`。
+- **v0.8.2** —— 集中式无弹窗子进程助手 + 250 ms 文件变更防抖。
+- **v0.8.1** —— Windows IDE 弹窗死循环修复。
+- **v0.8.0** —— 在 Pond 工作区内嵌入完整的 VS Code 风格 IDE。
 
 ## ✨ 核心特性
 

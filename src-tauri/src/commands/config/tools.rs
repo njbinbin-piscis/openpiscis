@@ -174,6 +174,7 @@ pub async fn trigger_heartbeat(state: State<'_, AppState>) -> Result<(), String>
         pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
         terminals: state.terminals.clone(),
         file_watchers: state.file_watchers.clone(),
+        lsp_manager: state.lsp_manager.clone(),
     };
     tokio::spawn(async move {
         let _ = crate::pisci::heartbeat::dispatch_heartbeat(&state_ref, &prompt, "internal").await;

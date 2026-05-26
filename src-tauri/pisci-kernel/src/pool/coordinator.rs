@@ -1317,19 +1317,20 @@ fn parse_mention_targets(
 
 fn has_live_delegated_mention(content: &str, name: &str) -> bool {
     let needle = format!("@!{name}");
+    let needle_lower = needle.to_lowercase();
     content.lines().any(|line| {
         let line = line.trim_start();
-        line.strip_prefix(&needle)
-            .map(|rest| {
-                rest.chars()
-                    .next()
-                    .map(|ch| {
-                        ch.is_whitespace()
-                            || matches!(ch, ':' | '：' | '-' | '—' | ',' | '，' | '.')
-                    })
-                    .unwrap_or(true)
-            })
-            .unwrap_or(false)
+        // case-insensitive prefix match: @!pisci and @!Pisci both work
+        let line_lower = line.to_lowercase();
+        if !line_lower.starts_with(&needle_lower) {
+            return false;
+        }
+        // check delimiter char AFTER the needle in the original line
+        line[needle.len()..]
+            .chars()
+            .next()
+            .map(|ch| ch.is_whitespace() || matches!(ch, ':' | '：' | '-' | '—' | ',' | '，' | '.'))
+            .unwrap_or(true)
     })
 }
 
