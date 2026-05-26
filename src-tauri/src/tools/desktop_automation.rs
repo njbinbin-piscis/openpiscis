@@ -122,7 +122,9 @@ impl Tool for DesktopAutomationTool {
 
 // ─── Platform implementations ─────────────────────────────────────────────────
 
-use pisci_kernel::proc::{std_command, tokio_command};
+#[cfg(target_os = "linux")]
+use pisci_kernel::proc::std_command;
+use pisci_kernel::proc::tokio_command;
 
 // ── Common helpers ────────────────────────────────────────────────────────────
 

@@ -23,7 +23,6 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 pub fn tokio_command<S: AsRef<std::ffi::OsStr>>(program: S) -> tokio::process::Command {
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
         let mut cmd = tokio::process::Command::new(program);
         cmd.creation_flags(CREATE_NO_WINDOW);
         cmd

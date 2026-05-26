@@ -8,10 +8,10 @@ use async_trait::async_trait;
 /// - 32-bit COM objects (WOW6432Node) require a 32-bit host process — we use SysWOW64\powershell.exe.
 /// - This mirrors exactly what a human would do to automate legacy Windows software.
 use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use pisci_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 use tokio::time::timeout;
 
 const COM_TIMEOUT_SECS: u64 = 60;
@@ -314,15 +314,12 @@ async fn run_com_script(script: &str, arch: &str, timeout_secs: u64) -> Result<T
         "powershell"
     };
 
-    let mut cmd = Command::new(ps_exe);
+    let mut cmd = tokio_command(ps_exe);
     cmd.args(["-NoProfile", "-NonInteractive", "-Command", &full_script])
         .current_dir("C:\\")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    // CREATE_NO_WINDOW: prevents a blue console window from flashing on screen
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x0800_0000);
 
     let result = timeout(Duration::from_secs(timeout_secs), cmd.output()).await;
 
