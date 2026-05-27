@@ -1010,7 +1010,7 @@ export default function Collab() {
           {projectDir ? (
             <>
               {contentView === "explorer" && (
-                <FileTree nodes={fileTree} activePath={activeTabPath} gitModified={gitModified} gitAdded={gitAdded} onFileClick={(node) => openFile(node.path)} onRefresh={() => { loadFileTree(); loadGitStatus(); }} />
+                <FileTree nodes={fileTree} activePath={activeTabPath} gitModified={gitModified} gitAdded={gitAdded} projectDir={projectDir} onFileClick={(node) => openFile(node.path)} onRefresh={() => { loadFileTree(); loadGitStatus(); }} />
               )}
               {contentView === "search" && (
                 <SearchPanel projectDir={projectDir} onResultClick={(path, _line) => openFile(path)} />
@@ -1029,7 +1029,7 @@ export default function Collab() {
       <div className="collab-right">
         <div className="collab-right-icons">
           {Object.entries(VIEW_ICONS).map(([view, icon]) => (
-            <button key={view} className={`collab-right-icon${contentView === view ? " active" : ""}`} onClick={() => setContentView(view as ContentView)} title={t(`collab.tab${view.charAt(0).toUpperCase() + view.slice(1)}`) || view}>
+            <button key={view} className={`collab-right-icon${contentView === view ? " active" : ""}`} onClick={() => setContentView(view as ContentView)} title={t(`pond.tab${view.charAt(0).toUpperCase() + view.slice(1)}`) || view}>
               <span className="activity-icon">{icon}</span>
               {view === "git" && (gitModified.size + gitAdded.size) > 0 && <span className="activity-badge">{gitModified.size + gitAdded.size}</span>}
             </button>

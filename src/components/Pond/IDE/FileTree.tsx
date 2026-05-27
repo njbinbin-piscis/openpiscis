@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { ideApi } from "../../../services/tauri/ide";
 import type { FileNode } from "./types";
 
 interface FileTreeProps {
@@ -6,6 +8,7 @@ interface FileTreeProps {
   activePath: string | null;
   gitModified: Set<string>;
   gitAdded: Set<string>;
+  projectDir: string | null;
   onFileClick: (node: FileNode) => void;
   onRefresh: () => void;
   depth?: number;
@@ -101,18 +104,71 @@ export default function FileTree({
   activePath,
   gitModified,
   gitAdded,
+  projectDir,
   onFileClick,
   onRefresh,
 }: FileTreeProps) {
+  const { t } = useTranslation();
+
+  const handleCreate = useCallback(
+    async (isDir: boolean) => {
+      if (!projectDir) return;
+      const promptKey = isDir ? "ide.newFolderPrompt" : "ide.newFilePrompt";
+      const name = window.prompt(t(promptKey));
+      if (!name || !name.trim()) return;
+      const trimmed = name.trim();
+      // Construct full path. Use forward slashes — Rust's PathBuf
+      // accepts them on Windows too, and the backend already calls
+      // create_dir_all on parent before write.
+      const sep = projectDir.includes("\\") ? "\\" : "/";
+      const fullPath = `${projectDir}${sep}${trimmed}`;
+      try {
+        await ideApi.fileAction(fullPath, isDir ? "create_dir" : "create_file");
+        onRefresh();
+      } catch (e) {
+        // Surface as a non-blocking alert so the user knows what failed.
+        window.alert(`${t(isDir ? "ide.newFolder" : "ide.newFile")}: ${String(e)}`);
+      }
+    },
+    [projectDir, onRefresh, t],
+  );
+
   return (
     <>
       <div className="ide-sidebar-header">
-        <span>Explorer</span>
-        <button onClick={onRefresh} title="Refresh">↻</button>
+        <span>{t("ide.explorer") || "Explorer"}</span>
+        <div className="ide-sidebar-header-actions">
+          <button
+            type="button"
+            onClick={() => handleCreate(false)}
+            disabled={!projectDir}
+            title={t("ide.newFile") || "New File"}
+            aria-label={t("ide.newFile") || "New File"}
+          >
+            📄+
+          </button>
+          <button
+            type="button"
+            onClick={() => handleCreate(true)}
+            disabled={!projectDir}
+            title={t("ide.newFolder") || "New Folder"}
+            aria-label={t("ide.newFolder") || "New Folder"}
+          >
+            📁+
+          </button>
+          <button
+            type="button"
+            onClick={onRefresh}
+            title={t("ide.refresh") || "Refresh"}
+            aria-label={t("ide.refresh") || "Refresh"}
+          >
+            ↻
+          </button>
+        </div>
       </div>
       {nodes.length === 0 ? (
         <div style={{ padding: 12, opacity: 0.5, fontSize: 12 }}>
-          No files found
+          {t("ide.noFiles") || "No files found"}
         </div>
       ) : (
         nodes.map((node) => (

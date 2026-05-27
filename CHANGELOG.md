@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.7] - 2026-05-28
+
+### Fixed
+- **Right-side icon menu tooltips not internationalized**: tooltips on the Pond/Collab right-side icon strip (chat, explorer, search, git, board, inbox, koiObserver) showed raw i18n keys like `collab.tabChat` because the namespace did not exist. Switched the lookup to the existing `pond.tab*` namespace and added the four missing keys (`tabChat`, `tabExplorer`, `tabSearch`, `tabGit`) to both `zh.ts` and `en.ts`.
+
+### Added
+- **IDE Explorer: New File / New Folder buttons**: added two action buttons next to the refresh button in the EXPLORER title bar (similar to VS Code), wired to the existing `ide_file_action` Tauri command. Buttons prompt for a name and create the file or directory at the project root, then refresh the tree. All Explorer header tooltips and the empty-state label are now localized via `ide.refresh`, `ide.newFile`, `ide.newFolder`, `ide.newFilePrompt`, `ide.newFolderPrompt`, `ide.noFiles`.
+
+---
+
 ## [0.8.6] - 2026-05-27
 
 ### Fixed

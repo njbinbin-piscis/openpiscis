@@ -373,6 +373,7 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
               activePath={activeTabPath}
               gitModified={gitModified}
               gitAdded={gitAdded}
+              projectDir={projectDir}
               onFileClick={(node) => openFile(node.path)}
               onRefresh={() => {
                 loadFileTree();

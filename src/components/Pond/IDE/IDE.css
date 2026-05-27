@@ -110,6 +110,22 @@
   background: var(--bg-hover);
 }
 
+.ide-sidebar-header button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ide-sidebar-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ide-sidebar-header-actions button {
+  font-size: 12px;
+  line-height: 1;
+}
+
 .file-tree-item {
   display: flex;
   align-items: center;
