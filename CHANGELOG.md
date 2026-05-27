@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.6] - 2026-05-27
+
+### Fixed
+- **Chat-room session-switch scroll position**: switching between Collab projects landed at the first message instead of the latest one. Root cause: a single `requestAnimationFrame` after the messages array changed fired before `MessageBubble` had finished progressive markdown / code-block layout, so `scrollHeight` was still smaller than the final value. Replaced with a `ResizeObserver` that pins the container to the bottom for ~600ms while content settles.
+- **@!Pisci no response in chat room**: `coordinator::handle_mention` only records `@!Pisci` as a board todo (because Pisci is not a Koi and `activate_pending_todos` skips `db.get_koi("pisci") == None`); execution then waited for the periodic heartbeat timer (up to `heartbeat_interval_mins`). Added an immediate `dispatch_heartbeat` fan-out from `send_pool_message` so `@!Pisci` mentions are processed right away.
+- **KoiManager nested scrollbars + flicker**: the wide modal (`.koi-modal--wide`) and its inner `.koi-manager` both had `overflow-y: auto`, producing a barely-scrollable outer scrollbar and a flicker when the wheel switched between them. The modal is now a flex column with `overflow: hidden`; the inner manager owns scroll with `scrollbar-gutter: stable` to prevent layout flicker.
+
+---
+
 ## [0.8.5] - 2026-05-27
 
 ### Fixed

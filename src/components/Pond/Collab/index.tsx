@@ -378,21 +378,54 @@ export default function Collab() {
   }, [activeSessionId, loadMessages, dispatch]);
 
   // Scroll to bottom when messages are first loaded for a session.
-  // Uses requestAnimationFrame so the DOM is laid out before scrolling.
+  //
+  // MessageBubble renders markdown / code blocks asynchronously, so a
+  // single rAF after `messages.length` changes is not enough — the
+  // container's scrollHeight keeps growing for several frames after
+  // mount. We pin to the bottom for a short window (~600ms) using a
+  // ResizeObserver, then mark this session as scrolled so subsequent
+  // appends use the existing near-bottom heuristic.
   useEffect(() => {
     if (!activeSessionId || messages.length === 0) return;
     if (scrolledSessionRef.current === activeSessionId) return;
     const el = messagesContainerRef.current;
     if (!el) return;
-    requestAnimationFrame(() => {
-      // Double-check inside rAF — a fast session switch may have
-      // torn down the container before this frame executes.
-      if (scrolledSessionRef.current === activeSessionId) return;
-      // Scroll to bottom immediately (no smooth — this is a session
-      // switch, the user expects to arrive at the latest messages).
+
+    const sessionAtStart = activeSessionId;
+    let cancelled = false;
+
+    const pin = () => {
+      if (cancelled) return;
+      if (scrolledSessionRef.current === sessionAtStart) return;
+      // Only scroll if we're still on the same session.
+      if (activeSessionId !== sessionAtStart) return;
       el.scrollTop = el.scrollHeight;
-      scrolledSessionRef.current = activeSessionId;
-    });
+    };
+
+    // First frame.
+    requestAnimationFrame(pin);
+
+    // Keep pinning while content grows (markdown / code highlighting /
+    // images). Stop after a short settle window.
+    const ro = new ResizeObserver(() => pin());
+    ro.observe(el);
+    Array.from(el.children).forEach((child) => ro.observe(child as Element));
+
+    const finalize = window.setTimeout(() => {
+      cancelled = true;
+      ro.disconnect();
+      // Final pin in case a late layout pass landed exactly on this tick.
+      if (scrolledSessionRef.current !== sessionAtStart && activeSessionId === sessionAtStart) {
+        el.scrollTop = el.scrollHeight;
+      }
+      scrolledSessionRef.current = sessionAtStart;
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+      window.clearTimeout(finalize);
+    };
   }, [activeSessionId, messages.length]);
 
   // Real-time append: trim FIFO, auto-scroll

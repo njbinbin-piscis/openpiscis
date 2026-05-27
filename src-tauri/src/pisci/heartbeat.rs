@@ -106,6 +106,68 @@ pub async fn ensure_heartbeat_session(
     Ok(())
 }
 
+/// Case-insensitive detection of `@!Pisci` (or `@!pisci`) as a
+/// delegated mention prefix on any line. Mirrors the kernel's
+/// `has_live_delegated_mention` check used by `coordinator::handle_mention`.
+pub fn content_targets_pisci(content: &str) -> bool {
+    let needle = "@!pisci";
+    content.lines().any(|line| {
+        let trimmed = line.trim_start();
+        let lower = trimmed.to_lowercase();
+        if !lower.starts_with(needle) {
+            return false;
+        }
+        trimmed[needle.len()..]
+            .chars()
+            .next()
+            .map(|ch| ch.is_whitespace() || matches!(ch, ':' | '：' | '-' | '—' | ',' | '，' | '.'))
+            .unwrap_or(true)
+    })
+}
+
+/// Spawn an immediate Pisci heartbeat so that `@!Pisci` mentions and
+/// other attention events do not have to wait for the periodic timer.
+///
+/// Resolves the heartbeat prompt from settings and runs `dispatch_heartbeat`
+/// on a detached tokio task. No-ops silently when heartbeat is disabled
+/// or the prompt is empty (matches the periodic loop's behavior).
+pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'static str) {
+    let cloned = crate::store::AppState {
+        db: state.db.clone(),
+        settings: state.settings.clone(),
+        plan_state: state.plan_state.clone(),
+        browser: state.browser.clone(),
+        cancel_flags: state.cancel_flags.clone(),
+        confirmation_responses: state.confirmation_responses.clone(),
+        interactive_responses: state.interactive_responses.clone(),
+        app_handle: state.app_handle.clone(),
+        scheduler: state.scheduler.clone(),
+        scheduled_job_ids: state.scheduled_job_ids.clone(),
+        gateway: state.gateway.clone(),
+        pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+        terminals: state.terminals.clone(),
+        file_watchers: state.file_watchers.clone(),
+        lsp_manager: state.lsp_manager.clone(),
+    };
+    tokio::spawn(async move {
+        let prompt = {
+            let s = cloned.settings.lock().await;
+            if !s.heartbeat_enabled {
+                return;
+            }
+            let raw = s.heartbeat_prompt.clone();
+            if raw.trim().is_empty() {
+                crate::store::settings::default_heartbeat_prompt()
+            } else {
+                raw
+            }
+        };
+        if let Err(e) = dispatch_heartbeat(&cloned, &prompt, channel).await {
+            warn!("immediate Pisci dispatch failed: {}", e);
+        }
+    });
+}
+
 pub async fn dispatch_heartbeat(
     state: &AppState,
     base_prompt: &str,

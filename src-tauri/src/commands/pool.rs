@@ -172,6 +172,19 @@ pub async fn send_pool_message(
                 tracing::warn!("Auto @mention dispatch failed: {e}");
             }
         });
+
+        // @!Pisci is not a Koi — `coordinator::handle_mention` records it
+        // as a board todo with owner="pisci" but does not execute it,
+        // because Pisci runs through the heartbeat path. Without an
+        // immediate trigger, users would have to wait up to
+        // `heartbeat_interval_mins` for any response. Fan out a focused
+        // heartbeat dispatch right now so @!Pisci feels as responsive
+        // as @!Koi mentions.
+        if input.sender_id != "pisci"
+            && crate::pisci::heartbeat::content_targets_pisci(&input.content)
+        {
+            crate::pisci::heartbeat::spawn_immediate_dispatch(&state, "mention");
+        }
     }
 
     Ok(msg)

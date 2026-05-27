@@ -436,8 +436,18 @@
 .koi-modal--wide {
   width: 740px;
   max-height: 82vh;
+  /* Prevent nested scrollbars: the inner .koi-manager owns the scroll. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .koi-modal--wide .koi-manager {
-  max-height: calc(82vh - 48px);
+  /* Fill remaining modal height, leaving padding for modal chrome. */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  /* Stable scrollbar gutter prevents flicker when content height
+     toggles between just-fits and overflowing. */
+  scrollbar-gutter: stable;
 }
