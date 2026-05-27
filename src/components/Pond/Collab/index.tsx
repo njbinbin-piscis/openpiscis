@@ -273,6 +273,10 @@ export default function Collab() {
   const [gitAdded, setGitAdded] = useState<Set<string>>(new Set());
   const [showTerminal, setShowTerminal] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  // VS Code-style: clicking an already-active IDE view button collapses
+  // the side panel; clicking again expands it. Only applies to
+  // explorer / search / git — the views that own the side panel.
+  const [sideCollapsed, setSideCollapsed] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(200);
   const activeTab = tabs.find((t) => t.path === activeTabPath) || null;
 
@@ -938,13 +942,13 @@ export default function Collab() {
           (terminal or assistant) spanning full width */}
       <div className="collab-center">
         <div
-          className={`collab-content-area${(contentView === "explorer" || contentView === "search" || contentView === "git") ? " collab-content-area--with-side" : ""}`}
+          className={`collab-content-area${(contentView === "explorer" || contentView === "search" || contentView === "git") && !sideCollapsed ? " collab-content-area--with-side" : ""}`}
         >
           {/* IDE side panel (file tree / search / git) — placed to the
-              LEFT of the main editor when an IDE view is active. Living
-              inside content-area means the bottom terminal/assistant
-              panel keeps the full center width. */}
-          {(contentView === "explorer" || contentView === "search" || contentView === "git") && (
+              LEFT of the main editor when an IDE view is active and not
+              collapsed. Living inside content-area means the bottom
+              terminal/assistant panel keeps the full center width. */}
+          {(contentView === "explorer" || contentView === "search" || contentView === "git") && !sideCollapsed && (
             <div className="collab-ide-side">
               {projectDir ? (
                 <>
@@ -1051,12 +1055,36 @@ export default function Collab() {
       {/* RIGHT: Icon tab strip (always visible, no collapse) */}
       <div className="collab-right">
         <div className="collab-right-icons">
-          {Object.entries(VIEW_ICONS).map(([view, icon]) => (
-            <button key={view} className={`collab-right-icon${contentView === view ? " active" : ""}`} onClick={() => setContentView(view as ContentView)} title={t(`pond.tab${view.charAt(0).toUpperCase() + view.slice(1)}`) || view}>
-              <span className="activity-icon">{icon}</span>
-              {view === "git" && (gitModified.size + gitAdded.size) > 0 && <span className="activity-badge">{gitModified.size + gitAdded.size}</span>}
-            </button>
-          ))}
+          {Object.entries(VIEW_ICONS).map(([view, icon]) => {
+            const isIdeView = view === "explorer" || view === "search" || view === "git";
+            const isActiveView = contentView === view;
+            // Active highlight on the icon: an IDE view counts as
+            // "active" only while its side panel is expanded — so the
+            // collapse state is reflected on the icon strip too.
+            const isHighlighted = isActiveView && (!isIdeView || !sideCollapsed);
+            return (
+              <button
+                key={view}
+                className={`collab-right-icon${isHighlighted ? " active" : ""}`}
+                onClick={() => {
+                  if (isActiveView && isIdeView) {
+                    // Same IDE view button clicked again → toggle the
+                    // side panel (collapse / expand).
+                    setSideCollapsed((c) => !c);
+                  } else {
+                    setContentView(view as ContentView);
+                    // Switching to any view from a collapsed IDE view
+                    // should re-expand the side panel.
+                    setSideCollapsed(false);
+                  }
+                }}
+                title={t(`pond.tab${view.charAt(0).toUpperCase() + view.slice(1)}`) || view}
+              >
+                <span className="activity-icon">{icon}</span>
+                {view === "git" && (gitModified.size + gitAdded.size) > 0 && <span className="activity-badge">{gitModified.size + gitAdded.size}</span>}
+              </button>
+            );
+          })}
           <div style={{ flex: 1 }} />
           <button
             className={`collab-right-icon${showAssistant ? " active" : ""}`}
