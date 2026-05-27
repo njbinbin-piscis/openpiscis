@@ -2332,10 +2332,11 @@ pub fn build_system_prompt_with_env(
         "linux" => "Linux",
         other => other,
     };
-    // Inject full local datetime so the agent has accurate time perception.
-    // Includes: date, day-of-week, time (HH:MM:SS), and UTC offset.
-    let now = chrono::Local::now();
-    let date_str = now.format("%Y-%m-%d (%A) %H:%M:%S %Z").to_string();
+    // Inject current UTC datetime so the agent can accurately compare
+    // timestamps returned by tools (which are always in UTC/RFC 3339).
+    // Includes: date, day-of-week, time (HH:MM:SS) in UTC.
+    let now = chrono::Utc::now();
+    let date_str = now.format("%Y-%m-%d (%A) %H:%M:%S UTC").to_string();
     let os_identity = format!(
         "You are Pisci, a powerful AI Agent. You run on the user's local {os_display} machine and can control the entire desktop environment."
     );

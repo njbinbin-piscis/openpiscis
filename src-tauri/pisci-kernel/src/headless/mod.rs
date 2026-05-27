@@ -417,8 +417,8 @@ fn default_headless_system_prompt(
     allow_outside: bool,
     extra_context: Option<&str>,
 ) -> String {
-    let today = chrono::Local::now()
-        .format("%Y-%m-%d (%A) %H:%M:%S %Z")
+    let today = chrono::Utc::now()
+        .format("%Y-%m-%d (%A) %H:%M:%S UTC")
         .to_string();
     let workspace_line = if workspace_root.trim().is_empty() {
         String::new()

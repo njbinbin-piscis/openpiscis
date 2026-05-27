@@ -6,6 +6,25 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.4] - 2026-05-26
+
+### Fixed
+- **@mention autocomplete trigger**: typing `@` now immediately shows the agent dropdown; previously the empty-string filter was treated as falsy, preventing the list from appearing until additional characters were typed.
+- **@mention dropdown keyboard navigation**: up/down arrow keys now scroll the highlighted item into view when it moves outside the visible area.
+- **Missing i18n keys**: IDE file preview area now shows localized placeholder text (`ide.openFileHint`, `ide.searchHint`, `ide.gitHint`) instead of raw key strings.
+- **@!Pisci mention dispatch**: sending `@!Pisci` in a new project now correctly creates a board todo owned by the Pisci coordinator; previously `parse_mention_targets` only iterated DB Kois and Pisci (not being a Koi) was silently ignored.
+- **Koi stuck in "busy" state**: when Pisci manually completes a Koi's todo via `pool_org`, the Koi's status is now reset to "idle" instead of remaining permanently busy.
+- **Timezone consistency**: all system prompt time injections now use UTC (`chrono::Utc::now()`) with an explicit "UTC" label, preventing 8-hour offset confusion when the agent compares prompt time with DB timestamps (which are always UTC/RFC 3339).
+- **Chat room scroll position on session switch**: switching between project chat rooms now reliably scrolls to the latest messages at the bottom. Replaced fragile `no-deps useEffect` + `initialLoadDoneRef` pattern with a `[activeSessionId, messages.length]` effect guarded by `scrolledSessionRef`.
+
+### Changed
+- **Koi prompt template**: now includes `{project_dir}` substitution and explicit guidance about the `kb/` directory vs project directory. `kb/` is clarified as "shared knowledge only" (decisions, patterns, conventions); actual deliverables must be saved to the project workspace, not `kb/`.
+
+### Added
+- **Koi Manager dialog**: a gear icon (⚙) next to the "Participants" header in the Collab left panel opens the KoiManager as a modal dialog, restoring Koi configuration access that was lost during the UI restructure.
+
+---
+
 ## [0.8.3] - 2026-05-26
 
 ### Added

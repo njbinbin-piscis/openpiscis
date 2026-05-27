@@ -430,3 +430,14 @@
   font-size: 3rem;
   opacity: 0.4;
 }
+
+/* ─── Koi Manager wide modal ──────────────────────────────────────── */
+
+.koi-modal--wide {
+  width: 740px;
+  max-height: 82vh;
+}
+
+.koi-modal--wide .koi-manager {
+  max-height: calc(82vh - 48px);
+}

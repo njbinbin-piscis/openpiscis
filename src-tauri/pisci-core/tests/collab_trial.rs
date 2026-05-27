@@ -306,7 +306,7 @@ fn collab_trial_heartbeat_scene_policy_is_lightweight_and_disables_proactive_com
     assert!(!policy.allow_skill_loader);
     assert!(!policy.include_memory);
     assert!(!policy.include_task_state);
-    assert!(!policy.include_project_instructions);
+    assert!(policy.include_project_instructions);
     assert_eq!(policy.effective_auto_compact_threshold(100_000), 0);
 }
 

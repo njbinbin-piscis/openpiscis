@@ -12,6 +12,7 @@ import GitPanel from "../IDE/GitPanel";
 import SearchPanel from "../IDE/SearchPanel";
 import Board from "../Board";
 import PisciInbox from "../PisciInbox";
+import KoiManager from "../KoiManager";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
 import { openPath } from "../../../services/tauri";
 import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
@@ -169,7 +170,8 @@ export default function Collab() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [capacity, setCapacity] = useState(POOL_DEFAULT_CAPACITY);
-  const initialLoadDoneRef = useRef<string | null>(null);
+  // Track which session we've scrolled to bottom for — reset on switch.
+  const scrolledSessionRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prevLastIdRef = useRef<number | null>(null);
@@ -260,6 +262,7 @@ export default function Collab() {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [leftWidth, setLeftWidth] = useState(280);
   const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [koiDialogOpen, setKoiDialogOpen] = useState(false);
 
   // IDE state
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
@@ -302,7 +305,6 @@ export default function Collab() {
       if (msgs.length > 0) {
         prevLastIdRef.current = msgs[msgs.length - 1].id;
       }
-      initialLoadDoneRef.current = sessionId;
     } catch {
       // silently ignore
     }
@@ -342,6 +344,15 @@ export default function Collab() {
     }
   }, [loadSessions, dispatch, kois.length]);
 
+  // Scroll @mention dropdown to keep selected item visible
+  useEffect(() => {
+    if (mentionFilter === null) return;
+    const activeEl = document.querySelector('.collab-mention-item.active');
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest' });
+    }
+  }, [mentionIndex, mentionFilter]);
+
   useEffect(() => {
     let unlisten: (() => void) | null = null;
     listen<{ id: string; status: string }>("koi_status_changed", () => {
@@ -355,6 +366,7 @@ export default function Collab() {
     setUnreadCount(0);
     setCapacity(POOL_DEFAULT_CAPACITY);
     prevLastIdRef.current = null;
+    scrolledSessionRef.current = null; // reset scroll flag for new session
     loadMessages(activeSessionId);
 
     let unlisten: (() => void) | null = null;
@@ -365,13 +377,23 @@ export default function Collab() {
     return () => { unlisten?.(); };
   }, [activeSessionId, loadMessages, dispatch]);
 
-  // Scroll to bottom on initial load
+  // Scroll to bottom when messages are first loaded for a session.
+  // Uses requestAnimationFrame so the DOM is laid out before scrolling.
   useEffect(() => {
-    if (initialLoadDoneRef.current === activeSessionId && messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      initialLoadDoneRef.current = null;
-    }
-  });
+    if (!activeSessionId || messages.length === 0) return;
+    if (scrolledSessionRef.current === activeSessionId) return;
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      // Double-check inside rAF — a fast session switch may have
+      // torn down the container before this frame executes.
+      if (scrolledSessionRef.current === activeSessionId) return;
+      // Scroll to bottom immediately (no smooth — this is a session
+      // switch, the user expects to arrive at the latest messages).
+      el.scrollTop = el.scrollHeight;
+      scrolledSessionRef.current = activeSessionId;
+    });
+  }, [activeSessionId, messages.length]);
 
   // Real-time append: trim FIFO, auto-scroll
   useEffect(() => {
@@ -817,7 +839,10 @@ export default function Collab() {
               <div className="chatpool-orgspec-panel">
                 <div className="chatpool-orgspec-header" onClick={() => setParticipantsOpen(!participantsOpen)}>
                   <span>{t("pool.participants") || "Participants"}</span>
-                  <span className="chatpool-orgspec-chevron">{participantsOpen ? "▲" : "▼"}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <button className="collab-icon-btn" title={t("koi.title") || "Koi Settings"} onClick={(e) => { e.stopPropagation(); setKoiDialogOpen(true); }}>⚙</button>
+                    <span className="chatpool-orgspec-chevron">{participantsOpen ? "▲" : "▼"}</span>
+                  </span>
                 </div>
                 {participantsOpen && (
                   <div className="chatpool-orgspec-body chatpool-participants-body">
@@ -986,6 +1011,15 @@ export default function Collab() {
       {/* Dialogs */}
       <ConfirmDialog open={!!deleteTarget} title={t("pool.confirmDeleteTitle") || "Delete Project"} message={t("pool.confirmDeleteMessage", { name: deleteTarget?.name ?? "" }) || "Delete this project?"} confirmLabel={t("common.delete") || "Delete"} cancelLabel={t("common.cancel") || "Cancel"} variant="danger" loading={deleting} onConfirm={confirmDeleteSession} onCancel={() => !deleting && setDeleteTarget(null)} />
       <ConfirmDialog open={!!actionTarget} title={actionTarget?.action === "pause" ? (t("pool.confirmPauseTitle") || "Pause") : actionTarget?.action === "resume" ? (t("pool.confirmResumeTitle") || "Resume") : (t("pool.confirmArchiveTitle") || "Archive")} message={actionTarget?.action === "pause" ? (t("pool.confirmPauseMessage", { name: actionTarget?.name ?? "" }) || "") : actionTarget?.action === "resume" ? (t("pool.confirmResumeMessage", { name: actionTarget?.name ?? "" }) || "") : (t("pool.confirmArchiveMessage", { name: actionTarget?.name ?? "" }) || "")} confirmLabel={actionTarget?.action === "pause" ? (t("pool.pauseSession") || "Pause") : actionTarget?.action === "resume" ? (t("pool.resumeSession") || "Resume") : (t("pool.archiveSession") || "Archive")} cancelLabel={t("common.cancel") || "Cancel"} variant={actionTarget?.action === "archive" ? "danger" : "primary"} loading={actioning} onConfirm={confirmSessionAction} onCancel={() => !actioning && setActionTarget(null)} />
+
+      {/* Koi Manager dialog */}
+      {koiDialogOpen && (
+        <div className="koi-modal-overlay" onClick={() => setKoiDialogOpen(false)}>
+          <div className="koi-modal koi-modal--wide" onClick={(e) => e.stopPropagation()}>
+            <KoiManager />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

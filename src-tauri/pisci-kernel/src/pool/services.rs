@@ -1199,6 +1199,17 @@ pub async fn complete_todo(
         .write(move |db| db.complete_koi_todo(&id, result_msg_id))
         .await?;
 
+    // Release the Koi from the busy state so it can accept new work.
+    // This matters when Pisci completes a Koi's todo from outside the
+    // Koi's own turn (e.g. manual review), and also serves as a safety
+    // net against stale busy states from crashed/abandoned Koi turns.
+    {
+        let owner_id = todo.owner_id.clone();
+        let _ = store
+            .write(move |db| db.update_koi_status(&owner_id, "idle"))
+            .await;
+    }
+
     let refreshed = store
         .read({
             let id = todo.id.clone();

@@ -202,7 +202,8 @@ async fn execute_todo_turn_inner(
         maybe_setup_worktree(store, cfg, canonical_pool_id.as_deref(), &koi, &todo).await;
 
     let task = todo.title.clone();
-    let prompt = render_execute_prompt(&koi, &todo);
+    let project_dir = pool_session.as_ref().and_then(|p| p.project_dir.as_deref());
+    let prompt = render_execute_prompt(&koi, &todo, project_dir);
     let timeout_secs = cfg.default_task_timeout_secs.max(koi_timeout_for_todo(
         &koi,
         todo.task_timeout_secs,
@@ -432,12 +433,15 @@ async fn maybe_setup_worktree(
     git::setup_worktree(&dir, &koi.name, &todo.id)
 }
 
-fn render_execute_prompt(koi: &KoiDefinition, todo: &KoiTodo) -> String {
+fn render_execute_prompt(koi: &KoiDefinition, todo: &KoiTodo, project_dir: Option<&str>) -> String {
     let short: String = todo.id.chars().take(8).collect();
+    let project_dir_str =
+        project_dir.unwrap_or("(not set — this is a global pool without a project directory)");
     KOI_EXECUTE_TODO_PROMPT
         .replace("{task}", &todo.title)
         .replace("{name}", &koi.name)
         .replace("{todo_id}", &short)
+        .replace("{project_dir}", project_dir_str)
 }
 
 fn koi_timeout_for_todo(koi: &KoiDefinition, todo_timeout_secs: u32, default_secs: u32) -> u32 {
@@ -1026,6 +1030,42 @@ pub async fn handle_mention(
 ) -> anyhow::Result<()> {
     let kois = store.read(|db| db.list_kois()).await.unwrap_or_default();
 
+    // ── @!Pisci: Handle Pisci self-targeting ──────────────────────────
+    // Pisci is NOT a Koi; it does not appear in the Koi list. But users
+    // expect @!Pisci to work just like any other delegated mention.
+    if sender_id != "pisci" && has_live_delegated_mention(content, "Pisci") {
+        let title: String = content.chars().take(120).collect();
+        let desc = content.to_string();
+        let assigned_by = sender_id.to_string();
+        let pool_id = pool_session_id.to_string();
+        let todo = store
+            .write(move |db| {
+                db.create_koi_todo(
+                    "pisci",
+                    &title,
+                    &desc,
+                    "medium",
+                    &assigned_by,
+                    Some(&pool_id),
+                    "mention",
+                    None,
+                    0,
+                )
+            })
+            .await?;
+        sink.as_ref().emit_pool(&PoolEvent::TodoChanged {
+            pool_id: pool_session_id.to_string(),
+            action: TodoChangeAction::Created,
+            todo: (&todo).into(),
+        });
+        tracing::info!(
+            target: "pool::coordinator",
+            pool_id = %pool_session_id,
+            todo_id = %todo.id,
+            "@!Pisci mention recorded as board todo (Pisci handles it in main loop)"
+        );
+    }
+
     for target in parse_mention_targets(&kois, sender_id, content) {
         // Always create a new todo for the mention, even if the Koi is busy.
         // This ensures the task appears on the board and will be auto-picked
@@ -1394,7 +1434,7 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
-        let text = render_execute_prompt(&koi, &todo);
+        let text = render_execute_prompt(&koi, &todo, None);
         assert!(text.contains("fix the thing"));
         assert!(text.contains("Alpha"));
         assert!(text.contains("aaaaaaaa"));
@@ -1466,6 +1506,25 @@ mod tests {
 
         assert!(parse_mention_targets(&kois, "pisci", "@all 请同步一下").is_empty());
         assert!(parse_mention_targets(&kois, "pisci", "@Alpha 看一下").is_empty());
+    }
+
+    #[test]
+    fn pisci_delegated_mention_is_detected() {
+        let kois: Vec<KoiDefinition> = vec![
+            test_koi("a", "Alpha", "idle"),
+            test_koi("b", "Beta", "idle"),
+        ];
+        // @!Pisci should NOT be returned by parse_mention_targets
+        // (Pisci is not a Koi; it is handled separately in handle_mention).
+        let targets = parse_mention_targets(&kois, "user", "@!Pisci 帮我做报告");
+        assert!(
+            targets.is_empty(),
+            "@!Pisci should not appear in Koi-iteration targets"
+        );
+        // But has_live_delegated_mention detects it directly.
+        assert!(has_live_delegated_mention("@!Pisci 帮我做报告", "Pisci"));
+        assert!(has_live_delegated_mention("@!pisci do task", "Pisci"));
+        assert!(!has_live_delegated_mention("@Pisci chat", "Pisci"));
     }
 
     #[test]
