@@ -6,6 +6,22 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.15] - 2026-05-25
+
+### Added
+- **Mandatory deliverables-tracking guidance in Pisci's system prompt** (reported as "every session's artifacts list is empty").
+  - Added a new `## Deliverables Tracking (Mandatory)` section to the core Pisci system prompt in `src-tauri/src/commands/chat.rs`. Pisci must now call `app_control(action="artifact_submit", ...)` in the SAME turn it produces each tangible output:
+    - Files created / modified via `file_write` / `file_edit` → `artifact_type="file"`, absolute path
+    - Screenshots (`screenshot`, `browser_screenshot`, `screen_capture`) → `artifact_type="image"`
+    - Web resources (reports, published URLs, documentation) → `artifact_type="link"`
+    - Prose-only reports / analyses → `artifact_type="report"` with `content_summary`
+    - Koi-reported file paths from `pool_chat` → Pisci submits each one as an artifact on the user-facing session
+  - Added a "self-check before ending a run" rule: before the final user-facing reply, scan the turn for any file path written, screenshot captured, or URL delivered and submit any that are still missing from the artifacts list.
+- **Koi deliverables reporting format** (`src-tauri/pisci-core/src/koi_prompt.rs` — Reconciling step 3a). Koi must now post file outputs as a `Deliverables:` list of absolute paths (one per line) so Pisci can reliably parse them and surface each as an artifact on the user's session.
+- The Artifacts panel in the Chat UI (`src/components/Chat/index.tsx` → `ArtifactsPanel`) already supported click-to-open: `openPath(artifact.uri!)` for local files and `<a target="_blank">` for URLs — no UI change needed; the panel now has artifacts to display.
+
+---
+
 ## [0.8.14] - 2026-05-25
 
 ### Fixed
