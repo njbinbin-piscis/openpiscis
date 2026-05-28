@@ -6,6 +6,25 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.16] - 2026-05-25
+
+### Added
+- **Explorer file tree: VS Code–style right-click context menu and keyboard operations**.
+  - Right-click any file or folder to open a context menu with: **Open**, **Rename** (F2), **Delete** (Del), **Copy Path**, **Copy Relative Path**, **Reveal in File Manager**, **New File**, **New Folder**.
+  - **Ctrl/Cmd+click multi-select** — hold Ctrl (or Cmd on macOS) while clicking to select multiple files/folders. Bulk Delete works on the entire selection.
+  - **Delete** key deletes selected files/folders (with a per-type confirmation dialog: single file, folder, or bulk count).
+  - **F2** key starts inline rename on the active (highlighted) node.
+  - Context menu auto-selects the right-clicked node if it isn't already in the selection (VS Code behavior).
+  - Keyboard shortcuts are scoped to the file tree — they only fire when the tree (or a child element) has focus and no inline input is active.
+  - The same features are wired in the Collab IDE view.
+
+### Fixed
+- **Opening the 2nd/3rd/etc. file no longer shows a spurious dirty dot** (reported as "除打开的第一个文件外，点击打开其他文件，标题都默认加上了修改标记圆点").
+  - Root cause: Monaco fires `onChange` with the new content during its internal model update (before React's `useEffect` runs). The previous guard used `lastContentRef` which was only updated in `useEffect` — too late. The `onChange` handler compared new content against the OLD file's content, saw a mismatch, and set `isDirty = true`.
+  - Fix: `CodeEditor` now tracks `lastPathRef` and resets `lastContentRef.current` synchronously during render when `tab.path` changes. Monaco's subsequent `onChange` fires with content that matches `lastContentRef.current`, so the tab stays clean.
+
+---
+
 ## [0.8.15] - 2026-05-25
 
 ### Added
@@ -19,6 +38,31 @@ This project follows [Semantic Versioning](https://semver.org/) and
   - Added a "self-check before ending a run" rule: before the final user-facing reply, scan the turn for any file path written, screenshot captured, or URL delivered and submit any that are still missing from the artifacts list.
 - **Koi deliverables reporting format** (`src-tauri/pisci-core/src/koi_prompt.rs` — Reconciling step 3a). Koi must now post file outputs as a `Deliverables:` list of absolute paths (one per line) so Pisci can reliably parse them and surface each as an artifact on the user's session.
 - The Artifacts panel in the Chat UI (`src/components/Chat/index.tsx` → `ArtifactsPanel`) already supported click-to-open: `openPath(artifact.uri!)` for local files and `<a target="_blank">` for URLs — no UI change needed; the panel now has artifacts to display.
+- **Chat session list now classifies sessions into three category tabs**: **Chat / IM / Pond CLI** (i18n: `chat.filterChat` / `chat.filterIM` / `chat.filterCli`).
+  - `classifySession()` (`src/components/Chat/index.tsx`) now returns a three-way `SessionKind`: `"chat" | "im" | "cli"`. Pond-CLI sessions (`source === "cli"`, set by `src-tauri/pisci-kernel/src/headless/mod.rs` and `src-tauri/pisci-cli/src/runner.rs`) are routed to their own tab instead of being mixed into IM.
+  - The previous "All" tab has been removed. The default filter is now `"chat"`. Internal/system sessions (`pisci_pool`, `heartbeat`, `pisci_inbox_*`, `pisci_heartbeat_*`, `koi_*`, …) remain hidden via `isInternalSession`.
+  - Pond-CLI entries show a 🐟 source icon (added to `sourceIcon()`).
+
+### Fixed
+- **IDE file save was silently broken** (Ctrl+S did nothing; "Save" from the tab header appeared to do nothing; closing the tab did not warn about unsaved changes).
+  - Root cause: Monaco Editor registered `Ctrl+S` via `addCommand(2048|49, () => { /* empty */ })` inside `src/components/Pond/IDE/CodeEditor.tsx`, swallowing the keydown before it reached the IDE's `window` listener — so the keystroke was intercepted but no save was performed.
+  - Wired a real `onSave` prop through `IDE → EditorTabs → CodeEditor` and changed the Monaco command to call `onSaveRef.current?.()`. The actual disk write still lives in the IDE layer (`saveFile`) where `tabs` state and `projectDir` are owned.
+  - Fixed a stale-closure bug in `saveFile`: it used to capture `tabs` and `projectDir` from the closure, so if the user typed between renders the saved content was the *old* state. Now reads `tabsRef.current` and `projectDirRef.current`, so Ctrl+S always writes the latest buffer.
+- **IDE / Collab editor now auto-reloads files modified by agents or external tools** (reported as "agent 在外部修改了文件后，IDE 已打开的文件未刷新内容").
+  - Root cause: `src-tauri/src/commands/ide.rs::ide_start_watcher` emitted `evt.path` with OS-native separators (`src\\foo.rs` on Windows), but `tab.path` is stored with `/` (that's how `FileTree` reports node paths and how `openFile` persists them). The `tab.path === evt.path` check therefore silently failed on Windows, so the `ideApi.readFile(...)` reload was never triggered.
+  - Backend (`ide_start_watcher`): the emitted `path` payload is now normalized to forward slashes via `rel.replace('\\', "/")` before `app_clone.emit("ide-file-changed", …)`. The `.git` / `node_modules` / `.koi-worktrees` filters already used the normalized form, so behavior is unchanged for those exclusions.
+  - Frontend (defensive, survives any future regression): both `src/components/Pond/IDE/index.tsx` and `src/components/Pond/Collab/index.tsx` now run `evt.path.replace(/\\/g, "/")` before comparing with `tab.path`. The same normalized `evtPath` is used when building the full path for `ideApi.readFile`.
+- **Closing the app / navigating away with unsaved tabs now triggers the browser's beforeunload prompt** — new `useEffect` in `src/components/Pond/IDE/index.tsx` watches `tabsRef.current` for any `isDirty` tab and sets `e.preventDefault()` + `e.returnValue = ""` on `beforeunload`.
+- **Dirty-dot indicator on editor tabs now reliably reflects `isDirty`** state. `tab.isDirty` is set to `true` on every Monaco `onChange` and cleared on successful `ideApi.writeFile`. The dot is rendered inside `<span className="tab-name">` so it stays visible even when the tab isn't hovered (previously it shared the close-button's hover rule and flickered in/out).
+- **Right-click context menu on editor tab headers** (VS Code parity):
+  - Close — closes the right-clicked tab (with unsaved-changes confirmation if dirty).
+  - Close Others — keeps only the right-clicked tab; saves dirty others if the user confirms.
+  - Close All — closes every tab; saves any dirty ones first (with a bulk confirmation dialog).
+  - Save — enabled only when the right-clicked tab is dirty; triggers the same `saveFile` as Ctrl+S.
+  - Close Unsaved — closes every dirty tab; saves them first if the user confirms the bulk prompt.
+  - Context menu dismisses on outside click, Escape, or scroll.
+- **Tab close now prompts when the tab has unsaved changes** (per-tab `window.confirm` before `removeTab`), so users can no longer lose work by clicking the × on a dirty tab.
+- Internationalization: added IDE keys `closeCurrent`, `closeOther`, `closeAll`, `closeUnsaved`, `saveFile`, `unsavedConfirm`, `unsavedBulkConfirm` (en + zh).
 
 ---
 

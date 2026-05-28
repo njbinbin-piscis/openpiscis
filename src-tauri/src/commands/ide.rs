@@ -1179,12 +1179,14 @@ pub async fn ide_start_watcher(
                                 .to_string_lossy()
                                 .to_string();
 
-                            // Skip git internal and node_modules.
-                            // Normalize to forward slashes so the check works on
-                            // Windows (where paths use backslashes) and avoids a
-                            // feedback loop where `git status` writes to .git\
-                            // which the watcher picks up and triggers another
-                            // git status, causing an infinite process storm.
+                            // Normalize to forward slashes. On Windows the native
+                            // separator is `\\`, but the IDE's `tab.path` always
+                            // uses `/` (that's how `openFile` stores it, how
+                            // `FileTree` reports node paths, and how `ideApi.readFile`
+                            // builds the full path). Emitting the raw OS path
+                            // meant `tab.path === evt.path` silently failed on
+                            // Windows and the editor never reloaded files that
+                            // agents / external tools changed.
                             let rel_norm = rel.replace('\\', "/");
                             if rel_norm == ".git"
                                 || rel_norm.starts_with(".git/")
@@ -1205,7 +1207,7 @@ pub async fn ide_start_watcher(
                                 "ide-file-changed",
                                 serde_json::json!({
                                     "project_dir": dir,
-                                    "path": rel,
+                                    "path": rel_norm,
                                     "kind": kind,
                                 }),
                             );

@@ -172,6 +172,12 @@
   border-left-color: var(--accent);
 }
 
+.file-tree-item.selected {
+  background: var(--bg-hover);
+  border-left-color: var(--accent);
+  opacity: 0.85;
+}
+
 .file-tree-item .icon {
   width: 16px;
   margin-right: 6px;
@@ -267,13 +273,17 @@
 .ide-tab .tab-name {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   flex: 1;
+  min-width: 0;
 }
 
 .ide-tab .tab-dirty {
   color: var(--accent);
   margin-left: 6px;
   font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .ide-tab .tab-close {
@@ -288,6 +298,7 @@
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .ide-tab:hover .tab-close,
@@ -299,6 +310,53 @@
   opacity: 1;
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+/* Tab header right-click context menu (VS Code style) */
+.ide-tab-context-menu {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 4px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  padding: 4px 0;
+  min-width: 160px;
+  font-size: 12px;
+  color: var(--text-primary);
+  z-index: 1000;
+}
+
+.ide-tab-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.ide-tab-context-menu button:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ide-tab-context-menu button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ide-tab-context-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.ide-tab-context-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }
 
 /* ─── Editor ──────────────────────────────────────────────────────────── */

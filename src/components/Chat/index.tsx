@@ -201,13 +201,14 @@ function MermaidBlock({ code }: { code: string }) {
 
 // ── Session classification ────────────────────────────────────────────────────
 
-type SessionKind = "chat" | "im";
+type SessionKind = "chat" | "im" | "cli";
 
 type SessionLike = { source?: string | null; id?: string | null };
 
 
 function classifySession(session: SessionLike | undefined | null): SessionKind {
   if (isInternalSession(session)) return "chat";
+  if (session?.source === "cli") return "cli";
   if (!session?.source || session.source === "chat") return "chat";
   return "im";
 }
@@ -215,6 +216,7 @@ function classifySession(session: SessionLike | undefined | null): SessionKind {
 /** Map a session.source value to a compact display emoji/label. */
 function sourceIcon(source: string): string {
   if (source === "chat" || !source) return "👤";
+  if (source === "cli") return "🐟";
   if (source.includes("telegram")) return "✈";
   if (source.includes("feishu") || source.includes("lark")) return "📘";
   if (source.includes("wechat")) return "🟢";
@@ -377,7 +379,7 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
     const [infoNotice, setInfoNotice] = useState<string | null>(null);
-  const [sessionFilter, setSessionFilter] = useState<"all" | SessionKind>("all");
+  const [sessionFilter, setSessionFilter] = useState<SessionKind>("chat");
 
   // ── Input history navigation (up/down arrows) ──────────────────────────
   const [historyIndex, setHistoryIndex] = useState(-1); // -1 = not navigating, 0 = oldest, N-1 = newest
@@ -821,7 +823,7 @@ export default function Chat() {
     const currentSessions = sessionsRef.current;
     const currentActiveId = activeSessionIdForFilterRef.current;
     const visibleSessions = currentSessions.filter((x) => !isInternalSession(x) && (
-      sessionFilter === "all" || classifySession(x) === sessionFilter
+      classifySession(x) === sessionFilter
     ));
     if (visibleSessions.length === 0) return;
     const s = currentActiveId ? currentSessions.find((x) => x.id === currentActiveId) : null;
@@ -1117,7 +1119,6 @@ export default function Chat() {
         const remaining = sessions.filter((s) => {
           if (s.id === sessionId) return false;
           if (isInternalSession(s)) return false;
-          if (sessionFilter === "all") return true;
           return classifySession(s) === sessionFilter;
         });
         dispatch(sessionsActions.setActiveSession(remaining.length > 0 ? remaining[0].id : null));
@@ -1528,7 +1529,6 @@ export default function Chat() {
   // ── Filtered session list (single source of truth) ───────────────────────
   const filteredSessions = sessions.filter((s) => {
     if (isInternalSession(s)) return false;
-    if (sessionFilter === "all") return true;
     return classifySession(s) === sessionFilter;
   });
 
@@ -1543,7 +1543,7 @@ export default function Chat() {
 
         {/* Filter tabs */}
         <div style={{ display: "flex", gap: 4, padding: "4px 8px 0", fontSize: 12 }}>
-          {(["all", "chat", "im"] as const).map((f) => (
+          {(["chat", "im", "cli"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setSessionFilter(f)}
@@ -1558,7 +1558,7 @@ export default function Chat() {
                 fontSize: 11,
               }}
             >
-              {f === "all" ? t("chat.filterAll") : f === "chat" ? t("chat.filterChat") : t("chat.filterIM")}
+              {f === "chat" ? t("chat.filterChat") : f === "im" ? t("chat.filterIM") : t("chat.filterCli")}
             </button>
           ))}
         </div>

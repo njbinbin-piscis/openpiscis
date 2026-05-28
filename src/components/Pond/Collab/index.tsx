@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import FileTree from "../IDE/FileTree";
+import type { FileTreeContextMenu } from "../IDE/FileTree";
 import EditorTabs from "../IDE/EditorTabs";
 import CodeEditor from "../IDE/CodeEditor";
 import TerminalPanel from "../IDE/Terminal";
@@ -273,6 +274,9 @@ export default function Collab() {
   const [gitAdded, setGitAdded] = useState<Set<string>>(new Set());
   const [showTerminal, setShowTerminal] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  // File tree multi-select + context menu
+  const [collabFileTreeSelection, setCollabFileTreeSelection] = useState<Set<string>>(new Set());
+  const [_collabFileTreeContextMenu, setCollabFileTreeContextMenu] = useState<FileTreeContextMenu | null>(null);
   // VS Code-style: clicking an already-active IDE view button collapses
   // the side panel; clicking again expands it. Only applies to
   // explorer / search / git — the views that own the side panel.
@@ -545,20 +549,22 @@ export default function Collab() {
     loadGitStatus();
     ideApi.startWatcher(projectDir).catch(() => {});
     const unlistenPromise = onFileChanged((evt) => {
-      if (evt.project_dir === projectDir) {
-        scheduleRefresh();
-        setTabs((prev) =>
-          prev.map((tab) => {
-            if (tab.path === evt.path && !tab.isDirty) {
-              ideApi.readFile(`${projectDir}/${evt.path}`).then((fc) => {
-                setTabs((p) => p.map((t) =>
-                  t.path === evt.path && !t.isDirty ? { ...t, content: fc.content } : t));
-              }).catch(() => {});
-            }
-            return tab;
-          }),
-        );
-      }
+      if (evt.project_dir !== projectDir) return;
+      // Normalize to `/` so `tab.path` (always stored with `/`) compares
+      // equal even when the watcher emits OS-native separators.
+      const evtPath = evt.path.replace(/\\/g, "/");
+      scheduleRefresh();
+      setTabs((prev) =>
+        prev.map((tab) => {
+          if (tab.path === evtPath && !tab.isDirty) {
+            ideApi.readFile(`${projectDir}/${evtPath}`).then((fc) => {
+              setTabs((p) => p.map((t) =>
+                t.path === evtPath && !t.isDirty ? { ...t, content: fc.content } : t));
+            }).catch(() => {});
+          }
+          return tab;
+        }),
+      );
     });
     return () => {
       if (refreshTimer.current) { clearTimeout(refreshTimer.current); refreshTimer.current = null; }
@@ -1000,7 +1006,7 @@ export default function Collab() {
               <div className="collab-ide-main">
                 {activeTab ? (
                   <>
-                    <EditorTabs tabs={tabs} activeTabPath={activeTabPath} onTabClick={setActiveTabPath} onTabClose={closeTab} />
+                    <EditorTabs tabs={tabs} activeTabPath={activeTabPath} onTabClick={setActiveTabPath} onTabClose={closeTab} contextMenu={null} />
                     <div className="ide-editor" style={{ flex: 1, minHeight: 120 }}><CodeEditor tab={activeTab} theme="violet" projectDir={projectDir} onChange={handleEditorChange} /></div>
                   </>
                 ) : (
@@ -1031,7 +1037,28 @@ export default function Collab() {
               {projectDir ? (
                 <>
                   {contentView === "explorer" && (
-                    <FileTree nodes={fileTree} activePath={activeTabPath} gitModified={gitModified} gitAdded={gitAdded} projectDir={projectDir} onFileClick={(node) => openFile(node.path)} onRefresh={() => { loadFileTree(); loadGitStatus(); }} />
+                    <FileTree
+                                          nodes={fileTree}
+                                          activePath={activeTabPath}
+                                          selectedPaths={collabFileTreeSelection}
+                                          gitModified={gitModified}
+                                          gitAdded={gitAdded}
+                                          projectDir={projectDir}
+                                          onFileClick={(node) => openFile(node.path)}
+                                          onRefresh={() => { loadFileTree(); loadGitStatus(); }}
+                                          onSelect={(path, opts) => {
+                                            setCollabFileTreeSelection((prev) => {
+                                              if (opts.multi) {
+                                                const next = new Set(prev);
+                                                if (next.has(path)) next.delete(path);
+                                                else next.add(path);
+                                                return next;
+                                              }
+                                              return new Set([path]);
+                                            });
+                                          }}
+                                          onContextMenu={(menu) => setCollabFileTreeContextMenu(menu)}
+                                        />
                   )}
                   {contentView === "search" && (
                     <SearchPanel projectDir={projectDir} onResultClick={(path, _line) => openFile(path)} />
