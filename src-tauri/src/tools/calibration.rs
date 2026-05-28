@@ -119,8 +119,7 @@ pub fn save_file(path: &std::path::Path, file: &CalibrationFile) -> std::io::Res
     }
     let mut to_write = file.clone();
     to_write.version = SCHEMA_VERSION;
-    let raw = serde_json::to_string_pretty(&to_write)
-        .map_err(std::io::Error::other)?;
+    let raw = serde_json::to_string_pretty(&to_write).map_err(std::io::Error::other)?;
     std::fs::write(path, raw)
 }
 
