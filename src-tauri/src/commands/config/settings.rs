@@ -224,6 +224,25 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
     if let Some(v) = updates["webhook_enabled"].as_bool() {
         settings.webhook_enabled = v;
     }
+    // WeChat (iLink Bot)
+    if let Some(v) = updates["wechat_enabled"].as_bool() {
+        settings.wechat_enabled = v;
+    }
+    if let Some(v) = updates["wechat_gateway_token"].as_str() {
+        settings.wechat_gateway_token = v.to_string();
+    }
+    if let Some(v) = updates["wechat_gateway_port"].as_u64() {
+        settings.wechat_gateway_port = v as u16;
+    }
+    if let Some(v) = updates["wechat_bot_token"].as_str() {
+        settings.wechat_bot_token = v.to_string();
+    }
+    if let Some(v) = updates["wechat_base_url"].as_str() {
+        settings.wechat_base_url = v.to_string();
+    }
+    if let Some(v) = updates["wechat_bot_id"].as_str() {
+        settings.wechat_bot_id = v.to_string();
+    }
     // Email (SMTP / IMAP)
     if let Some(v) = updates["smtp_host"].as_str() {
         settings.smtp_host = v.to_string();
@@ -252,12 +271,49 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
         settings.email_enabled = v;
     }
 
+    if let Some(v) = updates["allow_multiple_instances"].as_bool() {
+        settings.allow_multiple_instances = v;
+    }
+    if let Some(v) = updates["fallback_models"].as_array() {
+        settings.fallback_models = v
+            .iter()
+            .filter_map(|item| item.as_str().map(|s| s.to_string()))
+            .filter(|s| !s.trim().is_empty())
+            .collect();
+    }
+
     // Agent loop
     if let Some(v) = updates["max_iterations"].as_u64() {
         settings.max_iterations = v as u32;
     }
     if let Some(v) = updates["auto_compact_input_tokens_threshold"].as_u64() {
         settings.auto_compact_input_tokens_threshold = v as u32;
+    }
+    if let Some(v) = updates["compaction_micro_percent"].as_u64() {
+        settings.compaction_micro_percent = v.min(100) as u8;
+    }
+    if let Some(v) = updates["compaction_auto_percent"].as_u64() {
+        settings.compaction_auto_percent = v.min(100) as u8;
+    }
+    if let Some(v) = updates["compaction_full_percent"].as_u64() {
+        settings.compaction_full_percent = v.min(100) as u8;
+    }
+    if let Some(v) = updates["max_tool_result_tokens"].as_u64() {
+        settings.max_tool_result_tokens = v as u32;
+    }
+    if let Some(v) = updates["summary_model"].as_str() {
+        settings.summary_model = if v.is_empty() {
+            None
+        } else {
+            Some(v.to_string())
+        };
+    } else if updates
+        .get("summary_model")
+        .map(|v| v.is_null())
+        .unwrap_or(false)
+    {
+        // Explicit null → clear the override
+        settings.summary_model = None;
     }
     if let Some(v) = updates["project_instruction_budget_chars"].as_u64() {
         settings.project_instruction_budget_chars = v.max(512) as u32;

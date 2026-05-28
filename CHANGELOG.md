@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.14] - 2026-05-25
+
+### Fixed
+- **Settings persistence gaps that caused toggles to revert after save** (reported as "WeChat IM toggle turns back on after I disable and save").
+  - Root cause: the `save_settings` handler in `src-tauri/src/commands/config/settings.rs` only wrote a subset of the fields the frontend sent. Any field not explicitly matched was silently dropped on the backend, so the UI appeared to flip back when the settings were re-read.
+  - Added persistence for every remaining Settings field that has a UI control (or is part of the form state):
+    - WeChat / iLink Bot: `wechat_enabled`, `wechat_gateway_token`, `wechat_gateway_port`, `wechat_bot_token`, `wechat_base_url`, `wechat_bot_id`.
+    - Compaction tiers: `compaction_micro_percent`, `compaction_auto_percent`, `compaction_full_percent`.
+    - Agent loop: `max_tool_result_tokens`, `summary_model` (handles both empty-string and explicit-null as "clear override").
+    - App behavior: `allow_multiple_instances`.
+    - Fallback models: `fallback_models` (array, with blank entries filtered out).
+  - This is a complete audit of the `Settings` struct vs. the `save_settings` handler; every field reachable from the UI now round-trips through the backend.
+
+---
+
 ## [0.8.13] - 2026-05-25
 
 ### Fixed

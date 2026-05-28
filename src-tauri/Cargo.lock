@@ -4921,7 +4921,7 @@ dependencies = [
 
 [[package]]
 name = "pisci-desktop"
-version = "0.8.13"
+version = "0.8.14"
 dependencies = [
  "aes",
  "anyhow",
