@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.22] - 2026-05-28
+
+### Fixed
+- **IDE Explorer delete**: file/folder delete now passes absolute paths under the project root (same as open/read/write), so `ide_file_action` actually removes the target.
+- **Delete confirmation dialog**: shows the real file or folder name instead of the literal `{{name}}` placeholder; failures surface an alert instead of failing silently.
+
+---
+
 ## [0.8.21] - 2026-05-29
 
 ### Added

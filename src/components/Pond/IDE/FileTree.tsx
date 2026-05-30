@@ -34,8 +34,24 @@ interface FileTreeProps {
 
 /** Inline creation state: which parent dir, creating file vs dir */
 interface CreatingState {
-  parentPath: string; // full path of the directory to create inside
+  /** Parent directory relative to project root (empty string = project root). */
+  parentPath: string;
   isDir: boolean;
+}
+
+/** Join project root with a tree-relative path for Tauri `ide_file_action` / read / write. */
+function joinProjectPath(projectDir: string, relativePath: string): string {
+  const root = projectDir.replace(/[/\\]+$/, "");
+  const rel = relativePath.replace(/^[/\\]+/, "");
+  if (!rel) return root;
+  const sep = root.includes("\\") ? "\\" : "/";
+  return `${root}${sep}${rel}`;
+}
+
+function basenameFromPath(path: string): string {
+  const sep = path.includes("\\") ? "\\" : "/";
+  const i = path.lastIndexOf(sep);
+  return i >= 0 ? path.slice(i + 1) : path;
 }
 
 /** Inline rename state: the node currently being renamed. */
@@ -154,7 +170,7 @@ function TreeNode({
   onCommitRename: (name: string) => void;
   onCancelRename: () => void;
 }) {
-  const isCreateTarget = creating && creating.parentPath === node.path;
+  const isCreateTarget = creating != null && creating.parentPath === node.path;
   const isRenaming = renaming?.path === node.path;
   const [expanded, setExpanded] = useState(depth < 2 || !!isCreateTarget);
 
@@ -341,18 +357,22 @@ export default function FileTree({
 
   const commitCreate = useCallback(
     async (name: string) => {
-      if (!creating) return;
-      const sep = creating.parentPath.includes("\\") ? "\\" : "/";
-      const fullPath = `${creating.parentPath}${sep}${name}`;
+      if (!creating || !projectDir) return;
+      const sep = "/";
+      const rel = creating.parentPath ? `${creating.parentPath}${sep}${name}` : name;
       try {
-        await ideApi.fileAction(fullPath, creating.isDir ? "create_dir" : "create_file");
+        await ideApi.fileAction(
+          joinProjectPath(projectDir, rel),
+          creating.isDir ? "create_dir" : "create_file",
+        );
         setCreating(null);
         onRefresh();
       } catch (e) {
         console.error("FileTree create failed:", e);
+        window.alert(String(e));
       }
     },
-    [creating, onRefresh],
+    [creating, onRefresh, projectDir],
   );
 
   const cancelCreate = useCallback(() => setCreating(null), []);
@@ -379,20 +399,25 @@ export default function FileTree({
 
   const commitRename = useCallback(
     async (newName: string) => {
-      if (!renaming) return;
-      const sep = renaming.path.includes("\\") ? "\\" : "/";
+      if (!renaming || !projectDir) return;
+      const sep = "/";
       const lastSep = renaming.path.lastIndexOf(sep);
       const parent = lastSep > 0 ? renaming.path.substring(0, lastSep) : "";
-      const newPath = parent ? `${parent}${sep}${newName}` : newName;
+      const newRel = parent ? `${parent}${sep}${newName}` : newName;
       try {
-        await ideApi.fileAction(renaming.path, "rename", newPath);
+        await ideApi.fileAction(
+          joinProjectPath(projectDir, renaming.path),
+          "rename",
+          joinProjectPath(projectDir, newRel),
+        );
         setRenaming(null);
         onRefresh();
       } catch (e) {
         console.error("FileTree rename failed:", e);
+        window.alert(String(e));
       }
     },
-    [renaming, onRefresh],
+    [renaming, onRefresh, projectDir],
   );
 
   const cancelRename = useCallback(() => setRenaming(null), []);
@@ -415,30 +440,38 @@ export default function FileTree({
   // keyboard handler. The IDE attaches a global `keydown` listener and
   // calls `deleteSelected()` / `renameActive()` via a ref.
   const deleteSelected = useCallback(async () => {
-    if (selectedNodeInfo.length === 0) return;
+    if (selectedNodeInfo.length === 0 || !projectDir) return;
     const count = selectedNodeInfo.length;
     const hasDir = selectedNodeInfo.some((n) => n.isDir);
     const msgKey = count === 1
       ? (hasDir ? "ide.confirmDeleteFolder" : "ide.confirmDeleteFile")
       : "ide.confirmDeleteMany";
-    const msg = t(msgKey, { count })
-      || (count === 1
-        ? `Delete ${hasDir ? "folder" : "file"}?`
+    const name = count === 1 ? basenameFromPath(selectedNodeInfo[0].path) : undefined;
+    const msg =
+      t(msgKey, { count, name: name ?? "" }) ||
+      (count === 1
+        ? `Delete ${hasDir ? "folder" : "file"} "${name}"?`
         : `Delete ${count} items?`);
     // eslint-disable-next-line no-alert
     if (!window.confirm(msg)) return;
     // Delete in reverse-path order so children come before parents (avoids
     // the "parent already gone" failure when both are in the selection).
     const ordered = [...selectedNodeInfo].sort((a, b) => b.path.localeCompare(a.path));
+    const failures: string[] = [];
     for (const item of ordered) {
+      const absPath = joinProjectPath(projectDir, item.path);
       try {
-        await ideApi.fileAction(item.path, "delete");
+        await ideApi.fileAction(absPath, "delete");
       } catch (e) {
-        console.error("FileTree delete failed:", item.path, e);
+        console.error("FileTree delete failed:", absPath, e);
+        failures.push(`${item.path}: ${e}`);
       }
     }
+    if (failures.length > 0) {
+      window.alert(failures.join("\n"));
+    }
     onRefresh();
-  }, [selectedNodeInfo, onRefresh, t]);
+  }, [selectedNodeInfo, onRefresh, projectDir, t]);
 
   const renameActive = useCallback(() => {
     if (!activePath) return;
@@ -465,8 +498,7 @@ export default function FileTree({
     }
   }, [containerRef, nodes.length, creating, renaming]);
 
-  // Is the inline input at root level (parentPath === projectDir)?
-  const isRootCreate = creating && creating.parentPath === projectDir;
+  const isRootCreate = creating && creating.parentPath === "";
 
   return (
     <>
