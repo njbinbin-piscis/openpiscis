@@ -281,6 +281,13 @@
 
 /* ─── User input area ──────────────────────────────────────────────── */
 
+.collab-send-hint {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
 .collab-input-area {
   flex-shrink: 0;
   border-top: 1px solid var(--border);

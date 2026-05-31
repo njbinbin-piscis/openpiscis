@@ -369,12 +369,28 @@
   font-size: 13px;
 }
 
-.chatpool-load-more {
+.chatpool-load-more-btn {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 8px 12px;
   text-align: center;
-  font-size: 11px;
-  color: var(--text-muted);
-  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+}
+
+.chatpool-load-more-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.chatpool-load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* ── Message bubble ── */

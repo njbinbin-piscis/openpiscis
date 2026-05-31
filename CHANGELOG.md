@@ -6,6 +6,24 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.24] - 2026-05-28
+
+### Added
+- **`useScrollPrependedHistory` hook**: shared scroll-up pagination (layout restore, clickable load-more, short-viewport auto-fill) for message lists.
+- **Pool mention ack**: immediate Pisci `post_status` line when automated `@!Pisci` dispatch runs (system paths).
+
+### Fixed
+- **`@!Pisci` pool dispatch**: forced `build_forced_mention_attention` so mention-triggered heartbeats no longer skip when the periodic cursor advanced; mention channel requires visible `pool_org(post_status)` replies.
+- **Chat history lazy-load**: prepend scroll restore via `useLayoutEffect`, clickable「加载更多历史」, auto-load when the viewport is shorter than one screen.
+- **Pisci coordination console**: show tool-call rows with summaries; fix empty right pane with thousands of messages and a stuck「加载更多」.
+- **Collab / ChatPool lazy-load**: same prepend-scroll fixes as main chat.
+
+### Changed
+- **Pool chat identity**: humans send as **`sender_id: pisci`** (act as Pisci coordinator); `user` sender rejected; `@!Pisci` self-delegation blocked — use **IDE Pisci CLI** for 1:1 Pisci chat (main session · Pool CLI).
+- **Pool `@` autocomplete**: Koi only; hint documents **Ctrl+Enter** send and **Enter** newline.
+
+---
+
 ## [0.8.23] - 2026-05-28
 
 ### Added

@@ -12,7 +12,32 @@ import ConfirmDialog from "../../ConfirmDialog";
 import "./PisciInbox.css";
 
 const INBOX_INITIAL_SIZE = 200;
-const INBOX_LAZY_STEP = 10;
+const INBOX_LAZY_STEP = 50;
+
+function parsePersistedToolBlocks(raw?: string | null): Array<Record<string, unknown>> {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as Array<Record<string, unknown>>) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Text to show in the inbox when `content` is empty (common for tool carrier rows). */
+function inboxMessageDisplayText(message: ChatMessage): string {
+  const trimmed = message.content.trim();
+  if (trimmed) return trimmed;
+  for (const call of parsePersistedToolBlocks(message.tool_calls_json)) {
+    const name = typeof call.name === "string" ? call.name : "";
+    if (name) return `🔧 ${name}`;
+  }
+  if (message.tool_results_json?.trim()) {
+    return "🔧 tool result";
+  }
+  if (message.role === "tool") return "🔧 tool";
+  return "";
+}
 type InboxMode = "coordination" | "koiObserver";
 
 type PisciInboxProps = {
@@ -173,6 +198,8 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialLoadDoneRef = useRef<string | null>(null);
+  const scrollRestoreRef = useRef<number | null>(null);
+  const loadingMoreRef = useRef(false);
 
   const [poolTodoSessionIds, setPoolTodoSessionIds] = useState<Set<string>>(new Set());
 
@@ -245,7 +272,10 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
   }, []);
 
   const loadOlderMessages = useCallback(async (sessionId: string, currentCount: number) => {
-    if (loadingMore) return;
+    if (loadingMoreRef.current) return;
+    const el = messagesContainerRef.current;
+    scrollRestoreRef.current = el ? el.scrollHeight : 0;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const result = await sessionsApi.getMessages(sessionId, INBOX_LAZY_STEP, currentCount);
@@ -258,11 +288,16 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
         setHasMore(result.length === INBOX_LAZY_STEP);
       } else {
         setHasMore(false);
+        scrollRestoreRef.current = null;
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
       }
-    } finally {
+    } catch {
+      scrollRestoreRef.current = null;
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [loadingMore]);
+  }, []);
 
   useEffect(() => {
     loadSessions().catch(console.error);
@@ -285,7 +320,15 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
     loadMessages(activeSessionId).catch(console.error);
   }, [activeSessionId, loadMessages]);
 
-  // After initial load: immediately jump to bottom
+  const visibleMessages = useMemo(
+    () =>
+      messages
+        .map((message) => ({ message, text: inboxMessageDisplayText(message) }))
+        .filter((row) => row.text.length > 0),
+    [messages],
+  );
+
+  // After initial load: jump to bottom once messages are in the DOM
   useLayoutEffect(() => {
     if (initialLoadDoneRef.current === activeSessionId && messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -293,20 +336,41 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
     }
   });
 
+  // Restore scroll position after prepending older messages
+  useLayoutEffect(() => {
+    if (scrollRestoreRef.current == null) return;
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const prevScrollHeight = scrollRestoreRef.current;
+    scrollRestoreRef.current = null;
+    el.scrollTop = Math.max(0, el.scrollHeight - prevScrollHeight);
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+  }, [messages.length]);
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    if (el.scrollTop < 60 && hasMore && activeSessionId && !loadingMore) {
-      const prevScrollHeight = el.scrollHeight;
-      loadOlderMessages(activeSessionId, messages.length).then(() => {
-        requestAnimationFrame(() => {
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop =
-              messagesContainerRef.current.scrollHeight - prevScrollHeight;
-          }
-        });
-      });
+    if (el.scrollTop < 60 && hasMore && activeSessionId && !loadingMoreRef.current) {
+      loadOlderMessages(activeSessionId, messages.length);
     }
-  }, [hasMore, activeSessionId, loadingMore, loadOlderMessages, messages.length]);
+  }, [hasMore, activeSessionId, loadOlderMessages, messages.length]);
+
+  // Short viewport or only empty tool rows: keep loading until scrollable or exhausted
+  useEffect(() => {
+    if (!activeSessionId || !hasMore || loadingMoreRef.current || loadingMessages) return;
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const scrollable = el.scrollHeight - el.clientHeight > 8;
+    if (scrollable && visibleMessages.length > 0) return;
+    loadOlderMessages(activeSessionId, messages.length);
+  }, [
+    activeSessionId,
+    hasMore,
+    loadingMessages,
+    visibleMessages.length,
+    messages.length,
+    loadOlderMessages,
+  ]);
 
   const requestDeleteSession = useCallback(async (e: React.MouseEvent, session: Session) => {
     e.stopPropagation();
@@ -461,16 +525,20 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
               {!loadingMessages && messages.length === 0 && (
                 <div className="pisci-inbox-empty">{copy.noMessages}</div>
               )}
-              {messages.length > 0 && (
-                <div className="pisci-inbox-load-more">
-                  {loadingMore
-                    ? t("common.loading")
-                    : hasMore
-                      ? t("common.loadMore")
-                      : null}
-                </div>
+              {!loadingMessages && messages.length > 0 && visibleMessages.length === 0 && !hasMore && (
+                <div className="pisci-inbox-empty">{t("pond.inboxOnlyToolRows")}</div>
               )}
-              {messages.filter((m) => m.content.trim()).map((message) => (
+              {hasMore && (
+                <button
+                  type="button"
+                  className="pisci-inbox-load-more-btn"
+                  disabled={loadingMore}
+                  onClick={() => activeSessionId && loadOlderMessages(activeSessionId, messages.length)}
+                >
+                  {loadingMore ? t("common.loading") : t("common.loadMore")}
+                </button>
+              )}
+              {visibleMessages.map(({ message, text }) => (
                 <div key={message.id} className={`pisci-inbox-message pisci-inbox-message--${message.role}`}>
                   <div className="pisci-inbox-message-header">
                     <span className="pisci-inbox-message-role">
@@ -478,7 +546,7 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
                     </span>
                     <span className="pisci-inbox-message-time">{formatTime(message.created_at)}</span>
                   </div>
-                  <div className="pisci-inbox-message-content"><InboxMessageContent content={message.content} /></div>
+                  <div className="pisci-inbox-message-content"><InboxMessageContent content={text} /></div>
                 </div>
               ))}
               <div ref={messagesEndRef} />

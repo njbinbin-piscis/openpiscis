@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
 import { RootState, poolActions, koiActions, POOL_DEFAULT_CAPACITY } from "../../../store";
+import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
 import ConfirmDialog from "../../ConfirmDialog";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import "./ChatPool.css";
@@ -214,33 +215,39 @@ export default function ChatPool() {
     }
   }, [dispatch]);
 
-  /** Load LAZY_LOAD_STEP older messages when user scrolls to the top, expanding capacity. */
+  const scrollCancelRef = useRef<(() => void) | null>(null);
+
   const loadOlderMessages = useCallback(async (sessionId: string, currentCount: number) => {
-    if (loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const msgs = await poolApi.getMessages({
-        session_id: sessionId,
-        limit: LAZY_LOAD_STEP,
-        offset: currentCount,
-      });
-      if (msgs.length > 0) {
-        dispatch(poolActions.prependPoolMessages({
-          sessionId,
-          messages: msgs,
-          hasMore: msgs.length === LAZY_LOAD_STEP,
-        }));
-        // Expand capacity so the new older messages are not immediately evicted on next append
-        setCapacity((c) => c + LAZY_LOAD_STEP);
-      } else {
-        dispatch(poolActions.prependPoolMessages({ sessionId, messages: [], hasMore: false }));
-      }
-    } catch {
-      // silently ignore
-    } finally {
-      setLoadingMore(false);
+    const msgs = await poolApi.getMessages({
+      session_id: sessionId,
+      limit: LAZY_LOAD_STEP,
+      offset: currentCount,
+    });
+    if (msgs.length > 0) {
+      dispatch(poolActions.prependPoolMessages({
+        sessionId,
+        messages: msgs,
+        hasMore: msgs.length === LAZY_LOAD_STEP,
+      }));
+      setCapacity((c) => c + LAZY_LOAD_STEP);
+    } else {
+      dispatch(poolActions.prependPoolMessages({ sessionId, messages: [], hasMore: false }));
+      scrollCancelRef.current?.();
     }
-  }, [dispatch, loadingMore]);
+  }, [dispatch]);
+
+  const scrollHistory = useScrollPrependedHistory({
+    containerRef: messagesContainerRef,
+    itemCount: messages.length,
+    hasMore,
+    setLoading: setLoadingMore,
+    loadOlder: () => {
+      if (!activeSessionId) return Promise.resolve();
+      return loadOlderMessages(activeSessionId, messages.length);
+    },
+    active: Boolean(activeSessionId),
+  });
+  scrollCancelRef.current = scrollHistory.cancelPendingRestore;
 
   useEffect(() => {
     loadSessions();
@@ -317,22 +324,13 @@ export default function ChatPool() {
 
   const handleMessagesScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    // Clear unread badge when user manually scrolls to bottom 10%
     const scrollable = el.scrollHeight - el.clientHeight;
     const nearBottom = scrollable <= 0 || el.scrollTop >= scrollable * 0.9;
     if (nearBottom) {
       setUnreadCount(0);
     }
-    if (el.scrollTop < 60 && hasMore && activeSessionId && !loadingMore) {
-      const prevScrollHeight = el.scrollHeight;
-      loadOlderMessages(activeSessionId, messages.length).then(() => {
-        // Restore scroll position so the view doesn't jump to the top
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight - prevScrollHeight;
-        });
-      });
-    }
-  }, [hasMore, activeSessionId, loadingMore, loadOlderMessages, messages.length]);
+    scrollHistory.handleScroll(e);
+  }, [scrollHistory]);
 
   const handleCreateSession = async () => {
     const name = newName.trim();
@@ -661,9 +659,14 @@ export default function ChatPool() {
             onScroll={handleMessagesScroll}
           >
             {hasMore && (
-              <div className="chatpool-load-more">
+              <button
+                type="button"
+                className="chatpool-load-more-btn"
+                disabled={loadingMore}
+                onClick={() => scrollHistory.loadOlder()}
+              >
                 {loadingMore ? t("common.loading") : t("common.loadMore")}
-              </div>
+              </button>
             )}
             {messages.map((msg) => (
               <MessageBubble key={msg.id} msg={msg} kois={kois} />

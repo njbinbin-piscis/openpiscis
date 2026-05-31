@@ -142,6 +142,22 @@ pub async fn send_pool_message(
     state: State<'_, AppState>,
     input: SendPoolMessageInput,
 ) -> Result<PoolMessage, String> {
+    if input.sender_id == "user" {
+        return Err(
+            "Pool chat no longer accepts sender_id \"user\". \
+             Humans act as the Pisci coordinator (sender_id \"pisci\") and delegate to Koi via @!mentions."
+                .into(),
+        );
+    }
+    if input.sender_id == "pisci" && crate::pisci::heartbeat::content_targets_pisci(&input.content)
+    {
+        return Err(
+            "Cannot @!mention Pisci from a Pisci-role message. \
+             Delegate to Koi with @!KoiName, or use the IDE Pisci CLI for a direct Pisci conversation."
+                .into(),
+        );
+    }
+
     let db = state.db.lock().await;
     let msg = db
         .insert_pool_message(
@@ -173,15 +189,10 @@ pub async fn send_pool_message(
             }
         });
 
-        // @!Pisci is not a Koi — `coordinator::handle_mention` records it
-        // as a board todo with owner="pisci" but does not execute it,
-        // because Pisci normally runs through the heartbeat path. Fan out
-        // a mention-scoped dispatch right now so @!Pisci feels as
-        // responsive as @!Koi mentions. This path is NOT gated behind
-        // `heartbeat_enabled` — an explicit mention is an interactive
-        // request, so users who disable periodic heartbeats still get a
-        // direct Pisci reply in the pool.
-        if input.sender_id != "pisci"
+        // User @!Pisci in pool chat is rejected above. Non-user senders (pisci,
+        // system) may still @!Pisci for automated coordination.
+        if input.sender_id != "user"
+            && input.sender_id != "pisci"
             && crate::pisci::heartbeat::content_targets_pisci(&input.content)
         {
             crate::pisci::heartbeat::spawn_mention_dispatch(

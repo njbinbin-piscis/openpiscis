@@ -81,6 +81,7 @@ const en = {
     inboxSelectHint: "Select a session on the left to inspect Pisci's internal coordination log",
     inboxReadonly: "Read-only internal session",
     inboxNoMessages: "No messages in this coordination session yet",
+    inboxOnlyToolRows: "All rows loaded, but most are tool-call entries without visible text. Use Load more to scroll further back.",
     inboxGlobal: "Global Heartbeat",
     inboxProject: "Project Coordination",
     inboxMessageCount: "{{count}} msgs",
@@ -171,7 +172,12 @@ const en = {
   // Koi management
   koi: {
     title: "Koi Management",
-    pisciDesc: "Main coordinator - delegate via @!Pisci, orchestrates all Koi collaboration",
+    pisciDesc: "Main coordinator — you speak as Pisci in the pool via @!Koi; use IDE Pisci CLI for deep 1:1 chat",
+    pisciUseCli: "For a direct Pisci conversation, use Pisci CLI in the IDE; transcripts appear under Pool CLI in the main chat.",
+    actAsPisciRole: "Your pool messages are sent as Pisci to coordinate and @!delegate Koi—not as a regular user in Koi threads.",
+    sendAsPisciHint: "Speak as Pisci: type @!KoiName to delegate (@ opens autocomplete). Ctrl+Enter to send, Enter for a new line.",
+    sendShortcut: "Ctrl+Enter to send",
+    noDelegateSelfPisci: "You cannot @!Pisci to delegate to yourself. Use @!KoiName, or Pisci CLI in the IDE for a direct chat.",
     createBtn: "Create Koi",
     editBtn: "Reassign",
     deleteBtn: "Delete",
@@ -271,8 +277,8 @@ const en = {
     selectProjectDirBrowse: "Browse...",
     projectDirRequired: "Please select a working directory for this project",
     bindProjectDir: "Associate / Create Project Directory",
-    messageInputPlaceholder: "Type a message... @!name to delegate (Enter to send)",
-    mustMention: "Message requires a recipient. Use @name to mention someone, or @all to send to everyone.",
+    messageInputPlaceholder: "@!KoiName to delegate, or describe coordination…",
+    mustMention: "Send as Pisci and include @!KoiName (or @!all) to name a recipient.",
     mentionAll: "Everyone",
   },
 

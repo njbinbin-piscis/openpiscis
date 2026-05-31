@@ -7,8 +7,10 @@ use crate::pool::bridge;
 use crate::pool::KoiTodo;
 use crate::store::AppState;
 pub use pisci_core::heartbeat::{
-    build_pool_heartbeat_message, collect_pool_attention, PoolAttention,
+    build_forced_mention_attention, build_pool_heartbeat_message, collect_pool_attention,
+    PoolAttention,
 };
+use pisci_core::project_state::contains_delegated_pisci_mention;
 use pisci_core::project_state::ProjectDecision;
 use tracing::warn;
 
@@ -106,23 +108,9 @@ pub async fn ensure_heartbeat_session(
     Ok(())
 }
 
-/// Case-insensitive detection of `@!Pisci` (or `@!pisci`) as a
-/// delegated mention prefix on any line. Mirrors the kernel's
-/// `has_live_delegated_mention` check used by `coordinator::handle_mention`.
+/// Case-insensitive `@!Pisci` / `@!pisci` delegated mention at line start.
 pub fn content_targets_pisci(content: &str) -> bool {
-    let needle = "@!pisci";
-    content.lines().any(|line| {
-        let trimmed = line.trim_start();
-        let lower = trimmed.to_lowercase();
-        if !lower.starts_with(needle) {
-            return false;
-        }
-        trimmed[needle.len()..]
-            .chars()
-            .next()
-            .map(|ch| ch.is_whitespace() || matches!(ch, ':' | '：' | '-' | '—' | ',' | '，' | '.'))
-            .unwrap_or(true)
-    })
+    contains_delegated_pisci_mention(content)
 }
 
 /// Spawn an immediate Pisci heartbeat so that `@!Pisci` mentions and
@@ -173,15 +161,10 @@ pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'stati
     });
 }
 
-/// Build pool attention for an explicit `@!Pisci` mention, using a cursor
-/// one message behind the latest so the just-posted mention is always counted
-/// as a new attention event even if the periodic scan already advanced the
-/// cursor past it.
-async fn collect_mention_pool_attention(state: &AppState, pool_id: &str) -> Option<PoolAttention> {
-    let cursor_last = {
-        let cursor = state.pisci_heartbeat_cursor.lock().await;
-        cursor.get(pool_id).copied().unwrap_or(0)
-    };
+async fn collect_forced_mention_pool_attention(
+    state: &AppState,
+    pool_id: &str,
+) -> Option<PoolAttention> {
     let (pool, messages, pool_todos, koi_ids) = {
         let db = state.db.lock().await;
         let pool = db.get_pool_session(pool_id).ok().flatten()?;
@@ -203,11 +186,7 @@ async fn collect_mention_pool_attention(state: &AppState, pool_id: &str) -> Opti
             .collect::<Vec<_>>();
         (pool, messages, todos, koi_ids)
     };
-    let latest_message_id = messages.last().map(|m| m.id).unwrap_or(cursor_last);
-    let last_seen = latest_message_id
-        .saturating_sub(1)
-        .max(cursor_last.saturating_sub(1));
-    collect_pool_attention(&pool, &messages, &pool_todos, &koi_ids, last_seen)
+    build_forced_mention_attention(&pool, &messages, &pool_todos, &koi_ids)
 }
 
 /// Spawn an immediate Pisci turn in response to a direct `@!Pisci` mention
@@ -255,46 +234,31 @@ pub fn spawn_mention_dispatch(
         if prompt.trim().is_empty() {
             return;
         }
-        // Scope to the mentioning pool: scan, then dispatch only if the
-        // target pool is in the attention set. Reuse the heartbeat
-        // machinery so the Pisci turn runs in the pool's attention
-        // session (`Pisci · <pool>`) and posts back into pool_chat.
-        match scan_attention_pools(&cloned).await {
-            Ok(attentions) => {
-                let attention = attentions
-                    .iter()
-                    .find(|a| a.pool_id == pool_id)
-                    .cloned()
-                    .or(collect_mention_pool_attention(&cloned, &pool_id).await);
-                if let Some(attention) = attention {
-                    if let Err(e) =
-                        dispatch_single_pool_attention(&cloned, &prompt, &attention, channel).await
-                    {
-                        warn!(
-                            "@!Pisci mention dispatch failed for pool {}: {}",
-                            pool_id, e
-                        );
-                    }
-                } else {
-                    tracing::info!(
-                        target: "pool::pisci",
-                        pool_id = %pool_id,
-                        "@!Pisci mention: pool not flagged for attention; skipping immediate dispatch"
+        let attention = collect_forced_mention_pool_attention(&cloned, &pool_id).await;
+        match attention {
+            Some(attention) => {
+                if let Err(e) =
+                    dispatch_single_pool_attention(&cloned, &prompt, &attention, channel).await
+                {
+                    warn!(
+                        "@!Pisci mention dispatch failed for pool {}: {}",
+                        pool_id, e
                     );
+                    let _ = crate::pool::notice::post_pisci_pool_notice(
+                        &cloned.app_handle,
+                        &cloned,
+                        &pool_id,
+                        &format!("处理失败：{e}"),
+                    )
+                    .await;
                 }
             }
-            Err(e) => {
-                warn!("scan_attention_pools failed for @!Pisci mention: {e}");
-                if let Some(attention) = collect_mention_pool_attention(&cloned, &pool_id).await {
-                    if let Err(e) =
-                        dispatch_single_pool_attention(&cloned, &prompt, &attention, channel).await
-                    {
-                        warn!(
-                            "@!Pisci mention fallback dispatch failed for pool {}: {}",
-                            pool_id, e
-                        );
-                    }
-                }
+            None => {
+                tracing::info!(
+                    target: "pool::pisci",
+                    pool_id = %pool_id,
+                    "@!Pisci mention: no delegated mention found in pool; skipping dispatch"
+                );
             }
         }
     });
@@ -326,6 +290,17 @@ async fn dispatch_single_pool_attention(
     }
 
     let heartbeat_message = build_pool_heartbeat_message(base_prompt, attention);
+    let mention_reply_rules = if channel == "mention" {
+        "\n\
+         ## Direct @!Pisci mention (mandatory visible reply)\n\
+         A human explicitly @!mentioned you in this pool. They are watching the pool chat UI, NOT a hidden heartbeat session.\n\
+         - You MUST call pool_org(action=\"post_status\", pool_id, content=...) with a clear reply to the user's request before finishing.\n\
+         - Do NOT reply with only HEARTBEAT_OK or stay silent in the pool — that looks like no response.\n\
+         - Do not use pool_chat; use pool_org(post_status) for all user-visible pool messages.\n\
+         - If you cannot act (missing API access, blocked tool, unclear request), still post_status explaining why and what you need.\n"
+    } else {
+        ""
+    };
     run_agent_headless(
         state,
         &attention.session_id,
@@ -337,7 +312,7 @@ async fn dispatch_single_pool_attention(
             extra_system_context: Some(format!(
                 "You are reviewing pool '{}' ({}) during a heartbeat scan.\n\
                  Assessment: {} | Decision: {:?}\n\
-                 \n\
+                 {}\
                  Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, assign_koi, merge_branches, etc.).\n\
                  Do not use pool_chat from heartbeat; Pisci heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
@@ -349,6 +324,7 @@ async fn dispatch_single_pool_attention(
                 attention.pool_id,
                 attention.assessment.summary,
                 attention.assessment.decision,
+                mention_reply_rules,
                 attention.pool_id,
             )),
             session_title: Some(format!("Pisci · {}", attention.pool_name)),

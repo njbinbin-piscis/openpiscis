@@ -81,6 +81,7 @@ const zh = {
     inboxSelectHint: "选择左侧会话查看 Pisci 的内部协调记录",
     inboxReadonly: "只读内部会话",
     inboxNoMessages: "该协调会话暂无消息",
+    inboxOnlyToolRows: "已加载全部记录，但多为无正文的工具调用行；可点击「加载更多」继续向上翻查。",
     inboxGlobal: "全局心跳",
     inboxProject: "项目协调",
     inboxMessageCount: "{{count}} 条",
@@ -171,7 +172,12 @@ const zh = {
   // Koi 管理
   koi: {
     title: "Koi 管理",
-    pisciDesc: "主协调者 - 接收 @!Pisci 委派，统筹所有 Koi 协作",
+    pisciDesc: "主协调者 - 鱼池内由你扮演 Pisci，通过 @!Koi 委派；深聊请用 IDE「Pisci CLI」",
+    pisciUseCli: "与 Pisci 一对一深聊请使用项目 IDE 中的 Pisci CLI，记录保存在主会话「鱼池 CLI」分类。",
+    actAsPisciRole: "鱼池聊天中你的消息以 Pisci 身份发出，用于协调与 @!委派 Koi，而非以普通用户参与 Koi 讨论。",
+    sendAsPisciHint: "以 Pisci 身份协调鱼池：输入 @!Koi名 委派任务（@ 可唤起补全）。Ctrl+Enter 发送，Enter 换行。",
+    sendShortcut: "Ctrl+Enter 发送",
+    noDelegateSelfPisci: "不能以 @!Pisci 委派自己。请 @!Koi 名称委派任务；与 Pisci 深聊请用 IDE「Pisci CLI」。",
     createBtn: "创建新 Koi",
     editBtn: "换岗",
     deleteBtn: "删除",
@@ -271,8 +277,8 @@ const zh = {
     selectProjectDirBrowse: "浏览...",
     projectDirRequired: "请选择项目工作目录",
     bindProjectDir: "关联/创建项目目录",
-    messageInputPlaceholder: "输入消息... @!名称 委派任务 (Enter 发送)",
-    mustMention: "无法发送无对象消息，请使用 @名称 指定接收者，或使用 @all 发送所有人",
+    messageInputPlaceholder: "@!Koi名 委派任务，或说明协调意图…",
+    mustMention: "请以 Pisci 身份发送，并包含 @!Koi名（或 @!all）以指定接收者",
     mentionAll: "所有人",
   },
 

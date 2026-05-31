@@ -1,4 +1,4 @@
-import { Component, useEffect, useRef, useState, useCallback, useMemo, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, type ErrorInfo, type ReactNode } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
@@ -401,6 +401,7 @@ export default function Chat() {
   const CHAT_LAZY_STEP = 10;
   const [capacity, setCapacity] = useState(CHAT_INITIAL_SIZE);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [permissionRequest, setPermissionRequest] = useState<{
     requestId: string;
@@ -518,8 +519,11 @@ export default function Chat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Whether the user is scrolled near the bottom (so we auto-scroll on new messages)
   const isNearBottomRef = useRef(true);
-  // Flag set during loadMoreHistory to suppress auto-scroll
+  // Sync guard during loadMoreHistory (suppress auto-scroll + re-entrancy)
   const loadingMoreRef = useRef(false);
+  /** Restore scrollTop after older messages are prepended and painted. */
+  const scrollRestoreRef = useRef<number | null>(null);
+  const prevScrollTopRef = useRef(0);
   // Keep a ref to the current sessionId so event callbacks always see the latest value
   const activeSessionIdRef = useRef<string | null>(activeSessionId);
   useEffect(() => {
@@ -749,6 +753,9 @@ export default function Chat() {
     if (!activeSessionId) return;
     setCapacity(CHAT_INITIAL_SIZE);
     setUnreadCount(0);
+    scrollRestoreRef.current = null;
+    loadingMoreRef.current = false;
+    setLoadingMoreHistory(false);
     // Reset history navigation on session switch
     setHistoryIndex(-1);
     historyDraftRef.current = "";
@@ -831,25 +838,57 @@ export default function Chat() {
     if (!activeSessionId || loadingMoreRef.current) return;
     const el = messagesAreaRef.current;
     const prevScrollHeight = el ? el.scrollHeight : 0;
-    const currentCount = rawMessages.length;
+    const currentCount = messagesBySession[activeSessionId]?.length ?? 0;
     loadingMoreRef.current = true;
+    setLoadingMoreHistory(true);
+    scrollRestoreRef.current = prevScrollHeight;
     sessionsApi.getMessages(activeSessionId, CHAT_LAZY_STEP, currentCount).then((older) => {
       if (older.length > 0) {
-        dispatch(chatActions.prependChatMessages({ sessionId: activeSessionId, messages: older }));
-        setHasMoreHistory(older.length === CHAT_LAZY_STEP);
-        setCapacity((c) => c + CHAT_LAZY_STEP);
+        const existingIds = new Set((messagesBySession[activeSessionId] ?? []).map((m) => m.id));
+        const newOnes = older.filter((m) => !existingIds.has(m.id));
+        if (newOnes.length > 0) {
+          dispatch(chatActions.prependChatMessages({ sessionId: activeSessionId, messages: older }));
+          setCapacity((c) => c + CHAT_LAZY_STEP);
+          setHasMoreHistory(older.length === CHAT_LAZY_STEP);
+        } else if (newOnes.length === 0) {
+          setHasMoreHistory(false);
+          scrollRestoreRef.current = null;
+          loadingMoreRef.current = false;
+          setLoadingMoreHistory(false);
+        }
       } else {
         setHasMoreHistory(false);
-      }
-      // Restore scroll position after prepend so the view stays at the same message
-      requestAnimationFrame(() => {
-        if (el) {
-          el.scrollTop = el.scrollHeight - prevScrollHeight;
-        }
+        scrollRestoreRef.current = null;
         loadingMoreRef.current = false;
-      });
-    }).catch(() => { loadingMoreRef.current = false; });
-  }, [activeSessionId, rawMessages.length, dispatch]);
+        setLoadingMoreHistory(false);
+      }
+    }).catch(() => {
+      scrollRestoreRef.current = null;
+      loadingMoreRef.current = false;
+      setLoadingMoreHistory(false);
+    });
+  }, [activeSessionId, messagesBySession, dispatch]);
+
+  // Restore scroll after prepend is committed to the DOM (avoids locking scrollTop at 0)
+  useLayoutEffect(() => {
+    if (scrollRestoreRef.current == null) return;
+    const el = messagesAreaRef.current;
+    if (!el) return;
+    const prevScrollHeight = scrollRestoreRef.current;
+    scrollRestoreRef.current = null;
+    el.scrollTop = Math.max(0, el.scrollHeight - prevScrollHeight);
+    loadingMoreRef.current = false;
+    setLoadingMoreHistory(false);
+  }, [rawMessages.length]);
+
+  // When the list is shorter than the viewport, wheel scroll cannot hit the top — keep loading until scrollable or exhausted
+  useEffect(() => {
+    if (!activeSessionId || !hasMoreHistory || loadingMoreRef.current || loadingMoreHistory) return;
+    const el = messagesAreaRef.current;
+    if (!el) return;
+    if (el.scrollHeight - el.clientHeight > 8) return;
+    loadMoreHistory();
+  }, [activeSessionId, hasMoreHistory, rawMessages.length, loadingMoreHistory, loadMoreHistory]);
 
   // When the filter changes, switch to the first visible session if the current
   // active session is not visible under the new filter.
@@ -1093,14 +1132,22 @@ export default function Chat() {
       const scrollable = el.scrollHeight - el.clientHeight;
       isNearBottomRef.current = scrollable <= 0 || el.scrollTop >= scrollable * 0.9;
       if (isNearBottomRef.current) setUnreadCount(0);
-      // Trigger lazy-load when scrolled near the top
-      if (el.scrollTop < 60 && hasMoreHistory && !loadingMoreRef.current) {
+      const scrollingUp = el.scrollTop < prevScrollTopRef.current;
+      prevScrollTopRef.current = el.scrollTop;
+      // Trigger lazy-load when user scrolls up near the top (not while stuck at 0 after restore)
+      if (
+        scrollingUp &&
+        el.scrollTop < 60 &&
+        hasMoreHistory &&
+        !loadingMoreRef.current
+      ) {
         loadMoreHistory();
       }
     };
+    prevScrollTopRef.current = el.scrollTop;
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [hasMoreHistory, loadMoreHistory]);
+  }, [hasMoreHistory, loadMoreHistory, activeSessionId]);
 
   // Scroll the messages area to the bottom without affecting parent containers.
   // scrollIntoView() bubbles up and can cause the whole window to jump in Tauri WebView;
@@ -1894,9 +1941,14 @@ export default function Chat() {
 
             <div className="messages-area" ref={messagesAreaRef}>
               {hasMoreHistory && (
-                <div style={{ textAlign: "center", padding: "8px 0", fontSize: 11, color: "var(--text-muted)" }}>
-                  {loadingMoreRef.current ? t("common.loading") : t("chat.loadMoreHistory")}
-                </div>
+                <button
+                  type="button"
+                  className="chat-load-more-history"
+                  disabled={loadingMoreHistory}
+                  onClick={() => loadMoreHistory()}
+                >
+                  {loadingMoreHistory ? t("common.loading") : t("chat.loadMoreHistory")}
+                </button>
               )}
               {activeMessages.map((msg) => {
                 // Render historical chat_ui tool calls as interactive cards

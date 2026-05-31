@@ -16,6 +16,7 @@
 //! `runtime` and `event_bus` submodules.
 
 pub mod bridge;
+pub mod notice;
 
 pub use pisci_core::models::{
     KoiDefinition, KoiTodo, PoolMessage, PoolSession, StarterKoiSpec, KOI_COLORS, KOI_ICONS,

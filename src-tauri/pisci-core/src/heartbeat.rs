@@ -1,7 +1,7 @@
 use crate::models::{KoiTodo, PoolMessage, PoolSession};
 use crate::project_state::{
-    assess_project_state, contains_pisci_mention, extract_project_status_signal, ProjectAssessment,
-    ProjectDecision,
+    assess_project_state, contains_delegated_pisci_mention, contains_pisci_mention,
+    extract_project_status_signal, ProjectAssessment, ProjectDecision,
 };
 
 #[derive(Debug, Clone)]
@@ -235,4 +235,20 @@ pub fn collect_pool_attention(
         summary: lines.join("\n"),
         assessment,
     })
+}
+
+/// Build attention for an explicit `@!Pisci` mention without relying on the
+/// periodic heartbeat cursor. Uses a `last_seen` one message before the
+/// triggering mention so the mention is always included in the inbox summary.
+pub fn build_forced_mention_attention(
+    pool: &PoolSession,
+    messages: &[PoolMessage],
+    todos: &[KoiTodo],
+    koi_ids: &[String],
+) -> Option<PoolAttention> {
+    let trigger = messages
+        .iter()
+        .rev()
+        .find(|msg| contains_delegated_pisci_mention(&msg.content))?;
+    collect_pool_attention(pool, messages, todos, koi_ids, trigger.id.saturating_sub(1))
 }

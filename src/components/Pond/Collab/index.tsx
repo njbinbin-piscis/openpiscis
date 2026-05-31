@@ -19,6 +19,8 @@ import { ideApi, onFileChanged } from "../../../services/tauri/ide";
 import { openPath } from "../../../services/tauri";
 import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
 import { RootState, poolActions, koiActions, boardActions, POOL_DEFAULT_CAPACITY, parseMentions, hasMentions } from "../../../store";
+import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
+import { containsDelegatedPisciMention } from "../../../utils/poolMention";
 import ConfirmDialog from "../../ConfirmDialog";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import type { FileNode, OpenTab, GitFileStatus } from "../IDE/types";
@@ -187,16 +189,14 @@ export default function Collab() {
   const [mentionIndex, setMentionIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Build mention candidates: Pisci + all active Kois + @!all
+  // Pool chat: @!Koi only — Pisci is reached via IDE CLI (main chat · Pool CLI).
   const mentionCandidates = useMemo(() => {
-    const list: { name: string; icon: string; desc: string }[] = [
-      { name: "Pisci", icon: "🐙", desc: t("koi.pisciDesc") || "Main coordinator" },
-    ];
+    const list: { name: string; icon: string; desc: string }[] = [];
     kois.filter(k => k.status !== "offline").forEach(k => {
       list.push({ name: k.name, icon: k.icon || "🐡", desc: k.description || k.role });
     });
     return list;
-  }, [kois, t]);
+  }, [kois]);
 
   // Filter candidates when user types @
   const filteredMentions = useMemo(() => {
@@ -321,31 +321,39 @@ export default function Collab() {
     }
   }, [dispatch]);
 
+  const scrollCancelRef = useRef<(() => void) | null>(null);
+
   const loadOlderMessages = useCallback(async (sessionId: string, currentCount: number) => {
-    if (loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const msgs = await poolApi.getMessages({
-        session_id: sessionId,
-        limit: LAZY_LOAD_STEP,
-        offset: currentCount,
-      });
-      if (msgs.length > 0) {
-        dispatch(poolActions.prependPoolMessages({
-          sessionId,
-          messages: msgs,
-          hasMore: msgs.length === LAZY_LOAD_STEP,
-        }));
-        setCapacity((c) => c + LAZY_LOAD_STEP);
-      } else {
-        dispatch(poolActions.prependPoolMessages({ sessionId, messages: [], hasMore: false }));
-      }
-    } catch {
-      // silently ignore
-    } finally {
-      setLoadingMore(false);
+    const msgs = await poolApi.getMessages({
+      session_id: sessionId,
+      limit: LAZY_LOAD_STEP,
+      offset: currentCount,
+    });
+    if (msgs.length > 0) {
+      dispatch(poolActions.prependPoolMessages({
+        sessionId,
+        messages: msgs,
+        hasMore: msgs.length === LAZY_LOAD_STEP,
+      }));
+      setCapacity((c) => c + LAZY_LOAD_STEP);
+    } else {
+      dispatch(poolActions.prependPoolMessages({ sessionId, messages: [], hasMore: false }));
+      scrollCancelRef.current?.();
     }
-  }, [dispatch, loadingMore]);
+  }, [dispatch]);
+
+  const scrollHistory = useScrollPrependedHistory({
+    containerRef: messagesContainerRef,
+    itemCount: messages.length,
+    hasMore,
+    setLoading: setLoadingMore,
+    loadOlder: () => {
+      if (!activeSessionId) return Promise.resolve();
+      return loadOlderMessages(activeSessionId, messages.length);
+    },
+    active: Boolean(activeSessionId),
+  });
+  scrollCancelRef.current = scrollHistory.cancelPendingRestore;
 
   // ─── Init ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -479,15 +487,8 @@ export default function Collab() {
     const scrollable = el.scrollHeight - el.clientHeight;
     const nearBottom = scrollable <= 0 || el.scrollTop >= scrollable * 0.9;
     if (nearBottom) setUnreadCount(0);
-    if (el.scrollTop < 60 && hasMore && activeSessionId && !loadingMore) {
-      const prevScrollHeight = el.scrollHeight;
-      loadOlderMessages(activeSessionId, messages.length).then(() => {
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight - prevScrollHeight;
-        });
-      });
-    }
-  }, [hasMore, activeSessionId, loadingMore, loadOlderMessages, messages.length]);
+    scrollHistory.handleScroll(e);
+  }, [scrollHistory]);
 
   // ─── Pool session listeners ────────────────────────────────────────
   useEffect(() => {
@@ -774,6 +775,11 @@ export default function Collab() {
   const handleSendMessage = async () => {
     const text = userInput.trim();
     if (!text || !activeSessionId) return;
+    if (containsDelegatedPisciMention(text)) {
+      setMentionError(t("pool.noDelegateSelfPisci"));
+      setTimeout(() => setMentionError(""), 8000);
+      return;
+    }
     if (!hasMentions(text)) {
       setMentionError(t("pool.mustMention") || "Message requires a recipient. Use @name to mention someone, or @all to send to everyone.");
       setTimeout(() => setMentionError(""), 5000);
@@ -786,7 +792,7 @@ export default function Collab() {
       const metadata = mentions.includes("all") ? "all" : mentions.join(",");
       await poolApi.sendMessage({
         session_id: activeSessionId,
-        sender_id: "user",
+        sender_id: "pisci",
         content: text,
         msg_type: "mention",
         metadata,
@@ -794,6 +800,9 @@ export default function Collab() {
       setUserInput("");
     } catch (e) {
       console.error("[Collab] send message error:", e);
+      const msg = typeof e === "string" ? e : e instanceof Error ? e.message : String(e);
+      setMentionError(msg);
+      setTimeout(() => setMentionError(""), 8000);
     } finally {
       setSending(false);
     }
@@ -824,7 +833,7 @@ export default function Collab() {
         return;
       }
     }
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -918,7 +927,7 @@ export default function Collab() {
                     <div className="chatpool-participant">
                       <span className="chatpool-participant-icon">🐋</span>
                       <span className="chatpool-participant-name">Pisci</span>
-                      <span className="chatpool-participant-badge">{t("pool.mainAgent") || "Main Agent"}</span>
+                      <span className="chatpool-participant-badge" title={t("pool.actAsPisciRole")}>{t("pool.mainAgent") || "Main Agent"}</span>
                     </div>
                     {kois.map((koi) => (
                       <div key={koi.id} className="chatpool-participant">
@@ -988,7 +997,16 @@ export default function Collab() {
                     <div className="collab-empty"><span className="collab-empty-icon">💬</span><p>{t("pool.noMessages") || "No messages yet"}</p></div>
                   ) : (
                     <div className="collab-messages-scroll" ref={messagesContainerRef} onScroll={handleMessagesScroll}>
-                      {hasMore && <div className="chatpool-load-more">{loadingMore ? (t("common.loading") || "Loading...") : (t("common.loadMore") || "Load more")}</div>}
+                      {hasMore && (
+                        <button
+                          type="button"
+                          className="chatpool-load-more-btn"
+                          disabled={loadingMore}
+                          onClick={() => scrollHistory.loadOlder()}
+                        >
+                          {loadingMore ? (t("common.loading") || "Loading...") : (t("common.loadMore") || "Load more")}
+                        </button>
+                      )}
                       {messages.map((msg) => (<MessageBubble key={msg.id} msg={msg} kois={kois} />))}
                       <div ref={messagesEndRef} />
                     </div>
@@ -1010,9 +1028,10 @@ export default function Collab() {
                       <div className="collab-mention-hint">↑↓ {t("common.navigate") || "navigate"} &nbsp; Enter {t("common.select") || "select"} &nbsp; Esc {t("common.dismiss") || "dismiss"}</div>
                     </div>
                   )}
+                  <p className="collab-send-hint">{t("pool.sendAsPisciHint")}</p>
                   <div className="collab-input-row">
-                    <textarea className="collab-input" ref={inputRef} value={userInput} onChange={handleInputChange} onKeyDown={handleInputKeyDown} placeholder={t("pool.messageInputPlaceholder") || "Type a message..."} rows={2} disabled={!activeSessionId || sending} />
-                    <button className="chatpool-btn chatpool-btn-primary" onClick={handleSendMessage} disabled={sending || !userInput.trim() || !activeSessionId}>{sending ? "..." : t("common.send")}</button>
+                    <textarea className="collab-input" ref={inputRef} value={userInput} onChange={handleInputChange} onKeyDown={handleInputKeyDown} placeholder={t("pool.messageInputPlaceholder")} rows={3} disabled={!activeSessionId || sending} />
+                    <button className="chatpool-btn chatpool-btn-primary" onClick={handleSendMessage} disabled={sending || !userInput.trim() || !activeSessionId} title={t("pool.sendShortcut")}>{sending ? "..." : t("common.send")}</button>
                   </div>
                 </div>
               </>

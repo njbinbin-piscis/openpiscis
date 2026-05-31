@@ -284,6 +284,10 @@ fn collab_trial_collect_pool_attention_recognizes_delegated_pisci_mention() {
     let attention = collect_pool_attention(&pool, &messages, &[], &[], 1)
         .expect("@!Pisci mention should flag pool attention");
     assert_eq!(attention.session_id, "pisci_pool_pool-1");
+
+    let forced = pisci_core::heartbeat::build_forced_mention_attention(&pool, &messages, &[], &[])
+        .expect("forced mention attention");
+    assert_eq!(forced.latest_message_id, 2);
 }
 
 #[test]
