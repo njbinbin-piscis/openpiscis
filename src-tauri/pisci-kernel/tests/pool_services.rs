@@ -233,6 +233,7 @@ async fn pool_chat_tool_rejects_pisci_send_but_allows_koi_send() {
         max_iterations: None,
         memory_owner_id: memory_owner_id.to_string(),
         pool_session_id: Some(pool_id.clone()),
+        tool_use_id: None,
         cancel: Arc::new(AtomicBool::new(false)),
     };
 

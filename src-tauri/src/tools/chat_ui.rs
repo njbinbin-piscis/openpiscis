@@ -26,11 +26,12 @@ impl Tool for ChatUiTool {
     }
 
     fn description(&self) -> &str {
-        "Display an interactive UI card in the chat for the user to make structured choices. \
-         Use when the user needs to select from options, pick Koi team members, choose a project, \
-         or confirm a complex action. Do NOT use for simple yes/no questions — just ask in text. \
-         The tool blocks until the user submits the card, then returns USER_INTERACTIVE_RESPONSE_JSON. \
-         You must treat the returned values as authoritative user input and use them exactly; do not continue with prior defaults or assumptions that conflict with the submitted response."
+        "Display an interactive UI card (Chat UI Protocol v1) for structured user input. \
+         Supports text/number/date/time/slider/switch, select/radio/checkbox/tags with optional custom values, \
+         koi_picker, project_picker, conditional show_when, validation (required, min/max, pattern), and action buttons. \
+         Full spec: docs/chat-ui-protocol.md in the repo. \
+         Use for multi-field or constrained choices; NOT for simple yes/no (ask in text). \
+         Blocks until submit; returns USER_INTERACTIVE_RESPONSE_JSON — treat field ids and values as authoritative."
     }
 
     fn input_schema(&self) -> Value {
@@ -43,6 +44,11 @@ impl Tool for ChatUiTool {
                     "description": "The interactive UI card definition.",
                     "required": ["blocks"],
                     "properties": {
+                        "protocol_version": {
+                            "type": "string",
+                            "enum": ["1"],
+                            "description": "Protocol version; set to \"1\"."
+                        },
                         "title": {
                             "type": "string",
                             "description": "Card title displayed at the top."
@@ -50,6 +56,10 @@ impl Tool for ChatUiTool {
                         "description": {
                             "type": "string",
                             "description": "Optional description text below the title."
+                        },
+                        "submit_label": {
+                            "type": "string",
+                            "description": "Label for the auto-generated Submit button when no actions block is present."
                         },
                         "blocks": {
                             "type": "array",
@@ -60,16 +70,35 @@ impl Tool for ChatUiTool {
                                 "properties": {
                                     "type": {
                                         "type": "string",
-                                        "enum": ["text", "radio", "checkbox", "text_input", "number_input", "select", "koi_picker", "project_picker", "confirm", "actions", "divider"],
-                                        "description": "Block type."
+                                        "enum": [
+                                            "text", "section", "divider",
+                                            "text_input", "number_input", "slider", "switch",
+                                            "date", "time", "datetime",
+                                            "select", "radio", "checkbox", "tags",
+                                            "koi_picker", "project_picker",
+                                            "confirm", "actions"
+                                        ],
+                                        "description": "Block type (see docs/chat-ui-protocol.md)."
                                     },
                                     "id": {
                                         "type": "string",
-                                        "description": "Unique field ID for interactive blocks. Not needed for text/divider."
+                                        "description": "Unique snake_case field id for value-bearing blocks."
                                     },
                                     "label": {
                                         "type": "string",
-                                        "description": "Label text for the field. For an action/confirm button fallback, this is display text only; semantic meaning comes from the button value."
+                                        "description": "Visible label."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "Help text shown under the label."
+                                    },
+                                    "required": {
+                                        "type": "boolean",
+                                        "description": "If true, field must be filled before submit."
+                                    },
+                                    "disabled": {
+                                        "type": "boolean",
+                                        "description": "If true, control is read-only."
                                     },
                                     "value": {
                                         "description": "Value submitted when this block is used as a single-button action fallback."
@@ -95,14 +124,49 @@ impl Tool for ChatUiTool {
                                     },
                                     "placeholder": {
                                         "type": "string",
-                                        "description": "Placeholder for text_input/number_input."
+                                        "description": "Placeholder for text/tags/select."
+                                    },
+                                    "allow_custom": {
+                                        "type": "boolean",
+                                        "description": "For select/radio/checkbox: allow Other with free-text (submitted as user string, not __custom__)."
+                                    },
+                                    "custom_label": {
+                                        "type": "string",
+                                        "description": "Label for the custom/Other option."
+                                    },
+                                    "multiline": {
+                                        "type": "boolean",
+                                        "description": "For text_input: render as textarea."
+                                    },
+                                    "rows": {
+                                        "type": "integer",
+                                        "description": "Textarea row count when multiline is true."
+                                    },
+                                    "input_mode": {
+                                        "type": "string",
+                                        "enum": ["text", "email", "url", "password"],
+                                        "description": "For text_input: input subtype."
+                                    },
+                                    "min_length": {
+                                        "type": "integer",
+                                        "description": "Minimum string length for text_input."
+                                    },
+                                    "max_length": {
+                                        "type": "integer",
+                                        "description": "Maximum string length for text_input."
+                                    },
+                                    "pattern": {
+                                        "type": "string",
+                                        "description": "Regex pattern for text_input validation."
                                     },
                                     "show_when": {
                                         "type": "object",
-                                        "description": "Conditional visibility: show this block only when another field has a specific value.",
+                                        "description": "Conditional visibility.",
                                         "properties": {
                                             "field": { "type": "string" },
-                                            "equals": { "type": "string" }
+                                            "equals": {},
+                                            "one_of": { "type": "array" },
+                                            "not_equals": {}
                                         }
                                     },
                                     "suggestions": {
@@ -115,16 +179,14 @@ impl Tool for ChatUiTool {
                                         "description": "For project_picker: allow creating a new project."
                                     },
                                     "min": {
-                                        "type": "integer",
-                                        "description": "Minimum value for number_input, or minimum selections for koi_picker/checkbox."
+                                        "description": "number/slider: min value; checkbox/tags/koi_picker: min selection count; date/time: min ISO bound string."
                                     },
                                     "max": {
-                                        "type": "integer",
-                                        "description": "Maximum value for number_input."
+                                        "description": "number/slider: max value; checkbox/tags/koi_picker: max selection count; date/time: max ISO bound string."
                                     },
                                     "step": {
-                                        "type": "integer",
-                                        "description": "Step size for number_input."
+                                        "type": "number",
+                                        "description": "Step for number_input/slider."
                                     },
                                     "buttons": {
                                         "type": "array",
@@ -167,7 +229,13 @@ impl Tool for ChatUiTool {
             ));
         }
 
-        let request_id = uuid::Uuid::new_v4().to_string();
+        // Use the persisted tool_use id so the frontend can submit against the same
+        // key after messages reload from the DB (historical cards use call.id).
+        let request_id = ctx
+            .tool_use_id
+            .clone()
+            .filter(|id| !id.trim().is_empty())
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let (resp_tx, resp_rx) = tokio::sync::oneshot::channel();
 
         // Register the response channel

@@ -870,6 +870,7 @@ pub async fn execute_task(
         max_iterations: Some(max_iterations),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: None,
+        tool_use_id: None,
         cancel: cancel.clone(),
     };
 

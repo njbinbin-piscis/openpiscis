@@ -6,6 +6,23 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.21] - 2026-05-29
+
+### Added
+- **Chat UI Protocol v1** (`docs/chat-ui-protocol.md`): structured agent↔user interaction spec for the `chat_ui` tool — block types, validation, conditional `show_when`, submit payload (`__meta__`, `__action__`), and authoring guidelines.
+- **Extended interactive card renderer**: `date` / `time` / `datetime`, `slider`, `switch`, `textarea` (`text_input` + `multiline`), `tags`, `section`; `email`/`url`/`password` input modes; inline validation (required, min/max, pattern, selection counts).
+- **`allow_custom` on select/radio/checkbox**: “Other” option with free-text; submitted value is the user’s string, not a sentinel.
+- **Per-session pending cards**, deduplicated history vs live footer, default Submit when no `actions` block; `submit_label` on `ui_definition`.
+
+### Fixed
+- **`chat_ui` `request_id` aligned with `tool_use_id`** via `ToolContext.tool_use_id` so submit works after message reload and matches persisted tool calls.
+- **Interactive cards no longer leak across sessions** or duplicate at the bottom after `done`.
+
+### Changed
+- **`chat_ui` tool schema** and Pisci system prompt reference Protocol v1 and the protocol doc.
+
+---
+
 ## [0.8.20] - 2026-05-29
 
 ### Fixed

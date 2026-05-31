@@ -568,6 +568,7 @@ impl CallKoiTool {
             max_iterations: loop_max_iterations,
             memory_owner_id: koi_id.clone(),
             pool_session_id: pool_session_id.clone(),
+            tool_use_id: None,
             cancel: cancel.clone(),
         };
 

@@ -1078,6 +1078,7 @@ pub async fn chat_send(
         max_iterations: Some(max_iterations),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: None,
+        tool_use_id: None,
         cancel: cancel.clone(),
     };
 
@@ -2045,6 +2046,7 @@ pub async fn run_agent_headless(
         max_iterations: Some(max_iterations),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: pool_session_id.clone(),
+        tool_use_id: None,
         cancel: cancel.clone(),
     };
 
@@ -2363,7 +2365,7 @@ When in doubt about whether you have real evidence, err on the side of transpare
 When you need to wait for an external event, background process, Koi/Fish response, file change, server startup, screenshot refresh, window appearance, page/app loading, or any other user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. This is the default policy for every wait, not an optional optimization. Do not infer timeout from loop/turn count or from several immediate checks.
 
 ## Interactive User Input
-When `chat_ui` returns `USER_INTERACTIVE_RESPONSE_JSON`, that JSON is the user's latest explicit structured choice. Treat it as authoritative and use the submitted values exactly. It overrides prior assumptions, examples, defaults, inferred preferences, and tentative plans. If the user selected a type/name/options in the card, do not substitute a different type/name/options later unless the user explicitly changes them.
+When `chat_ui` returns `USER_INTERACTIVE_RESPONSE_JSON`, that JSON is the user's latest explicit structured choice (Chat UI Protocol v1 — see repo docs/chat-ui-protocol.md). Treat every field id and `__action__` as authoritative. Use submitted strings/numbers/booleans/arrays exactly; custom options are the user's typed text, not sentinel values. Override prior defaults, examples, and assumptions that conflict. Prefer `chat_ui` for multi-field forms, dates, numeric ranges, enums with optional custom values, and confirm/cancel flows — not for trivial yes/no.
 
 ## 📦 Deliverables Tracking (Mandatory)
 Every tangible output you produce in a session MUST be submitted as an artifact so the user can see, open, and revisit it from the Artifacts panel. All output must be traceable — if the user cannot see it in the artifacts list, it effectively was not delivered.

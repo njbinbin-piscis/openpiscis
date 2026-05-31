@@ -292,6 +292,7 @@ When you need to wait for an external event, background process, Koi/Fish respon
             max_iterations: Some(fish_def.agent.max_iterations),
             memory_owner_id: ctx.memory_owner_id.clone(),
             pool_session_id: ctx.pool_session_id.clone(),
+            tool_use_id: None,
             cancel: ctx.cancel.clone(),
         };
 

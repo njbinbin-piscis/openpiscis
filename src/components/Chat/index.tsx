@@ -408,9 +408,9 @@ export default function Chat() {
     description: string;
   } | null>(null);
 
-  // Interactive UI cards from chat_ui tool
-  const [interactiveCards, setInteractiveCards] = useState<
-    Record<string, { requestId: string; uiDefinition: any; submitted?: boolean }>
+  // Pending interactive UI cards from chat_ui (per session; cleared on agent done)
+  const [interactiveCardsBySession, setInteractiveCardsBySession] = useState<
+    Record<string, Record<string, { requestId: string; uiDefinition: any; submitted?: boolean }>>
   >({});
 
   // Context debug preview
@@ -545,6 +545,10 @@ export default function Chat() {
 
   const rawMessages = activeSessionId ? messagesBySession[activeSessionId] ?? [] : [];
 
+  const interactiveCards = activeSessionId
+    ? interactiveCardsBySession[activeSessionId] ?? {}
+    : {};
+
   // Extract historical interactive cards from chat_ui tool calls in persisted messages
   const historicalCards = useMemo(() => {
     const cards: Record<string, { requestId: string; uiDefinition: any; submittedValues: Record<string, unknown> | null; afterMessageId: string }> = {};
@@ -584,6 +588,29 @@ export default function Chat() {
     }
     return cards;
   }, [rawMessages]);
+
+  // Live cards still waiting for input — skip if the same request is already in message history
+  const pendingLiveCards = useMemo(() => {
+    return Object.values(interactiveCards).filter((card) => {
+      if (card.submitted) return false;
+      if (historicalCards[card.requestId]) return false;
+      return true;
+    });
+  }, [interactiveCards, historicalCards]);
+
+  const markInteractiveSubmitted = useCallback((sessionId: string, requestId: string) => {
+    setInteractiveCardsBySession((all) => {
+      const sessionCards = all[sessionId];
+      if (!sessionCards?.[requestId]) return all;
+      return {
+        ...all,
+        [sessionId]: {
+          ...sessionCards,
+          [requestId]: { ...sessionCards[requestId], submitted: true },
+        },
+      };
+    });
+  }, []);
 
   // Check if a message is a chat_ui tool call or its result (should be rendered as a card, not filtered entirely)
   const chatUiToolCallIds = useMemo(() => {
@@ -907,22 +934,29 @@ export default function Chat() {
           });
           break;
         case "interactive_ui":
-          setInteractiveCards((prev) => ({
-            ...prev,
-            [event.request_id]: {
-              requestId: event.request_id,
-              uiDefinition: event.ui_definition,
+          setInteractiveCardsBySession((all) => ({
+            ...all,
+            [boundSessionId]: {
+              ...(all[boundSessionId] ?? {}),
+              [event.request_id]: {
+                requestId: event.request_id,
+                uiDefinition: event.ui_definition,
+              },
             },
           }));
-          // Scroll to bottom so the card is immediately visible — it renders after the
-          // streaming bubble, so without this the user might not notice it appeared.
-          setTimeout(() => scrollToBottom(true), 50);
+          if (activeSessionIdRef.current === boundSessionId) {
+            setTimeout(() => scrollToBottom(true), 50);
+          }
           break;
         case "done":
           // Use boundSessionId (the session this listener was registered for) so that
           // freezeStreaming and getMessages always target the correct session, even if
           // the user switched to a different session while the agent was running.
           console.log('[Chat] agent done event, boundSid=', boundSessionId);
+          setInteractiveCardsBySession((all) => ({
+            ...all,
+            [boundSessionId]: {},
+          }));
           flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.freezeStreaming(boundSessionId));
@@ -953,6 +987,10 @@ export default function Chat() {
             .catch(() => {});
           break;
         case "cancelled":
+          setInteractiveCardsBySession((all) => ({
+            ...all,
+            [boundSessionId]: {},
+          }));
           flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.clearStreaming(boundSessionId));
@@ -1822,6 +1860,11 @@ export default function Chat() {
                             requestId={card.requestId}
                             uiDefinition={card.uiDefinition}
                             submittedValues={card.submittedValues}
+                            onSubmitted={
+                              activeSessionId
+                                ? () => markInteractiveSubmitted(activeSessionId, card.requestId)
+                                : undefined
+                            }
                           />
                         </div>
                       </div>
@@ -1865,14 +1908,19 @@ export default function Chat() {
                   so they appear at the bottom of the conversation, always visible to the user.
                   The agent pauses streaming while waiting for user input, so the streaming
                   bubble is empty/hidden at this point anyway. */}
-              {Object.values(interactiveCards).map((card) => (
+              {pendingLiveCards.map((card) => (
                 <div key={card.requestId} className="message message-assistant">
                   <div className="message-role">{t("chat.pisci")}</div>
                   <div className="message-content">
                     <InteractiveCard
                       requestId={card.requestId}
                       uiDefinition={card.uiDefinition}
-                      submittedValues={card.submitted ? undefined : null}
+                      submittedValues={null}
+                      onSubmitted={
+                        activeSessionId
+                          ? () => markInteractiveSubmitted(activeSessionId, card.requestId)
+                          : undefined
+                      }
                     />
                   </div>
                 </div>

@@ -60,6 +60,8 @@ pub struct ToolContext {
     pub memory_owner_id: String,
     /// Optional pool session ID for Chat Pool integration.
     pub pool_session_id: Option<String>,
+    /// LLM tool-use id for the call currently executing (set by the agent loop).
+    pub tool_use_id: Option<String>,
     /// Cooperative cancellation flag for long-running tools.
     pub cancel: Arc<AtomicBool>,
 }

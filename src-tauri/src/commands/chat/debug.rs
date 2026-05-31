@@ -1424,6 +1424,7 @@ pub async fn run_debug_scenario(
         max_iterations: Some(max_iterations.min(10)),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: None,
+        tool_use_id: None,
         cancel: cancel.clone(),
     };
 
@@ -2074,6 +2075,7 @@ pub async fn run_uia_drag_test(state: State<'_, AppState>) -> Result<UiaDragTest
         max_iterations: Some(max_iterations.min(12)),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: None,
+        tool_use_id: None,
         cancel: cancel.clone(),
     };
 

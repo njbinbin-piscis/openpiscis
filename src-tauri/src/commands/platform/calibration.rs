@@ -243,6 +243,7 @@ async fn run_phase2_impl(app: AppHandle, request: Phase2Request) -> Result<Phase
         max_iterations: Some(1),
         memory_owner_id: "pisci".to_string(),
         pool_session_id: None,
+        tool_use_id: None,
         cancel: cancel_flag.clone(),
     };
 

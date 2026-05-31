@@ -1716,6 +1716,8 @@ impl AgentLoop {
                 }
 
                 debug!("Executing tool: {} | input: {}", name, input_hint);
+                let mut tool_ctx = ctx.clone();
+                tool_ctx.tool_use_id = Some(id.to_string());
                 let cancel_clone = Arc::clone(cancel);
                 // Poll cancel flag every 200 ms while the tool runs
                 let cancel_watcher = async move {
@@ -1730,7 +1732,7 @@ impl AgentLoop {
                     biased;
                     res = tokio::time::timeout(
                         std::time::Duration::from_secs(TOOL_TIMEOUT_SECS),
-                        tool.call(input.clone(), ctx),
+                        tool.call(input.clone(), &tool_ctx),
                     ) => {
                         match res {
                             Ok(Ok(r)) => r,
@@ -3819,6 +3821,7 @@ mod tests {
             max_iterations: Some(1),
             memory_owner_id: "pisci".into(),
             pool_session_id: None,
+            tool_use_id: None,
             cancel: cancel.clone(),
         };
 

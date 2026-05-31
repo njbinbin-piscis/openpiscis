@@ -539,6 +539,7 @@ impl KoiRuntime {
                 max_iterations: loop_max_iterations,
                 memory_owner_id: koi_def.id.clone(),
                 pool_session_id: pool_session_id.map(String::from),
+                tool_use_id: None,
                 cancel: cancel.clone(),
             };
 
