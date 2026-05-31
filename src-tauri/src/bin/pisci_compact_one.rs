@@ -4,6 +4,11 @@
 //! to stdout. All tracing goes to stderr. Used by the cross-framework
 //! compression benchmark (`scripts/bench_compression/run_bench.py`).
 //!
+//! This tool links against `pisci_desktop_lib` (for config/runtime
+//! resolution) so it lives in the desktop host crate rather than the
+//! extracted `pisci-engine`. Build with:
+//!   cargo build -p pisci-desktop --features bench-compact --bin pisci_compact_one
+//!
 //! Usage (PowerShell):
 //!   Get-Content sample.json | .\target\debug\pisci_compact_one.exe
 

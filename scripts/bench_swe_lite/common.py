@@ -29,10 +29,15 @@ def find_binary(stem: str, explicit: str | None = None) -> Path:
             return p
         raise FileNotFoundError(f"Binary override not found: {p}")
 
-    # The Rust workspace root is `src-tauri/`, so cargo writes binaries
-    # under `src-tauri/target/{debug,release}/`. SWE-lite uses the optional
-    # `openpisci-headless` CLI asset instead of the desktop GUI binary.
+    # The desktop Rust workspace root is `src-tauri/`. The agent runtime
+    # crates were extracted into the sibling `pisci-engine` repo, so the
+    # `openpisci-headless` CLI asset is now built there (its binary lands in
+    # `pisci-engine/target/{debug,release}/`). We search both trees so either
+    # build location resolves.
+    engine_root = REPO_ROOT.parent / "pisci-engine"
     candidates = [
+        engine_root / "target" / "release" / _exe_name(stem),
+        engine_root / "target" / "debug" / _exe_name(stem),
         REPO_ROOT / "src-tauri" / "target" / "release" / _exe_name(stem),
         REPO_ROOT / "src-tauri" / "target" / "debug" / _exe_name(stem),
         REPO_ROOT / "target" / "release" / _exe_name(stem),

@@ -1,5 +1,11 @@
+# The agent runtime crates (pisci-core / pisci-kernel / pisci-cli) were
+# extracted into the standalone `pisci-engine` repo so that both `openpisci`
+# (this desktop host) and `codez` can share one kernel. They are consumed as
+# a git dependency (see `[workspace.dependencies]` below). For local engine
+# hacking, add a `[patch."https://github.com/njbinbin-pisci/pisci-engine.git"]`
+# section pointing the crates at a local `../../pisci-engine` checkout.
 [workspace]
-members = ["pisci-core", "pisci-kernel", "pisci-cli"]
+members = []
 resolver = "2"
 
 # Workspace-wide lint policy. `cargo clippy --workspace` will treat all of
@@ -33,9 +39,9 @@ anyhow = "1"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-pisci-core = { path = "pisci-core" }
-pisci-kernel = { path = "pisci-kernel" }
-pisci-cli = { path = "pisci-cli" }
+# Shared agent runtime — the standalone pisci-engine repo (also consumed by codez).
+pisci-core = { git = "https://github.com/njbinbin-pisci/pisci-engine.git", package = "pisci-core" }
+pisci-kernel = { git = "https://github.com/njbinbin-pisci/pisci-engine.git", package = "pisci-kernel" }
 
 [package]
 name = "pisci-desktop"
@@ -55,6 +61,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [[bin]]
 name = "pisci-desktop"
 path = "src/main.rs"
+
+# Desktop-coupled compression benchmark tool. Moved here from the (now
+# extracted) `pisci-cli` crate because it links against `pisci_desktop_lib`
+# for config/runtime resolution. Gated behind a feature so normal desktop
+# builds don't compile it.
+[[bin]]
+name = "pisci_compact_one"
+path = "src/bin/pisci_compact_one.rs"
+required-features = ["bench-compact"]
+
+[features]
+default = []
+bench-compact = []
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

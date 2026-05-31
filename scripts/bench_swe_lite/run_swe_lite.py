@@ -195,7 +195,8 @@ def run_case_profile(
                     "--bin",
                     "openpisci-headless",
                     "--manifest-path",
-                    "src-tauri/Cargo.toml",
+                    # openpisci-headless now lives in the extracted pisci-engine repo.
+                    "../pisci-engine/Cargo.toml",
                     "--",
                     "run",
                     "--input",
