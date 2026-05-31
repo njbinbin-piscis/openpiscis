@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.25] - 2026-05-31
+
+### Changed
+- **Heartbeat / org_spec**: consume `pisci-engine` with a stricter default heartbeat prompt — `HEARTBEAT_OK` is gated on `pool_org(read)` and explicit org_spec convergence checks (no hardcoded phase rules). Supervisor attention stays active when the board is quiet but global coordination may still be required.
+- **Kernel split**: pin `pisci-core` / `pisci-kernel` git dependency to the latest engine commit (`7c04d03`).
+
+### Fixed
+- **Pool heartbeat context**: per-pool heartbeat runs now remind Pisci to read org_spec before replying `HEARTBEAT_OK`.
+- **IDE Git panel**: clearer commit errors (`commitNeedStaged`, `gitNoProjectDir`); backend validates staged files and writes commit messages via `-F` (fixes silent commit failures).
+
+---
+
 ## [0.8.24] - 2026-05-28
 
 ### Added

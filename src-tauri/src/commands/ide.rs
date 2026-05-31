@@ -673,7 +673,7 @@ pub async fn ide_git_status(project_dir: String) -> Result<Vec<GitFileStatus>, S
         let chars: Vec<char> = line.chars().collect();
         let index_status = chars[0];
         let worktree_status = chars[1];
-        let path = line[3..].to_string();
+        let path = parse_porcelain_path(&line[3..]);
 
         // Staged changes (index)
         if index_status != ' ' && index_status != '?' {
@@ -704,6 +704,15 @@ pub async fn ide_git_status(project_dir: String) -> Result<Vec<GitFileStatus>, S
     }
 
     Ok(statuses)
+}
+
+/// Path segment from `git status --porcelain` (after XY + space).
+fn parse_porcelain_path(raw: &str) -> String {
+    let trimmed = raw.trim_start();
+    if let Some((_old, new)) = trimmed.split_once(" -> ") {
+        return new.trim().to_string();
+    }
+    trimmed.to_string()
 }
 
 fn status_char_to_string(c: char) -> String {
@@ -934,14 +943,49 @@ pub async fn ide_git_reset_all(project_dir: String) -> Result<(), String> {
     Ok(())
 }
 
+async fn git_has_staged_changes(root: &std::path::Path) -> Result<bool, String> {
+    let output = timeout(
+        Duration::from_secs(30),
+        new_git_cmd()
+            .args(["diff", "--cached", "--quiet"])
+            .current_dir(root)
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .output(),
+    )
+    .await
+    .map_err(|_| "git command timed out")?
+    .map_err(|e| format!("git command failed: {}", e))?;
+
+    // diff --cached --quiet: exit 0 = nothing staged, 1 = has staged changes
+    Ok(output.status.code() == Some(1))
+}
+
 /// Commit staged changes with a message.
 #[tauri::command]
 pub async fn ide_git_commit(project_dir: String, message: String) -> Result<String, String> {
     let root = PathBuf::from(&project_dir);
-    let output = run_git_cmd(&root, &["commit", "-m", &message])
+    if !root.join(".git").exists() {
+        return Err("Not a git repository".into());
+    }
+    if message.trim().is_empty() {
+        return Err("Commit message cannot be empty".into());
+    }
+    if !git_has_staged_changes(&root).await? {
+        return Err(
+            "Nothing staged to commit. Stage files with + in the Changes list first.".into(),
+        );
+    }
+
+    let tmp = std::env::temp_dir().join(format!("openpisci-commit-{}.txt", std::process::id()));
+    std::fs::write(&tmp, message.as_bytes())
+        .map_err(|e| format!("failed to write commit message file: {}", e))?;
+    let path_str = tmp.to_string_lossy().to_string();
+    let result = run_git_cmd(&root, &["commit", "-F", &path_str])
         .await
-        .map_err(|e| format!("git commit failed: {}", e))?;
-    Ok(output)
+        .map_err(|e| format!("git commit failed: {}", e));
+    let _ = std::fs::remove_file(&tmp);
+    result
 }
 
 /// Checkout (switch to) a branch. Refuses if there are uncommitted changes

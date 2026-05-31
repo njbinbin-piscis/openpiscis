@@ -630,6 +630,25 @@
   gap: 4px;
 }
 
+.git-commit-hint {
+  margin: 0 10px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.git-commit-error {
+  margin: 0 10px 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 4px;
+  word-break: break-word;
+}
+
 .git-action-btn {
   background: var(--accent);
   border: none;

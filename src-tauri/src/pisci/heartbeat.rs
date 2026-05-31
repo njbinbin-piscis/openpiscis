@@ -317,14 +317,16 @@ async fn dispatch_single_pool_attention(
                  Do not use pool_chat from heartbeat; Pisci heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
                  If any todo is needs_review, stable state is not enough: inspect messages/todos and either close it out, route rework, or post a concrete status explaining the blocker.\n\
+                 Before HEARTBEAT_OK you MUST pool_org(action=\"read\", pool_id=\"{}\") and judge convergence against org_spec (all phases/milestones/deliverables in the spec text — not just whether todos are done). If org_spec is unfinished, post_status + create_todo/assign_koi; do not reply HEARTBEAT_OK or \"no intervention needed\".\n\
                  If the pool has a project_dir and branches need merging, consider using merge_branches.\n\
                  During heartbeat, NEVER archive a pool automatically — only the user can explicitly request archiving.\n\
-                 Reply HEARTBEAT_OK only after the review state has been handled, not merely because there were no new messages.",
+                 Reply HEARTBEAT_OK only after org_spec convergence is verified and actions are taken, not because the board is quiet or todos are all done.",
                 attention.pool_name,
                 attention.pool_id,
                 attention.assessment.summary,
                 attention.assessment.decision,
                 mention_reply_rules,
+                attention.pool_id,
                 attention.pool_id,
             )),
             session_title: Some(format!("Pisci · {}", attention.pool_name)),

@@ -9,6 +9,23 @@ interface GitPanelProps {
   onRefresh: () => Promise<void>;
 }
 
+function formatInvokeError(e: unknown): string {
+  if (typeof e === "string") return e;
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const o = e as Record<string, unknown>;
+    if (typeof o.message === "string" && o.message) return o.message;
+    if (typeof o.data === "string" && o.data) return o.data;
+  }
+  try {
+    const json = JSON.stringify(e);
+    if (json && json !== "{}") return json;
+  } catch {
+    /* ignore */
+  }
+  return String(e);
+}
+
 export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPanelProps) {
   const { t } = useTranslation();
   const [statuses, setStatuses] = useState<GitFileStatus[]>([]);
@@ -16,6 +33,7 @@ export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPane
   const [loading, setLoading] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [commitError, setCommitError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!projectDir) return;
@@ -40,10 +58,14 @@ export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPane
 
   const handleStage = useCallback(async (path: string) => {
     if (!projectDir) return;
-    await ideApi.gitAdd(projectDir, path);
-    await refresh();
-    await onRefresh();
-  }, [projectDir, refresh, onRefresh]);
+    try {
+      await ideApi.gitAdd(projectDir, path);
+      await refresh();
+      await onRefresh();
+    } catch (e) {
+      window.alert(`${t("ide.stageFailed")}\n${formatInvokeError(e)}`);
+    }
+  }, [projectDir, refresh, onRefresh, t]);
 
   const handleStageAll = useCallback(async () => {
     if (!projectDir) return;
@@ -67,19 +89,36 @@ export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPane
   }, [projectDir, refresh, onRefresh]);
 
   const handleCommit = useCallback(async () => {
-    if (!projectDir || !commitMsg.trim()) return;
+    const message = commitMsg.trim();
+    if (!projectDir) {
+      setCommitError(t("ide.gitNoProjectDir"));
+      return;
+    }
+    if (!message) {
+      setCommitError(t("ide.commitNeedMessage"));
+      return;
+    }
+    if (!statuses.some((s) => s.staged)) {
+      setCommitError(t("ide.commitNeedStaged"));
+      return;
+    }
+
     setCommitting(true);
+    setCommitError(null);
     try {
-      await ideApi.gitCommit(projectDir, commitMsg.trim());
+      await ideApi.gitCommit(projectDir, message);
       setCommitMsg("");
       await refresh();
       await onRefresh();
     } catch (e) {
+      const detail = formatInvokeError(e);
       console.error("Commit error:", e);
+      setCommitError(detail);
+      window.alert(`${t("ide.commitFailed")}\n${detail}`);
     } finally {
       setCommitting(false);
     }
-  }, [projectDir, commitMsg, refresh, onRefresh]);
+  }, [projectDir, commitMsg, statuses, refresh, onRefresh, t]);
 
   const handleCheckout = useCallback(
     async (branch: string) => {
@@ -134,7 +173,6 @@ export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPane
   const staged = statuses.filter((s) => s.staged);
   const koiBranches = branches.filter((b) => b.is_koi);
   const mainBranches = branches.filter((b) => !b.is_koi);
-
   return (
     <div className="git-panel">
       <div className="ide-sidebar-header">
@@ -151,21 +189,31 @@ export default function GitPanel({ projectDir, onDiffClick, onRefresh }: GitPane
           className="git-commit-input"
           placeholder={t("ide.commitPlaceholder") || "Commit message"}
           value={commitMsg}
-          onChange={(e) => setCommitMsg(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && e.ctrlKey) handleCommit(); }}
+          onChange={(e) => {
+            setCommitMsg(e.target.value);
+            if (commitError) setCommitError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              void handleCommit();
+            }
+          }}
           disabled={committing}
         />
         <div className="git-commit-actions">
           <button
+            type="button"
             className="git-action-btn"
-            onClick={handleCommit}
+            onClick={() => void handleCommit()}
             disabled={committing || staged.length === 0 || !commitMsg.trim()}
-            title={t("ide.commit") || "Commit"}
+            title={t("ide.commit")}
           >
             {committing ? "…" : "✓"}
           </button>
         </div>
       </div>
+      {commitError && <div className="git-commit-error">{commitError}</div>}
 
       {/* Staged Changes */}
       <div className="git-panel-section">
