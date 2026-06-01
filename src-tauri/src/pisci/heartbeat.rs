@@ -7,7 +7,8 @@ use crate::pool::bridge;
 use crate::pool::KoiTodo;
 use crate::store::AppState;
 pub use pisci_core::heartbeat::{
-    build_forced_mention_attention, build_pool_heartbeat_message, collect_pool_attention,
+    assessment_requires_coordination, build_forced_mention_attention, build_pool_heartbeat_message,
+    collect_pool_attention, is_heartbeat_ack_only, build_heartbeat_coordination_gap_notice,
     PoolAttention,
 };
 use pisci_core::project_state::contains_delegated_pisci_mention;
@@ -264,6 +265,24 @@ pub fn spawn_mention_dispatch(
     });
 }
 
+async fn latest_pool_message_id(state: &AppState, pool_id: &str) -> i64 {
+    let db = state.db.lock().await;
+    db.get_pool_messages(pool_id, 1, 0)
+        .ok()
+        .and_then(|msgs| msgs.last().map(|m| m.id))
+        .unwrap_or(0)
+}
+
+async fn pisci_pool_activity_since(state: &AppState, pool_id: &str, since_id: i64) -> bool {
+    let db = state.db.lock().await;
+    let Ok(messages) = db.get_pool_messages(pool_id, 100, 0) else {
+        return false;
+    };
+    messages
+        .iter()
+        .any(|m| m.id > since_id && m.sender_id == "pisci")
+}
+
 /// Run Pisci in a single pool's attention session. Extracted from
 /// [`dispatch_heartbeat`] so both the periodic loop and the
 /// mention-triggered path can reuse the same per-pool dispatch logic.
@@ -301,7 +320,8 @@ async fn dispatch_single_pool_attention(
     } else {
         ""
     };
-    run_agent_headless(
+    let pool_msg_before = latest_pool_message_id(state, &attention.pool_id).await;
+    let (response_text, _, _) = run_agent_headless(
         state,
         &attention.session_id,
         &heartbeat_message,
@@ -316,17 +336,14 @@ async fn dispatch_single_pool_attention(
                  Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, assign_koi, merge_branches, etc.).\n\
                  Do not use pool_chat from heartbeat; Pisci heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
-                 If any todo is needs_review, stable state is not enough: inspect messages/todos and either close it out, route rework, or post a concrete status explaining the blocker.\n\
-                 Before HEARTBEAT_OK you MUST pool_org(action=\"read\", pool_id=\"{}\") and judge convergence against org_spec (all phases/milestones/deliverables in the spec text — not just whether todos are done). If org_spec is unfinished, post_status + create_todo/assign_koi; do not reply HEARTBEAT_OK or \"no intervention needed\".\n\
                  If the pool has a project_dir and branches need merging, consider using merge_branches.\n\
                  During heartbeat, NEVER archive a pool automatically — only the user can explicitly request archiving.\n\
-                 Reply HEARTBEAT_OK only after org_spec convergence is verified and actions are taken, not because the board is quiet or todos are all done.",
+                 Reply HEARTBEAT_OK only after org_spec convergence is verified and pool_org actions are taken, not because the board is quiet or todos are all done.",
                 attention.pool_name,
                 attention.pool_id,
                 attention.assessment.summary,
                 attention.assessment.decision,
                 mention_reply_rules,
-                attention.pool_id,
                 attention.pool_id,
             )),
             session_title: Some(format!("Pisci · {}", attention.pool_name)),
@@ -335,11 +352,36 @@ async fn dispatch_single_pool_attention(
             ..HeadlessRunOptions::default()
         }),
     )
-    .await
-    .map(|_| ())?;
+    .await?;
 
+    let coordinated = pisci_pool_activity_since(state, &attention.pool_id, pool_msg_before).await;
+    let needs_follow_up = !coordinated
+        && (assessment_requires_coordination(&attention.assessment)
+            || channel == "mention")
+        && (channel == "mention" || is_heartbeat_ack_only(&response_text));
+    if needs_follow_up {
+        let notice = build_heartbeat_coordination_gap_notice(attention);
+        if let Err(err) = crate::pool::notice::post_pisci_pool_notice(
+            &state.app_handle,
+            state,
+            &attention.pool_id,
+            &notice,
+        )
+        .await
+        {
+            warn!(
+                "heartbeat state trigger: failed to post coordination gap for pool {}: {}",
+                attention.pool_id, err
+            );
+        }
+    }
+
+    let latest_after = latest_pool_message_id(state, &attention.pool_id).await;
     let mut cursor = state.pisci_heartbeat_cursor.lock().await;
-    cursor.insert(attention.pool_id.clone(), attention.latest_message_id);
+    cursor.insert(
+        attention.pool_id.clone(),
+        latest_after.max(attention.latest_message_id),
+    );
     Ok(())
 }
 

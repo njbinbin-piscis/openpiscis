@@ -185,6 +185,7 @@ async fn run_in_process_koi_turn(
         session_title: None,
         session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
         scene_kind: Some(SceneKind::KoiTask),
+        memory_owner_id: Some(request.koi_id.clone()),
         workspace_root_override: request.workspace.clone(),
         builtin_tool_overrides: HashMap::new(),
         context_toggles: HeadlessContextToggles::default(),

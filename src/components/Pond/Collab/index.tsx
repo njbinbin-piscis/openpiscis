@@ -396,6 +396,13 @@ export default function Collab() {
     return () => { unlisten?.(); };
   }, [activeSessionId, loadMessages, dispatch]);
 
+  // Leaving chat unmounts the scroll container; clear the pin so re-entry scrolls to bottom.
+  useEffect(() => {
+    if (contentView !== "chat") {
+      scrolledSessionRef.current = null;
+    }
+  }, [contentView]);
+
   // Scroll to bottom when messages are first loaded for a session.
   //
   // MessageBubble renders markdown / code blocks asynchronously, so a

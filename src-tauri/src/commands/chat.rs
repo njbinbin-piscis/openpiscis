@@ -59,6 +59,66 @@ struct ChatPromptArtifacts {
     system_prompt: String,
     registry: Arc<pisci_kernel::agent::tool::ToolRegistry>,
     tool_defs: Vec<ToolDef>,
+    /// When the session workspace matches a pool's `project_dir`.
+    bound_pool_id: Option<String>,
+}
+
+fn normalize_workspace_path_for_match(path: &str) -> String {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    trimmed.replace('\\', "/").trim_end_matches('/').to_string()
+}
+
+fn paths_match_for_pool_binding(a: &str, b: &str) -> bool {
+    normalize_workspace_path_for_match(a) == normalize_workspace_path_for_match(b)
+}
+
+fn pool_status_rank(status: &str) -> u8 {
+    match status {
+        "active" => 0,
+        "paused" => 1,
+        _ => 2,
+    }
+}
+
+fn resolve_pool_session_for_workspace(
+    pools: &[crate::pool::PoolSession],
+    workspace_root: &str,
+) -> Option<crate::pool::PoolSession> {
+    if normalize_workspace_path_for_match(workspace_root).is_empty() {
+        return None;
+    }
+    let mut matches: Vec<crate::pool::PoolSession> = pools
+        .iter()
+        .filter(|pool| {
+            pool.project_dir
+                .as_deref()
+                .is_some_and(|dir| paths_match_for_pool_binding(dir, workspace_root))
+        })
+        .cloned()
+        .collect();
+    if matches.is_empty() {
+        return None;
+    }
+    matches.sort_by(|a, b| {
+        pool_status_rank(&a.status)
+            .cmp(&pool_status_rank(&b.status))
+            .then_with(|| b.updated_at.cmp(&a.updated_at))
+    });
+    matches.into_iter().next()
+}
+
+fn bound_pool_session_guidance(pool_id: &str, pool_name: &str) -> String {
+    format!(
+        "\n\n## Bound Pool Session\n\
+This chat session is scoped to the fish-pool project \"{}\" (pool_id=`{}`).\n\
+- Treat this as your current project context. Do NOT enumerate or inspect unrelated pools unless the user explicitly asks.\n\
+- Default all `pool_org` actions to `pool_id=\"{}\"` unless the user names a different project.\n\
+- The pool snapshot above is preloaded; call `pool_org(action=\"get_todos\")` / `pool_org(action=\"get_messages\")` only when you need fresher state.\n",
+        pool_name, pool_id, pool_id
+    )
 }
 
 fn append_task_spine_list(ctx: &mut String, label: &str, items: &[String]) {
@@ -513,11 +573,44 @@ async fn build_chat_prompt_artifacts(
     // harness will actually send, so the token accounting stays honest.
     let tool_defs = registry.to_tool_defs(pisci_kernel::agent::tool::ToolDefMode::Minimal);
 
+    let (bound_pool_id, pool_context, bound_pool_name) = {
+        let db = state.db.lock().await;
+        let pools = db.list_pool_sessions().map_err(|e| e.to_string())?;
+        match resolve_pool_session_for_workspace(&pools, workspace_root) {
+            None => (None, String::new(), None),
+            Some(pool) => {
+                let pool_id = pool.id.clone();
+                let pool_name = pool.name.clone();
+                let recent_messages = db
+                    .get_pool_messages(
+                        &pool_id,
+                        scene_policy.recent_pool_message_limit() as i64 * 2,
+                        0,
+                    )
+                    .map_err(|e| e.to_string())?;
+                let todos = db.list_koi_todos(None).map_err(|e| e.to_string())?;
+                let pool_todos: Vec<_> = todos
+                    .into_iter()
+                    .filter(|todo| todo.pool_session_id.as_deref() == Some(pool_id.as_str()))
+                    .collect();
+                let pool_policy = ScenePolicy::for_kind(SceneKind::PoolCoordinator);
+                let ctx = render_pool_context_snapshot(
+                    pool_policy,
+                    Some(&pool),
+                    &pool_todos,
+                    &recent_messages,
+                );
+                (Some(pool_id), ctx, Some(pool_name))
+            }
+        }
+    };
+    let bound_pool_scope = bound_pool_id.as_deref();
+
     let memory_context = {
         let db = state.db.lock().await;
         let keywords: Vec<&str> = query_text.split_whitespace().take(10).collect();
         let query = keywords.join(" ");
-        match db.search_memories_scoped(&query, "pisci", None, 5) {
+        match db.search_memories_scoped(&query, "pisci", bound_pool_scope, 5) {
             Ok(mems) if !mems.is_empty() => {
                 let mut ctx = String::from("\n\n## Personal Context (from memory)\n");
                 for m in &mems {
@@ -574,13 +667,23 @@ async fn build_chat_prompt_artifacts(
     if !project_instruction_context.is_empty() {
         system_prompt.push_str(&project_instruction_context);
     }
+    if !pool_context.is_empty() {
+        system_prompt.push_str(&pool_context);
+        system_prompt.push_str(pool_coordinator_scene_guidance());
+        if let (Some(pool_id), Some(pool_name)) = (bound_pool_id.as_deref(), bound_pool_name.as_deref())
+        {
+            system_prompt.push_str(&bound_pool_session_guidance(pool_id, pool_name));
+        }
+    }
     tracing::info!(
-        "main_chat_context_slices session={} memory_mode={:?} pool_snapshot_mode={:?} memory_chars={} task_state_chars={} injected_chars={} project_instruction_chars={} system_prompt_chars={}",
+        "main_chat_context_slices session={} bound_pool={:?} memory_mode={:?} pool_snapshot_mode={:?} memory_chars={} task_state_chars={} pool_context_chars={} injected_chars={} project_instruction_chars={} system_prompt_chars={}",
         session_id,
+        bound_pool_id,
         scene_policy.memory_slice_mode(),
         scene_policy.pool_snapshot_mode(),
         memory_context.chars().count(),
         task_state_context.chars().count(),
+        pool_context.chars().count(),
         full_memory_context.chars().count(),
         project_instruction_context.chars().count(),
         system_prompt.chars().count(),
@@ -589,6 +692,7 @@ async fn build_chat_prompt_artifacts(
         system_prompt,
         registry,
         tool_defs,
+        bound_pool_id,
     })
 }
 
@@ -1006,6 +1110,7 @@ pub async fn chat_send(
         enable_project_instructions,
     )
     .await?;
+    let bound_pool_id = prompt_artifacts.bound_pool_id.clone();
     let registry = prompt_artifacts.registry.clone();
 
     let policy = Arc::new(PolicyGate::with_profile_and_flags(
@@ -1091,7 +1196,7 @@ pub async fn chat_send(
         settings: tool_settings,
         max_iterations: Some(max_iterations),
         memory_owner_id: "pisci".to_string(),
-        pool_session_id: None,
+        pool_session_id: bound_pool_id,
         tool_use_id: None,
         cancel: cancel.clone(),
     };
@@ -1439,6 +1544,9 @@ pub struct HeadlessRunOptions {
     pub session_title: Option<String>,
     pub session_source: Option<String>,
     pub scene_kind: Option<SceneKind>,
+    /// Tool-context identity for pool_chat / pool_org / memory scoping.
+    /// Defaults to `"pisci"`; Koi worktree turns must pass the canonical koi id.
+    pub memory_owner_id: Option<String>,
     pub workspace_root_override: Option<String>,
     pub builtin_tool_overrides: HashMap<String, bool>,
     pub context_toggles: crate::headless_cli::HeadlessContextToggles,
@@ -1473,6 +1581,15 @@ fn derive_headless_session_source(channel: &str, pool_session_id: Option<&str>) 
         other if other.starts_with(SESSION_SOURCE_IM_PREFIX) => other.to_string(),
         other => format!("{}{}", SESSION_SOURCE_IM_PREFIX, other),
     }
+}
+
+fn resolve_headless_memory_owner_id(options: Option<&HeadlessRunOptions>) -> String {
+    options
+        .and_then(|o| o.memory_owner_id.as_deref())
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+        .unwrap_or("pisci")
+        .to_string()
 }
 
 fn resolve_headless_scene_kind(
@@ -1639,6 +1756,7 @@ pub async fn run_agent_headless(
         .unwrap_or_else(|| derive_headless_session_source(channel, pool_session_id.as_deref()));
     let scene_kind =
         resolve_headless_scene_kind(channel, &desired_session_source, options.as_ref());
+    let memory_owner_id = resolve_headless_memory_owner_id(options.as_ref());
     let scene_policy = ScenePolicy::for_kind(scene_kind);
 
     // vision_capable controls vision_override on the MAIN LLM.
@@ -1843,8 +1961,12 @@ pub async fn run_agent_headless(
                     String::new()
                 } else {
                     let db = state.db.lock().await;
-                    match db.search_memories_scoped(&query, "pisci", pool_session_id.as_deref(), 5)
-                    {
+                    match db.search_memories_scoped(
+                        &query,
+                        &memory_owner_id,
+                        pool_session_id.as_deref(),
+                        5,
+                    ) {
                         Ok(mems) if !mems.is_empty() => {
                             let mut ctx = String::from("\n\n## Relevant Memory\n");
                             for m in &mems {
@@ -2058,7 +2180,7 @@ pub async fn run_agent_headless(
         bypass_permissions: false,
         settings: tool_settings,
         max_iterations: Some(max_iterations),
-        memory_owner_id: "pisci".to_string(),
+        memory_owner_id: memory_owner_id.clone(),
         pool_session_id: pool_session_id.clone(),
         tool_use_id: None,
         cancel: cancel.clone(),
@@ -4334,10 +4456,12 @@ mod tests {
     use super::{
         build_context_messages, build_main_chat_system_prompt, collapse_superseded_tool_failures,
         derive_headless_session_source, extract_tool_minimals_from_history,
-        minimal_tool_result_blocks, resolve_headless_scene_kind, HeadlessRunOptions,
+        minimal_tool_result_blocks, paths_match_for_pool_binding,
+        resolve_headless_scene_kind, resolve_pool_session_for_workspace, HeadlessRunOptions,
         SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL, SESSION_SOURCE_PISCI_POOL,
     };
     use crate::commands::config::scene::SceneKind;
+    use crate::pool::PoolSession;
     use crate::store::db::ChatMessage;
     use chrono::Utc;
     use pisci_kernel::llm::{ContentBlock, LlmMessage, MessageContent};
@@ -4461,6 +4585,64 @@ mod tests {
         assert_eq!(
             derive_headless_session_source("feishu", Some("pool-1")),
             SESSION_SOURCE_PISCI_POOL
+        );
+    }
+
+    #[test]
+    fn paths_match_for_pool_binding_normalizes_slashes() {
+        assert!(paths_match_for_pool_binding(
+            "/home/agent/Projects/pisci/CodeZ",
+            "/home/agent/Projects/pisci/CodeZ/"
+        ));
+        assert!(paths_match_for_pool_binding(
+            "C:\\repo\\app",
+            "C:/repo/app"
+        ));
+        assert!(!paths_match_for_pool_binding("/repo/a", "/repo/b"));
+    }
+
+    #[test]
+    fn resolve_pool_session_for_workspace_prefers_active_pool() {
+        let now = Utc::now();
+        let make = |id: &str, status: &str| PoolSession {
+            id: id.to_string(),
+            name: id.to_string(),
+            org_spec: String::new(),
+            status: status.to_string(),
+            project_dir: Some("/repo/app".to_string()),
+            task_timeout_secs: 600,
+            origin_im_binding_key: None,
+            last_active_at: Some(now),
+            created_at: now,
+            updated_at: now,
+        };
+        let pools = vec![
+            make("archived-pool", "archived"),
+            make("active-pool", "active"),
+        ];
+        let resolved = resolve_pool_session_for_workspace(&pools, "/repo/app").unwrap();
+        assert_eq!(resolved.id, "active-pool");
+    }
+
+    #[test]
+    fn resolve_headless_memory_owner_id_defaults_to_pisci_and_honors_override() {
+        assert_eq!(
+            resolve_headless_memory_owner_id(None),
+            "pisci".to_string()
+        );
+        assert_eq!(
+            resolve_headless_memory_owner_id(Some(&HeadlessRunOptions {
+                memory_owner_id: Some("koi-tester-uuid".into()),
+                ..HeadlessRunOptions::default()
+            })),
+            "koi-tester-uuid".to_string()
+        );
+        assert_eq!(
+            resolve_headless_memory_owner_id(Some(&HeadlessRunOptions {
+                memory_owner_id: Some("  ".into()),
+                ..HeadlessRunOptions::default()
+            })),
+            "pisci".to_string()
         );
     }
 
