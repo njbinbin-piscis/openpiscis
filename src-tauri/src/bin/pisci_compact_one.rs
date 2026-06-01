@@ -7,7 +7,7 @@
 //! This tool links against `pisci_desktop_lib` (for config/runtime
 //! resolution) so it lives in the desktop host crate rather than the
 //! extracted `pisci-engine`. Build with:
-//!   cargo build -p pisci-desktop --features bench-compact --bin pisci_compact_one
+//!   cargo build -p pisci-desktop --features bench-compact --example pisci_compact_one
 //!
 //! Usage (PowerShell):
 //!   Get-Content sample.json | .\target\debug\pisci_compact_one.exe

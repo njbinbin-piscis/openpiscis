@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.26] - 2026-05-31
+
+### Fixed
+- **CI / Tauri bundle**: `pisci_compact_one` is now a `[[example]]` (bench-only) instead of `[[bin]]`, so release installers no longer expect a binary that is only built with `bench-compact`.
+
+---
+
 ## [0.8.25] - 2026-05-31
 
 ### Changed

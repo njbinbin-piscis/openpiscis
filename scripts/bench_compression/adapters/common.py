@@ -18,10 +18,13 @@ BENCH_DIR = Path(__file__).resolve().parents[1]
 CLAW_BENCH_DIR = REPO_ROOT / "references" / "claw-compactor" / "benchmark"
 HERMES_DIR = REPO_ROOT / "references" / "hermes-agent"
 PISCI_BIN_CANDIDATES = [
+    REPO_ROOT / "src-tauri" / "target" / "release" / "examples" / "pisci_compact_one.exe",
+    REPO_ROOT / "src-tauri" / "target" / "debug" / "examples" / "pisci_compact_one.exe",
+    REPO_ROOT / "target" / "release" / "examples" / "pisci_compact_one.exe",
+    REPO_ROOT / "target" / "debug" / "examples" / "pisci_compact_one.exe",
+    # Legacy layout when pisci_compact_one was a [[bin]] target
     REPO_ROOT / "src-tauri" / "target" / "release" / "pisci_compact_one.exe",
     REPO_ROOT / "src-tauri" / "target" / "debug" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "release" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "debug" / "pisci_compact_one.exe",
 ]
 
 
@@ -36,7 +39,7 @@ def find_pisci_bin() -> Path:
     if not existing:
         raise FileNotFoundError(
             "pisci_compact_one.exe not found; build with "
-            "`cargo build -p pisci-desktop --features bench-compact --bin pisci_compact_one --manifest-path src-tauri/Cargo.toml`"
+            "`cargo build -p pisci-desktop --features bench-compact --example pisci_compact_one --manifest-path src-tauri/Cargo.toml`"
         )
     existing.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return existing[0]
