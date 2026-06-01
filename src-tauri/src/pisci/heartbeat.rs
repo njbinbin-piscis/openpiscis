@@ -7,9 +7,9 @@ use crate::pool::bridge;
 use crate::pool::KoiTodo;
 use crate::store::AppState;
 pub use pisci_core::heartbeat::{
-    assessment_requires_coordination, build_forced_mention_attention, build_pool_heartbeat_message,
-    collect_pool_attention, is_heartbeat_ack_only, build_heartbeat_coordination_gap_notice,
-    PoolAttention,
+    assessment_requires_coordination, build_forced_mention_attention,
+    build_heartbeat_coordination_gap_notice, build_pool_heartbeat_message, collect_pool_attention,
+    is_heartbeat_ack_only, PoolAttention,
 };
 use pisci_core::project_state::contains_delegated_pisci_mention;
 use pisci_core::project_state::ProjectDecision;
@@ -356,8 +356,7 @@ async fn dispatch_single_pool_attention(
 
     let coordinated = pisci_pool_activity_since(state, &attention.pool_id, pool_msg_before).await;
     let needs_follow_up = !coordinated
-        && (assessment_requires_coordination(&attention.assessment)
-            || channel == "mention")
+        && (assessment_requires_coordination(&attention.assessment) || channel == "mention")
         && (channel == "mention" || is_heartbeat_ack_only(&response_text));
     if needs_follow_up {
         let notice = build_heartbeat_coordination_gap_notice(attention);

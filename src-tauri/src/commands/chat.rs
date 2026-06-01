@@ -670,7 +670,8 @@ async fn build_chat_prompt_artifacts(
     if !pool_context.is_empty() {
         system_prompt.push_str(&pool_context);
         system_prompt.push_str(pool_coordinator_scene_guidance());
-        if let (Some(pool_id), Some(pool_name)) = (bound_pool_id.as_deref(), bound_pool_name.as_deref())
+        if let (Some(pool_id), Some(pool_name)) =
+            (bound_pool_id.as_deref(), bound_pool_name.as_deref())
         {
             system_prompt.push_str(&bound_pool_session_guidance(pool_id, pool_name));
         }
@@ -4456,8 +4457,8 @@ mod tests {
     use super::{
         build_context_messages, build_main_chat_system_prompt, collapse_superseded_tool_failures,
         derive_headless_session_source, extract_tool_minimals_from_history,
-        minimal_tool_result_blocks, paths_match_for_pool_binding,
-        resolve_headless_scene_kind, resolve_pool_session_for_workspace, HeadlessRunOptions,
+        minimal_tool_result_blocks, paths_match_for_pool_binding, resolve_headless_scene_kind,
+        resolve_pool_session_for_workspace, HeadlessRunOptions,
         SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL, SESSION_SOURCE_PISCI_POOL,
     };
     use crate::commands::config::scene::SceneKind;
@@ -4594,10 +4595,7 @@ mod tests {
             "/home/agent/Projects/pisci/CodeZ",
             "/home/agent/Projects/pisci/CodeZ/"
         ));
-        assert!(paths_match_for_pool_binding(
-            "C:\\repo\\app",
-            "C:/repo/app"
-        ));
+        assert!(paths_match_for_pool_binding("C:\\repo\\app", "C:/repo/app"));
         assert!(!paths_match_for_pool_binding("/repo/a", "/repo/b"));
     }
 
@@ -4626,10 +4624,7 @@ mod tests {
 
     #[test]
     fn resolve_headless_memory_owner_id_defaults_to_pisci_and_honors_override() {
-        assert_eq!(
-            resolve_headless_memory_owner_id(None),
-            "pisci".to_string()
-        );
+        assert_eq!(resolve_headless_memory_owner_id(None), "pisci".to_string());
         assert_eq!(
             resolve_headless_memory_owner_id(Some(&HeadlessRunOptions {
                 memory_owner_id: Some("koi-tester-uuid".into()),
