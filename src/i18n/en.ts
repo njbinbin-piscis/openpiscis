@@ -645,6 +645,13 @@ const en = {
     workspaceBrowse: "Browse...",
     workspaceBrowseTitle: "Select Workspace Directory",
     workspaceReset: "Reset to Default",
+    reviewChanges: "{{count}} file(s) changed this turn",
+    reviewUndoAll: "Undo All",
+    reviewKeep: "Keep",
+    reviewUndoing: "Undoing…",
+    reviewNew: "new",
+    reviewEdit: "edit",
+    reviewUndoFailed: "Undo failed",
   },
 
   // Memory

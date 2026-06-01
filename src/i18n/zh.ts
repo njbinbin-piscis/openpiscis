@@ -645,6 +645,13 @@ const zh = {
     workspaceBrowse: "浏览...",
     workspaceBrowseTitle: "选择工作目录",
     workspaceReset: "恢复默认",
+    reviewChanges: "本回合修改了 {{count}} 个文件",
+    reviewUndoAll: "全部撤销",
+    reviewKeep: "保留",
+    reviewUndoing: "撤销中…",
+    reviewNew: "新建",
+    reviewEdit: "修改",
+    reviewUndoFailed: "撤销失败",
   },
 
   // 记忆

@@ -463,6 +463,116 @@
 }
 
 /* Input area */
+/* ── File-journal review bar (Undo All) ─────────────────────────────────── */
+.review-bar {
+  margin: 0 24px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+  animation: review-in 0.16s ease-out;
+}
+
+@keyframes review-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+
+.review-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.review-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.review-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.review-btn.danger {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, var(--border));
+}
+
+.review-btn.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+}
+
+.review-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.review-files {
+  list-style: none;
+  margin: 0;
+  padding: 6px 12px 8px;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.review-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.review-tag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.review-tag.new {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.review-tag.edit {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.review-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
 .input-area {
   padding: 16px 24px;
   border-top: 1px solid var(--border);

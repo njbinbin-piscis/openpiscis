@@ -7,7 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { RootState, chatActions, sessionsActions, ToolStep, StreamingState, PlanTodoItem, ContextUsageSnapshot } from "../../store";
-import { artifactsApi, chatApi, sessionsApi, gatewayApi, AgentEventType, ChannelInfo, ChatAttachment, type Session, type ChatMessage, type SessionArtifact } from "../../services/tauri";
+import { artifactsApi, chatApi, journalApi, sessionsApi, gatewayApi, AgentEventType, ChannelInfo, ChatAttachment, type Session, type ChatMessage, type SessionArtifact, type JournalChange } from "../../services/tauri";
 import { settingsApi } from "../../services/tauri";
 import type { Settings } from "../../services/tauri";
 import ReactMarkdown from "react-markdown";
@@ -379,6 +379,9 @@ export default function Chat() {
 
   const [input, setInput] = useState("");
   const [sendError, setSendError] = useState<string | null>(null);
+  // File-journal review: files the agent changed in the last turn, per session.
+  const [reviewBySession, setReviewBySession] = useState<Record<string, JournalChange[]>>({});
+  const [undoingReview, setUndoingReview] = useState(false);
     const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [sessionFilter, setSessionFilter] = useState<SessionKind>("chat");
 
@@ -1076,6 +1079,12 @@ export default function Chat() {
               }
             })
             .catch(() => {});
+          // Surface the files this turn changed so the user can Undo All.
+          journalApi.listChanges(boundSessionId)
+            .then((changes) => {
+              setReviewBySession((all) => ({ ...all, [boundSessionId]: changes }));
+            })
+            .catch(() => {});
           break;
         case "cancelled":
           setInteractiveCardsBySession((all) => ({
@@ -1502,6 +1511,13 @@ export default function Chat() {
     dispatch(chatActions.clearToolSteps(activeSessionId));
     if (clearPlan) dispatch(chatActions.clearPlan(activeSessionId));
     dispatch(chatActions.clearStreaming(activeSessionId));
+    // A new turn supersedes the previous turn's review bar.
+    setReviewBySession((all) => {
+      if (!all[activeSessionId]) return all;
+      const next = { ...all };
+      delete next[activeSessionId];
+      return next;
+    });
     // Clear frozen bubble so the next turn starts fresh from DB messages
     dispatch(chatActions.clearFrozenBubble(activeSessionId));
 
@@ -1572,6 +1588,34 @@ export default function Chat() {
       chatApi.cancel(activeSessionId);
     }
   }, [activeSessionId]);
+
+  const reviewChanges = activeSessionId ? reviewBySession[activeSessionId] ?? [] : [];
+
+  const dismissReview = useCallback((sessionId: string) => {
+    setReviewBySession((all) => {
+      if (!all[sessionId]) return all;
+      const next = { ...all };
+      delete next[sessionId];
+      return next;
+    });
+  }, []);
+
+  const handleUndoReview = useCallback(async () => {
+    if (!activeSessionId || undoingReview) return;
+    setUndoingReview(true);
+    try {
+      await journalApi.undoLast(activeSessionId);
+      dismissReview(activeSessionId);
+    } catch (e) {
+      setSendError(`${t("chat.reviewUndoFailed")}: ${e}`);
+    } finally {
+      setUndoingReview(false);
+    }
+  }, [activeSessionId, undoingReview, dismissReview, t]);
+
+  const handleKeepReview = useCallback(() => {
+    if (activeSessionId) dismissReview(activeSessionId);
+  }, [activeSessionId, dismissReview]);
 
   const handlePermissionResponse = useCallback(async (approved: boolean) => {
     if (!permissionRequest) return;
@@ -2068,6 +2112,42 @@ export default function Chat() {
             {isImSession && (
               <div style={{ padding: "8px 16px", fontSize: 12, color: "var(--text-muted)", borderTop: "1px solid var(--border)", textAlign: "center" }}>
                 {t("chat.imSessionHint")}
+              </div>
+            )}
+
+            {!isImSession && reviewChanges.length > 0 && (
+              <div className="review-bar">
+                <div className="review-head">
+                  <span className="review-title">
+                    {t("chat.reviewChanges", { count: reviewChanges.length })}
+                  </span>
+                  <div className="review-actions">
+                    <button
+                      className="review-btn danger"
+                      onClick={handleUndoReview}
+                      disabled={undoingReview}
+                    >
+                      {undoingReview ? t("chat.reviewUndoing") : `↩ ${t("chat.reviewUndoAll")}`}
+                    </button>
+                    <button
+                      className="review-btn"
+                      onClick={handleKeepReview}
+                      disabled={undoingReview}
+                    >
+                      ✓ {t("chat.reviewKeep")}
+                    </button>
+                  </div>
+                </div>
+                <ul className="review-files">
+                  {reviewChanges.map((c) => (
+                    <li key={c.id} className="review-file" title={c.rel_path}>
+                      <span className={`review-tag ${c.existed ? "edit" : "new"}`}>
+                        {c.existed ? t("chat.reviewEdit") : t("chat.reviewNew")}
+                      </span>
+                      <span className="review-path">{c.rel_path}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

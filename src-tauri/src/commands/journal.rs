@@ -22,14 +22,23 @@ fn open_workspace_journal(workspace_root: &str) -> Result<FileJournal, String> {
     FileJournal::open(workspace_root, db).map_err(|e| e.to_string())
 }
 
+/// Resolve the session's effective workspace root (per-session override, else
+/// the global setting) so the frontend only needs to pass a session id.
+async fn session_workspace(
+    state: &State<'_, AppState>,
+    session_id: &str,
+) -> Result<String, String> {
+    let default_root = { state.settings.lock().await.workspace_root.clone() };
+    resolve_session_workspace_root(state, session_id, default_root).await
+}
+
 /// Files changed by the most recent turn (applied, not yet undone), newest first.
 #[tauri::command]
 pub async fn journal_list_changes(
     state: State<'_, AppState>,
     session_id: String,
-    workspace_root: String,
 ) -> Result<Vec<JournalChange>, String> {
-    let root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
+    let root = session_workspace(&state, &session_id).await?;
     let journal = open_workspace_journal(&root)?;
     match journal
         .latest_turn_with_changes(&session_id)
@@ -43,13 +52,13 @@ pub async fn journal_list_changes(
 }
 
 /// Undo every file change from the most recent turn, restoring pre-edit content.
+/// Returns the restored relative paths.
 #[tauri::command]
 pub async fn journal_undo_last(
     state: State<'_, AppState>,
     session_id: String,
-    workspace_root: String,
 ) -> Result<Vec<String>, String> {
-    let root = resolve_session_workspace_root(&state, &session_id, workspace_root).await?;
+    let root = session_workspace(&state, &session_id).await?;
     let journal = open_workspace_journal(&root)?;
     match journal
         .latest_turn_with_changes(&session_id)

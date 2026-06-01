@@ -170,6 +170,32 @@ export const chatApi = {
 };
 
 // ---------------------------------------------------------------------------
+// File journal — per-turn pre-edit snapshots powering "Undo All".
+// Backed by the shared pisci-kernel FileJournal (same impl CodeZ uses).
+// ---------------------------------------------------------------------------
+
+export interface JournalChange {
+  id: number;
+  /** Workspace-relative path, forward slashes. */
+  rel_path: string;
+  /** "file_write" | "file_edit". */
+  tool_name: string;
+  /** Whether the file existed before the edit (false => agent created it). */
+  existed: boolean;
+  /** Whether the edit actually applied. */
+  applied: boolean;
+}
+
+export const journalApi = {
+  /** Files changed by the latest turn (applied, not yet undone), newest first. */
+  listChanges: (sessionId: string) =>
+    invoke<JournalChange[]>("journal_list_changes", { sessionId }),
+  /** Undo every change from the latest turn; returns restored relative paths. */
+  undoLast: (sessionId: string) =>
+    invoke<string[]>("journal_undo_last", { sessionId }),
+};
+
+// ---------------------------------------------------------------------------
 // Scheduler
 // ---------------------------------------------------------------------------
 
