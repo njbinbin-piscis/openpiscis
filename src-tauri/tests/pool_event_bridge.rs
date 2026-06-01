@@ -73,6 +73,8 @@ fn sample_todo_snapshot() -> TodoSnapshot {
         pool_session_id: Some("pool-xyz".into()),
         claimed_by: None,
         depends_on: None,
+        git_branch: None,
+        integration_status: None,
         blocked_reason: None,
         result_message_id: None,
         source_type: "koi".into(),

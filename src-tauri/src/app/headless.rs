@@ -102,7 +102,7 @@ fn cli_extra_system_context(request: &HeadlessCliRequest) -> String {
                     .to_string(),
             );
             lines.push(
-                "- When Koi todos are done, perform supervisor closeout: review pool messages/todos, then explicitly merge branches with pool_org(action=\"merge_branches\") or request rework. Koi completion alone is not final delivery."
+                "- When integration_ready branches appear on the board, merge incrementally with pool_org(action=\"merge_branches\", branch=...) after review. Use depends_on on assign_koi/create_todo for org_spec waves. Koi completion alone is not final delivery."
                     .to_string(),
             );
             lines.push(

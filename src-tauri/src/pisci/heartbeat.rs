@@ -336,7 +336,7 @@ async fn dispatch_single_pool_attention(
                  Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, assign_koi, merge_branches, etc.).\n\
                  Do not use pool_chat from heartbeat; Pisci heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
-                 If the pool has a project_dir and branches need merging, consider using merge_branches.\n\
+                 If the pool has a project_dir and branches need merging, prefer incremental pool_org(merge_branches, branch=...) when integration_ready_count > 0.\n\
                  During heartbeat, NEVER archive a pool automatically — only the user can explicitly request archiving.\n\
                  Reply HEARTBEAT_OK only after org_spec convergence is verified and pool_org actions are taken, not because the board is quiet or todos are all done.",
                 attention.pool_name,
