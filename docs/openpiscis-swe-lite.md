@@ -36,12 +36,12 @@
 
 默认包含三档：
 
-- `baseline_pisci`
-  - `openpisci-headless run --mode pisci`
+- `baseline_piscis`
+  - `openpiscis-headless run --mode piscis`
 - `context_lite`
   - 单代理，但关闭一组上下文注入项（memory / task state / project instructions / rolling summary / state frame）
 - `experimental_pool`
-  - `openpisci-headless run --mode pool`
+  - `openpiscis-headless run --mode pool`
 
 这三档不是官方 SWE-bench 的标准分组，而是为了先验证 OpenPiscis 自身 harness 的收益来源。
 
@@ -50,10 +50,10 @@
 先构建二进制：
 
 ```powershell
-# openpisci-headless now lives in the extracted piscis-engine repo (sibling checkout):
-cargo build -p pisci-cli --bin openpisci-headless --manifest-path ../piscis-engine/Cargo.toml
-# pisci_compact_one links against piscis-desktop, so it stays in this repo as its own member crate:
-cargo build -p pisci-bench --release --manifest-path src-tauri/Cargo.toml
+# openpiscis-headless now lives in the extracted piscis-engine repo (sibling checkout):
+cargo build -p piscis-cli --bin openpiscis-headless --manifest-path ../piscis-engine/Cargo.toml
+# piscis_compact_one links against piscis-desktop, so it stays in this repo as its own member crate:
+cargo build -p piscis-bench --release --manifest-path src-tauri/Cargo.toml
 ```
 
 然后执行：
@@ -73,8 +73,8 @@ py -3 scripts/bench_swe_lite/run_swe_lite.py --config-template C:\path\to\config
 
 ```powershell
 py -3 scripts/bench_swe_lite/run_swe_lite.py --only-tasks py001_sum_even py006_jsonl_resume
-py -3 scripts/bench_swe_lite/run_swe_lite.py --profiles baseline_pisci context_lite
-py -3 scripts/bench_swe_lite/run_swe_lite.py --headless-bin target/debug/openpisci-headless.exe
+py -3 scripts/bench_swe_lite/run_swe_lite.py --profiles baseline_piscis context_lite
+py -3 scripts/bench_swe_lite/run_swe_lite.py --headless-bin target/debug/openpiscis-headless.exe
 ```
 
 ## 结果
@@ -95,7 +95,7 @@ py -3 scripts/bench_swe_lite/run_swe_lite.py --headless-bin target/debug/openpis
 
 ## 当前遥测
 
-Runner 会从隔离 `config_dir` 中的 `pisci.db` 回收：
+Runner 会从隔离 `config_dir` 中的 `piscis.db` 回收：
 
 - `message_count`
 - `rolling_summary_version`
@@ -107,7 +107,7 @@ Runner 会从隔离 `config_dir` 中的 `pisci.db` 回收：
 - `schema_error_count`
 - `recovered_schema_error_count`
 
-另外会把会话 transcript 回放给 `pisci_compact_one` 的 `HARNESS` 模式，补充：
+另外会把会话 transcript 回放给 `piscis_compact_one` 的 `HARNESS` 模式，补充：
 
 - 分层 token breakdown
 - `channel_utilization`

@@ -2,7 +2,7 @@
 target/
 # Note: Cargo.lock is intentionally committed for applications (not libraries)
 # Workspace members should not carry their own lockfile; only the workspace root's lockfile is tracked.
-src-tauri/pisci-core/Cargo.lock
+src-tauri/piscis-core/Cargo.lock
 
 # Node / npm
 node_modules/
@@ -19,7 +19,7 @@ src-tauri/binaries/
 *.db
 *.db-shm
 *.db-wal
-.pisci/
+.piscis/
 config.json
 
 # OS

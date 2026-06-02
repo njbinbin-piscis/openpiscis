@@ -13,14 +13,14 @@ import AssistantPanel from "../IDE/AssistantPanel";
 import GitPanel from "../IDE/GitPanel";
 import SearchPanel from "../IDE/SearchPanel";
 import Board from "../Board";
-import PisciInbox from "../PisciInbox";
+import PiscisInbox from "../PiscisInbox";
 import KoiManager from "../KoiManager";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
 import { openPath } from "../../../services/tauri";
 import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
 import { RootState, poolActions, koiActions, boardActions, POOL_DEFAULT_CAPACITY, parseMentions, hasMentions } from "../../../store";
 import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
-import { containsDelegatedPisciMention } from "../../../utils/poolMention";
+import { containsDelegatedPiscisMention } from "../../../utils/poolMention";
 import ConfirmDialog from "../../ConfirmDialog";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import type { FileNode, OpenTab, GitFileStatus } from "../IDE/types";
@@ -101,7 +101,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function MessageBubble({ msg, kois }: { msg: PoolMessage; kois: KoiWithStats[] }) {
   const sender = kois.find((k) => k.id === msg.sender_id);
-  const isPiscis = msg.sender_id === "pisci";
+  const isPiscis = msg.sender_id === "piscis";
   const icon = isPiscis ? "🐋" : sender?.icon ?? "🐟";
   const color = isPiscis ? "#7c3aed" : sender?.color ?? "#6b7280";
   const name = isPiscis ? "Piscis" : sender?.name ?? msg.sender_id;
@@ -782,7 +782,7 @@ export default function Collab() {
   const handleSendMessage = async () => {
     const text = userInput.trim();
     if (!text || !activeSessionId) return;
-    if (containsDelegatedPisciMention(text)) {
+    if (containsDelegatedPiscisMention(text)) {
       setMentionError(t("pool.noDelegateSelfPiscis"));
       setTimeout(() => setMentionError(""), 8000);
       return;
@@ -799,7 +799,7 @@ export default function Collab() {
       const metadata = mentions.includes("all") ? "all" : mentions.join(",");
       await poolApi.sendMessage({
         session_id: activeSessionId,
-        sender_id: "pisci",
+        sender_id: "piscis",
         content: text,
         msg_type: "mention",
         metadata,
@@ -934,7 +934,7 @@ export default function Collab() {
                     <div className="chatpool-participant">
                       <span className="chatpool-participant-icon">🐋</span>
                       <span className="chatpool-participant-name">Piscis</span>
-                      <span className="chatpool-participant-badge" title={t("pool.actAsPisciRole")}>{t("pool.mainAgent") || "Main Agent"}</span>
+                      <span className="chatpool-participant-badge" title={t("pool.actAsPiscisRole")}>{t("pool.mainAgent") || "Main Agent"}</span>
                     </div>
                     {kois.map((koi) => (
                       <div key={koi.id} className="chatpool-participant">
@@ -1035,7 +1035,7 @@ export default function Collab() {
                       <div className="collab-mention-hint">↑↓ {t("common.navigate") || "navigate"} &nbsp; Enter {t("common.select") || "select"} &nbsp; Esc {t("common.dismiss") || "dismiss"}</div>
                     </div>
                   )}
-                  <p className="collab-send-hint">{t("pool.sendAsPisciHint")}</p>
+                  <p className="collab-send-hint">{t("pool.sendAsPiscisHint")}</p>
                   <div className="collab-input-row">
                     <textarea className="collab-input" ref={inputRef} value={userInput} onChange={handleInputChange} onKeyDown={handleInputKeyDown} placeholder={t("pool.messageInputPlaceholder")} rows={3} disabled={!activeSessionId || sending} />
                     <button className="chatpool-btn chatpool-btn-primary" onClick={handleSendMessage} disabled={sending || !userInput.trim() || !activeSessionId} title={t("pool.sendShortcut")}>{sending ? "..." : t("common.send")}</button>
@@ -1066,12 +1066,12 @@ export default function Collab() {
 
             {/* Inbox view */}
             {contentView === "inbox" && (
-              <PisciInbox mode="coordination" poolSessionId={activeSessionId} />
+              <PiscisInbox mode="coordination" poolSessionId={activeSessionId} />
             )}
 
             {/* Koi Observer view */}
             {contentView === "koiObserver" && (
-              <PisciInbox mode="koiObserver" poolSessionId={activeSessionId} />
+              <PiscisInbox mode="koiObserver" poolSessionId={activeSessionId} />
             )}
           </div>
 

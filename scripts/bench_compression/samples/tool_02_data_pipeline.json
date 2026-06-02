@@ -1,7 +1,7 @@
 {
   "session_id": "tool-02-data-pipeline",
   "description": "Tool-heavy data pipeline session: diagnose skew, rewrite SQL, rerun aggregation",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "message_count": 20,
   "messages": [
     {

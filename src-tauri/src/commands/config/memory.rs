@@ -42,9 +42,9 @@ pub async fn add_memory(
         category.as_deref().unwrap_or("general"),
         confidence.unwrap_or(0.8),
         None,
-        "pisci",
+        "piscis",
         "private",
-        "pisci",
+        "piscis",
         None, // cross-project memory (no project tag)
     )
     .map_err(|e| e.to_string())

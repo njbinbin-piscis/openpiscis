@@ -1,7 +1,7 @@
 """run_bench.py — Cross-framework context-compression benchmark orchestrator.
 
 Runs 6 compressors against 8 samples (5 reference from claw-compactor +
-3 tool-heavy Pisci-native) and collects:
+3 tool-heavy Piscis-native) and collects:
 
   • compression_ratio / space_saving_pct
   • ROUGE-L F1 (LCS-based text fidelity)
@@ -26,10 +26,10 @@ from pathlib import Path
 # Make the adapters package importable regardless of cwd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from adapters.common import BENCH_DIR, CLAW_BENCH_DIR, CompressorResult, find_pisci_bin
+from adapters.common import BENCH_DIR, CLAW_BENCH_DIR, CompressorResult, find_piscis_bin
 from adapters import claw as claw_adp
 from adapters import hermes as hermes_adp
-from adapters import pisci as pisci_adp
+from adapters import piscis as piscis_adp
 
 # Make claw's benchmark package importable (for evaluate)
 if str(CLAW_BENCH_DIR.parent) not in sys.path:
@@ -223,7 +223,7 @@ def render_summary(results: list[dict], with_judge: bool) -> str:
         by_comp[r["compressor"]].append(r)
 
     lines = [
-        "# Pisci 跨框架上下文压缩基准",
+        "# Piscis 跨框架上下文压缩基准",
         "",
         f"> 运行时间：{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}",
         "",
@@ -231,10 +231,10 @@ def render_summary(results: list[dict], with_judge: bool) -> str:
         "",
         "| 选手 | 类型 | 说明 |",
         "|---|---|---|",
-        "| **Pisci-L1** | 规则（零 LLM） | 旧 ToolResult → minimal receipt，走 `build_request_messages` |",
-        "| **Pisci-L1+** | 规则（零 LLM） | L1 规则预处理（RLE/stack/ANSI/base64/table/path）+ receipt 降档 |",
-        "| **Pisci-L2** | 语义（1 LLM） | 走 `compact_summarise` 生成滚动摘要 |",
-        "| **Pisci-Harness** | 规则（零 LLM） | 完整 `ContextBuilder::finalize` 流水线，分层 token 归因 |",
+        "| **Piscis-L1** | 规则（零 LLM） | 旧 ToolResult → minimal receipt，走 `build_request_messages` |",
+        "| **Piscis-L1+** | 规则（零 LLM） | L1 规则预处理（RLE/stack/ANSI/base64/table/path）+ receipt 降档 |",
+        "| **Piscis-L2** | 语义（1 LLM） | 走 `compact_summarise` 生成滚动摘要 |",
+        "| **Piscis-Harness** | 规则（零 LLM） | 完整 `ContextBuilder::finalize` 流水线，分层 token 归因 |",
         "| **Hermes** | 语义（1+ LLM） | `hermes-agent/agent.context_compressor.ContextCompressor.compress` |",
         "| **Engram** | 语义（2 LLM） | `claw-compactor` Observer + Reflector（重路由到 Qwen） |",
         "| **RuleCompressor** | 规则（零 LLM） | `claw-compactor` 5 层确定性规则 |",
@@ -265,10 +265,10 @@ def render_summary(results: list[dict], with_judge: bool) -> str:
     lines.append("|" + "---|" * (len(cols) + 1))
 
     PREFERRED_ORDER = [
-        "Pisci-L1",
-        "Pisci-L1+",
-        "Pisci-L2",
-        "Pisci-Harness",
+        "Piscis-L1",
+        "Piscis-L1+",
+        "Piscis-L2",
+        "Piscis-Harness",
         "Hermes",
         "Engram",
         "RuleCompressor",
@@ -389,8 +389,8 @@ def render_summary(results: list[dict], with_judge: bool) -> str:
 
 
 def run_all(with_judge: bool, limit_compressors: list[str] | None, limit_samples: list[str] | None):
-    bench_bin = find_pisci_bin()
-    log.info("pisci bin: %s", bench_bin)
+    bench_bin = find_piscis_bin()
+    log.info("piscis bin: %s", bench_bin)
 
     # Resolve samples
     sample_paths: list[Path] = []
@@ -411,10 +411,10 @@ def run_all(with_judge: bool, limit_compressors: list[str] | None, limit_samples
             ("NoCompression", claw_adp.compress_no),
             ("RuleCompressor", claw_adp.compress_rule),
             ("RandomDrop", claw_adp.compress_random_drop),
-            ("Pisci-L1", pisci_adp.compress_pisci_l1),
-            ("Pisci-L1+", pisci_adp.compress_pisci_l1_plus),
-            ("Pisci-L2", pisci_adp.compress_pisci_l2),
-            ("Pisci-Harness", pisci_adp.compress_pisci_harness),
+            ("Piscis-L1", piscis_adp.compress_piscis_l1),
+            ("Piscis-L1+", piscis_adp.compress_piscis_l1_plus),
+            ("Piscis-L2", piscis_adp.compress_piscis_l2),
+            ("Piscis-Harness", piscis_adp.compress_piscis_harness),
             ("Hermes", hermes_adp.compress_hermes),
             ("Engram", claw_adp.compress_engram),
         ]
@@ -444,8 +444,8 @@ def run_all(with_judge: bool, limit_compressors: list[str] | None, limit_samples
         for name, fn in compressors:
             log.info("  → %s", name)
             t0 = time.perf_counter()
-            if name.startswith("Pisci-"):
-                # Pisci adapters understand blocks natively.
+            if name.startswith("Piscis-"):
+                # Piscis adapters understand blocks natively.
                 result = fn(sid, messages)
             else:
                 # All other adapters only read `content` — give them the
@@ -487,7 +487,7 @@ def main():
     parser.add_argument(
         "--only",
         nargs="*",
-        help="Limit to specific compressor names (e.g. Pisci-L2 Hermes)",
+        help="Limit to specific compressor names (e.g. Piscis-L2 Hermes)",
     )
     parser.add_argument(
         "--samples",

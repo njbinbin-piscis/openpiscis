@@ -6,7 +6,7 @@
  * published on `host://pool_event`.
  *
  * Mirrors Rust-side `src-tauri/src/commands/pool.rs` +
- * `commands/pool/{koi,board}.rs`, and `pisci_core::host::PoolEvent`.
+ * `commands/pool/{koi,board}.rs`, and `piscis_core::host::PoolEvent`.
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -110,7 +110,7 @@ export interface KoiPalette {
 // ---------------------------------------------------------------------------
 // Pool events — canonical `host://pool_event` channel (Phase 1.8)
 //
-// Kernel type: `pisci_core::host::PoolEvent`. The Rust side serialises each
+// Kernel type: `piscis_core::host::PoolEvent`. The Rust side serialises each
 // variant with `#[serde(tag = "kind", rename_all = "snake_case")]`, so a
 // discriminated union keyed on `kind` maps one-to-one with zero custom
 // adapter code. Keep these shapes in lock-step with `host.rs`.

@@ -73,7 +73,7 @@ impl LspManager {
             let probe = "where";
             #[cfg(not(windows))]
             let probe = "which";
-            pisci_kernel::proc::std_command(probe)
+            piscis_kernel::proc::std_command(probe)
                 .arg(cmd)
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
@@ -188,7 +188,7 @@ impl LspManager {
         );
 
         // Spawn the LSP server process
-        let mut child = pisci_kernel::proc::tokio_command(&info.server_command)
+        let mut child = piscis_kernel::proc::tokio_command(&info.server_command)
             .args(&info.server_args)
             .current_dir(project_dir)
             .stdin(Stdio::piped())

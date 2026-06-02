@@ -14,7 +14,7 @@ use crate::host::DesktopEventSink;
 use crate::pool::bridge;
 use crate::pool::{PoolMessage, PoolSession};
 use crate::store::AppState;
-use pisci_core::host::{PoolEvent, PoolEventSink, PoolMessageSnapshot, PoolSessionSnapshot};
+use piscis_core::host::{PoolEvent, PoolEventSink, PoolMessageSnapshot, PoolSessionSnapshot};
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
@@ -145,11 +145,12 @@ pub async fn send_pool_message(
     if input.sender_id == "user" {
         return Err(
             "Pool chat no longer accepts sender_id \"user\". \
-             Humans act as the Piscis coordinator (sender_id \"pisci\") and delegate to Koi via @!mentions."
+             Humans act as the Piscis coordinator (sender_id \"piscis\") and delegate to Koi via @!mentions."
                 .into(),
         );
     }
-    if input.sender_id == "pisci" && crate::pisci::heartbeat::content_targets_pisci(&input.content)
+    if input.sender_id == "piscis"
+        && crate::piscis::heartbeat::content_targets_piscis(&input.content)
     {
         return Err(
             "Cannot @!mention Piscis from a Piscis-role message. \
@@ -189,13 +190,13 @@ pub async fn send_pool_message(
             }
         });
 
-        // User @!Piscis in pool chat is rejected above. Non-user senders (pisci,
+        // User @!Piscis in pool chat is rejected above. Non-user senders (piscis,
         // system) may still @!Piscis for automated coordination.
         if input.sender_id != "user"
-            && input.sender_id != "pisci"
-            && crate::pisci::heartbeat::content_targets_pisci(&input.content)
+            && input.sender_id != "piscis"
+            && crate::piscis::heartbeat::content_targets_piscis(&input.content)
         {
-            crate::pisci::heartbeat::spawn_mention_dispatch(
+            crate::piscis::heartbeat::spawn_mention_dispatch(
                 &state,
                 input.session_id.clone(),
                 "mention",
@@ -448,7 +449,7 @@ pub async fn pause_pool_session(
 
 /// Resume a paused or archived project pool.
 /// - Sets pool status back to "active"
-/// - Posts a system message and @pisci to re-engage coordination
+/// - Posts a system message and @piscis to re-engage coordination
 #[tauri::command]
 pub async fn resume_pool_session(
     app: tauri::AppHandle,
@@ -462,8 +463,8 @@ pub async fn resume_pool_session(
             .map_err(|e| e.to_string())?;
     }
 
-    // 2. Post system message + @pisci to re-engage
-    let resume_msg = "▶ 项目已被用户恢复。@pisci 请检查待办任务并继续协调。".to_string();
+    // 2. Post system message + @piscis to re-engage
+    let resume_msg = "▶ 项目已被用户恢复。@piscis 请检查待办任务并继续协调。".to_string();
     let (session, sys_msg) = {
         let db = state.db.lock().await;
         let msg = db
@@ -478,7 +479,7 @@ pub async fn resume_pool_session(
 
     emit_message(&app, &sys_msg);
 
-    // 3. Trigger @pisci mention so Piscis wakes up and resumes coordination
+    // 3. Trigger @piscis mention so Piscis wakes up and resumes coordination
     let app_clone = app.clone();
     let db_arc = state.db.clone();
     let pool_id = id.clone();

@@ -2001,7 +2001,7 @@ export default function Chat() {
                   if (cards.length > 0) {
                     return cards.map((card) => (
                       <div key={card.requestId} className="message message-assistant">
-                        <div className="message-role">{t("chat.pisci")}</div>
+                        <div className="message-role">{t("chat.piscis")}</div>
                         <div className="message-content">
                           {msg.content.trim() && <MessageContent content={msg.content} />}
                           <InteractiveCard
@@ -2022,7 +2022,7 @@ export default function Chat() {
                 return (
                   <div key={msg.id} className={`message message-${msg.role}`}>
                     <div className="message-role">
-                      {msg.role === "user" ? t("chat.you") : t("chat.pisci")}
+                      {msg.role === "user" ? t("chat.you") : t("chat.piscis")}
                     </div>
                     <div className="message-content">
                       <MessageContent content={msg.content} />
@@ -2036,7 +2036,7 @@ export default function Chat() {
                   Hidden for IM sessions (headless agent, no real-time text stream). */}
               {running && !isImSession && (
                 <div className="message message-assistant streaming-bubble">
-                  <div className="message-role">{t("chat.pisci")}</div>
+                  <div className="message-role">{t("chat.piscis")}</div>
                   <div className="message-content">
                     {streamingCurrent ? (
                       <>
@@ -2058,7 +2058,7 @@ export default function Chat() {
                   bubble is empty/hidden at this point anyway. */}
               {pendingLiveCards.map((card) => (
                 <div key={card.requestId} className="message message-assistant">
-                  <div className="message-role">{t("chat.pisci")}</div>
+                  <div className="message-role">{t("chat.piscis")}</div>
                   <div className="message-content">
                     <InteractiveCard
                       requestId={card.requestId}
@@ -2249,7 +2249,7 @@ export default function Chat() {
         ) : (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <img src="/pisci.png" alt="OpenPiscis" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 14, opacity: 0.7 }} />
+              <img src="/piscis.png" alt="OpenPiscis" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 14, opacity: 0.7 }} />
             </div>
             <div className="empty-state-title">{t("chat.welcome")}</div>
             <div className="empty-state-desc">{t("chat.welcomeDesc")}</div>

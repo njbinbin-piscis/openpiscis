@@ -114,7 +114,7 @@ pub async fn list_builtin_tools(
         },
         BuiltinToolInfo {
             name: "pool_org".into(),
-            description: "创建和管理项目池与组织规范，由 Pisci 主动发起协作项目".into(),
+            description: "创建和管理项目池与组织规范，由 Piscis 主动发起协作项目".into(),
             icon: "🏊".into(),
             windows_only: false,
         },
@@ -171,13 +171,13 @@ pub async fn trigger_heartbeat(state: State<'_, AppState>) -> Result<(), String>
         scheduler: state.scheduler.clone(),
         scheduled_job_ids: state.scheduled_job_ids.clone(),
         gateway: state.gateway.clone(),
-        pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
         terminals: state.terminals.clone(),
         file_watchers: state.file_watchers.clone(),
         lsp_manager: state.lsp_manager.clone(),
     };
     tokio::spawn(async move {
-        let _ = crate::pisci::heartbeat::dispatch_heartbeat(&state_ref, &prompt, "internal").await;
+        let _ = crate::piscis::heartbeat::dispatch_heartbeat(&state_ref, &prompt, "internal").await;
     });
     Ok(())
 }

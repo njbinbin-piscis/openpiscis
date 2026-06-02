@@ -2,22 +2,22 @@
 # this workspace rather than the extracted piscis-engine — but it is its OWN
 # crate (not a target of `piscis-desktop`) so Tauri's bundler never tries to
 # ship it in the desktop installers. Build explicitly with:
-#   cargo build -p pisci-bench --release   (binary: target/release/pisci_compact_one)
+#   cargo build -p piscis-bench --release   (binary: target/release/piscis_compact_one)
 [package]
-name = "pisci-bench"
+name = "piscis-bench"
 version = "0.0.0"
 edition = "2021"
 publish = false
-description = "Bench-only one-shot compression CLI for OpenPisci (not shipped)."
+description = "Bench-only one-shot compression CLI for OpenPiscis (not shipped)."
 
 [[bin]]
-name = "pisci_compact_one"
+name = "piscis_compact_one"
 path = "src/main.rs"
 
 [dependencies]
 # Alias the dep key to the lib's crate name so `piscis_desktop_lib::…` resolves.
 piscis_desktop_lib = { path = "..", package = "piscis-desktop" }
-pisci-kernel = { workspace = true }
+piscis-kernel = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }

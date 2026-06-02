@@ -1,7 +1,7 @@
 //! EventBus trait — minimal abstraction so the in-process `call_koi` path
 //! can emit UI events without hard-coupling to Tauri in every helper.
 //!
-//! After Phase 4, pool coordination lives in `pisci-kernel`. The only
+//! After Phase 4, pool coordination lives in `piscis-kernel`. The only
 //! remaining consumer on the desktop side is `koi::runtime` for the
 //! `call_koi` tool, so this module is intentionally small.
 

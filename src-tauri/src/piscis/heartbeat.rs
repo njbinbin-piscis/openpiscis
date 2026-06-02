@@ -1,4 +1,4 @@
-use crate::commands::chat::{run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCI_POOL};
+use crate::commands::chat::{run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCIS_POOL};
 use crate::commands::config::scene::SceneKind;
 use crate::notify::{
     dispatch_notification, NotificationLevel, NotificationRequest, NotificationTarget, NotifierDeps,
@@ -6,18 +6,18 @@ use crate::notify::{
 use crate::pool::bridge;
 use crate::pool::KoiTodo;
 use crate::store::AppState;
-pub use pisci_core::heartbeat::{
+pub use piscis_core::heartbeat::{
     assessment_requires_coordination, build_forced_mention_attention,
     build_heartbeat_coordination_gap_notice, build_pool_heartbeat_message, collect_pool_attention,
     is_heartbeat_ack_only, PoolAttention,
 };
-use pisci_core::project_state::contains_delegated_pisci_mention;
-use pisci_core::project_state::ProjectDecision;
+use piscis_core::project_state::contains_delegated_piscis_mention;
+use piscis_core::project_state::ProjectDecision;
 use tracing::warn;
 
-const HEARTBEAT_SOURCE: &str = crate::commands::chat::SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL;
-const HEARTBEAT_POOL_SOURCE: &str = SESSION_SOURCE_PISCI_POOL;
-const HEARTBEAT_GLOBAL_SESSION_ID: &str = "pisci_heartbeat_global";
+const HEARTBEAT_SOURCE: &str = crate::commands::chat::SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL;
+const HEARTBEAT_POOL_SOURCE: &str = SESSION_SOURCE_PISCIS_POOL;
+const HEARTBEAT_GLOBAL_SESSION_ID: &str = "piscis_heartbeat_global";
 
 async fn run_mechanical_pool_recovery(state: &AppState) -> Result<Vec<String>, String> {
     let pools = {
@@ -43,7 +43,7 @@ async fn run_mechanical_pool_recovery(state: &AppState) -> Result<Vec<String>, S
 
 pub async fn scan_attention_pools(state: &AppState) -> Result<Vec<PoolAttention>, String> {
     let cursor_snapshot = {
-        let cursor = state.pisci_heartbeat_cursor.lock().await;
+        let cursor = state.piscis_heartbeat_cursor.lock().await;
         cursor.clone()
     };
 
@@ -87,7 +87,7 @@ pub async fn scan_attention_pools(state: &AppState) -> Result<Vec<PoolAttention>
     }
 
     if !advance_cursors.is_empty() {
-        let mut cursor = state.pisci_heartbeat_cursor.lock().await;
+        let mut cursor = state.piscis_heartbeat_cursor.lock().await;
         for (pool_id, latest_message_id) in advance_cursors {
             cursor.insert(pool_id, latest_message_id);
         }
@@ -109,9 +109,9 @@ pub async fn ensure_heartbeat_session(
     Ok(())
 }
 
-/// Case-insensitive `@!Piscis` / `@!pisci` delegated mention at line start.
-pub fn content_targets_pisci(content: &str) -> bool {
-    contains_delegated_pisci_mention(content)
+/// Case-insensitive `@!Piscis` / `@!piscis` delegated mention at line start.
+pub fn content_targets_piscis(content: &str) -> bool {
+    contains_delegated_piscis_mention(content)
 }
 
 /// Spawn an immediate Piscis heartbeat so that `@!Piscis` mentions and
@@ -138,7 +138,7 @@ pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'stati
         scheduler: state.scheduler.clone(),
         scheduled_job_ids: state.scheduled_job_ids.clone(),
         gateway: state.gateway.clone(),
-        pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
         terminals: state.terminals.clone(),
         file_watchers: state.file_watchers.clone(),
         lsp_manager: state.lsp_manager.clone(),
@@ -199,7 +199,7 @@ async fn collect_forced_mention_pool_attention(
 /// `pool_id` scopes the dispatch to a single pool. `scan_attention_pools`
 /// will pick that pool up (the new mention is an attention event, so the
 /// pool appears in the result set) and `dispatch_heartbeat` will run
-/// Pisci only in that pool's attention session.
+/// Piscis only in that pool's attention session.
 pub fn spawn_mention_dispatch(
     state: &crate::store::AppState,
     pool_id: String,
@@ -217,7 +217,7 @@ pub fn spawn_mention_dispatch(
         scheduler: state.scheduler.clone(),
         scheduled_job_ids: state.scheduled_job_ids.clone(),
         gateway: state.gateway.clone(),
-        pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
         terminals: state.terminals.clone(),
         file_watchers: state.file_watchers.clone(),
         lsp_manager: state.lsp_manager.clone(),
@@ -245,7 +245,7 @@ pub fn spawn_mention_dispatch(
                         "@!Piscis mention dispatch failed for pool {}: {}",
                         pool_id, e
                     );
-                    let _ = crate::pool::notice::post_pisci_pool_notice(
+                    let _ = crate::pool::notice::post_piscis_pool_notice(
                         &cloned.app_handle,
                         &cloned,
                         &pool_id,
@@ -256,7 +256,7 @@ pub fn spawn_mention_dispatch(
             }
             None => {
                 tracing::info!(
-                    target: "pool::pisci",
+                    target: "pool::piscis",
                     pool_id = %pool_id,
                     "@!Piscis mention: no delegated mention found in pool; skipping dispatch"
                 );
@@ -273,14 +273,14 @@ async fn latest_pool_message_id(state: &AppState, pool_id: &str) -> i64 {
         .unwrap_or(0)
 }
 
-async fn pisci_pool_activity_since(state: &AppState, pool_id: &str, since_id: i64) -> bool {
+async fn piscis_pool_activity_since(state: &AppState, pool_id: &str, since_id: i64) -> bool {
     let db = state.db.lock().await;
     let Ok(messages) = db.get_pool_messages(pool_id, 100, 0) else {
         return false;
     };
     messages
         .iter()
-        .any(|m| m.id > since_id && m.sender_id == "pisci")
+        .any(|m| m.id > since_id && m.sender_id == "piscis")
 }
 
 /// Run Piscis in a single pool's attention session. Extracted from
@@ -289,7 +289,7 @@ async fn pisci_pool_activity_since(state: &AppState, pool_id: &str, since_id: i6
 async fn dispatch_single_pool_attention(
     state: &AppState,
     base_prompt: &str,
-    attention: &pisci_core::heartbeat::PoolAttention,
+    attention: &piscis_core::heartbeat::PoolAttention,
     channel: &str,
 ) -> Result<(), String> {
     ensure_heartbeat_session(
@@ -354,13 +354,13 @@ async fn dispatch_single_pool_attention(
     )
     .await?;
 
-    let coordinated = pisci_pool_activity_since(state, &attention.pool_id, pool_msg_before).await;
+    let coordinated = piscis_pool_activity_since(state, &attention.pool_id, pool_msg_before).await;
     let needs_follow_up = !coordinated
         && (assessment_requires_coordination(&attention.assessment) || channel == "mention")
         && (channel == "mention" || is_heartbeat_ack_only(&response_text));
     if needs_follow_up {
         let notice = build_heartbeat_coordination_gap_notice(attention);
-        if let Err(err) = crate::pool::notice::post_pisci_pool_notice(
+        if let Err(err) = crate::pool::notice::post_piscis_pool_notice(
             &state.app_handle,
             state,
             &attention.pool_id,
@@ -376,7 +376,7 @@ async fn dispatch_single_pool_attention(
     }
 
     let latest_after = latest_pool_message_id(state, &attention.pool_id).await;
-    let mut cursor = state.pisci_heartbeat_cursor.lock().await;
+    let mut cursor = state.piscis_heartbeat_cursor.lock().await;
     cursor.insert(
         attention.pool_id.clone(),
         latest_after.max(attention.latest_message_id),
@@ -437,14 +437,14 @@ pub async fn dispatch_heartbeat(
     }
 }
 
-/// Emit a `pisci_toast` event as a human-escalation safety net. This runs
-/// before Pisci's own turn so the user is alerted even if Pisci itself fails
-/// or takes a long time to respond. Pisci is still expected to call
+/// Emit a `piscis_toast` event as a human-escalation safety net. This runs
+/// before Piscis's own turn so the user is alerted even if Piscis itself fails
+/// or takes a long time to respond. Piscis is still expected to call
 /// `app_control(notify_user, ...)` itself to add a diagnostic summary.
 ///
 /// When the pool was created from an IM conversation
 /// (`pool_sessions.origin_im_binding_key`), the same notification is
-/// fanned out to that IM channel so users who interact with Pisci
+/// fanned out to that IM channel so users who interact with Piscis
 /// remotely don't miss escalations while the desktop UI is closed.
 async fn emit_auto_escalation_toast(state: &AppState, attention: &PoolAttention) {
     let reasons = if attention.assessment.attention_reasons.is_empty() {

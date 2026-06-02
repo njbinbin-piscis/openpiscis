@@ -14,17 +14,17 @@
 //!   * We build a fresh desktop in-process [`SubagentRuntime`] per call via
 //!     `DesktopHost::from_state` / `build_deps_from_db`. The runtime
 //!     itself is cheap; Koi work runs inside the GUI product process by
-//!     default instead of requiring an `openpisci-headless` sidecar.
+//!     default instead of requiring an `openpiscis-headless` sidecar.
 //!   * All helpers return kernel-shaped results so command handlers can
 //!     serialise them back to the frontend unchanged.
 
 use std::sync::Arc;
 
-use pisci_core::host::{HostRuntime, PoolEventSink, SubagentRuntime};
-use pisci_core::models::KoiTodo;
-use pisci_kernel::pool::coordinator::{self, CoordinatorConfig, KoiExecResult};
-use pisci_kernel::pool::store::PoolStore;
-use pisci_kernel::store::Database;
+use piscis_core::host::{HostRuntime, PoolEventSink, SubagentRuntime};
+use piscis_core::models::KoiTodo;
+use piscis_kernel::pool::coordinator::{self, CoordinatorConfig, KoiExecResult};
+use piscis_kernel::pool::store::PoolStore;
+use piscis_kernel::store::Database;
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
 

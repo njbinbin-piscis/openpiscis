@@ -32,7 +32,7 @@ export default function About() {
   return (
     <div className="about-page">
       <div className="about-hero">
-        <img src="/pisci.png" className="about-logo" alt="OpenPiscis" />
+        <img src="/piscis.png" className="about-logo" alt="OpenPiscis" />
         <h1 className="about-title">OpenPiscis</h1>
         <p className="about-tagline">{t("about.tagline")}</p>
         <span className="about-version">v{version}</span>

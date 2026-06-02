@@ -198,13 +198,13 @@
       "kind": "critical"
     },
     {
-      "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-      "a": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+      "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+      "a": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
       "kind": "critical"
     },
     {
-      "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-      "a": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+      "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+      "a": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
       "kind": "critical"
     },
     {

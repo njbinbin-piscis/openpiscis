@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -42,7 +42,7 @@ impl Tool for ChatUiTool {
          Supports layout (row/column/card), image/code_preview/progress/link_list, wizard steps, file_picker, \
          text/number/date/time/slider/switch, select/radio/checkbox/tags, koi/project pickers, show_when, validation. \
          Buttons: emit=submit (terminal) or emit=action (non-terminal; then use chat_ui_patch + chat_ui_listen). \
-         Include data{} for v2 data model. Catalog: docs/pisci.chat.catalog.json — spec: docs/chat-ui-protocol.md. \
+         Include data{} for v2 data model. Catalog: docs/piscis.chat.catalog.json — spec: docs/chat-ui-protocol.md. \
          NOT for simple yes/no. Blocks until submit (or action+listen flow)."
     }
 

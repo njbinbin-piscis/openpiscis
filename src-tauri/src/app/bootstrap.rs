@@ -15,7 +15,7 @@
 //! [`super::logging`], [`super::markers`] and [`super::headless`].
 
 use crate::{commands, gateway, store};
-use pisci_kernel::scheduler;
+use piscis_kernel::scheduler;
 use serde_json::Value;
 use std::sync::Arc;
 use tauri::{Emitter, Manager};
@@ -230,12 +230,12 @@ fn open_path(path: String) -> Result<(), String> {
     {
         let p = std::path::Path::new(&path);
         if p.is_dir() {
-            pisci_kernel::proc::std_command("explorer")
+            piscis_kernel::proc::std_command("explorer")
                 .arg(&path)
                 .spawn()
                 .map_err(|e| format!("Failed to open directory in Explorer: {e}"))?;
         } else {
-            pisci_kernel::proc::std_command("cmd")
+            piscis_kernel::proc::std_command("cmd")
                 .args(["/c", "start", "", &path])
                 .spawn()
                 .map_err(|e| format!("Failed to open file: {e}"))?;
@@ -249,7 +249,7 @@ fn open_path(path: String) -> Result<(), String> {
         } else {
             "xdg-open"
         };
-        pisci_kernel::proc::std_command(cmd)
+        piscis_kernel::proc::std_command(cmd)
             .arg(&path)
             .spawn()
             .map_err(|e| format!("Failed to open path: {e}"))?;
@@ -265,11 +265,11 @@ pub fn run() {
 fn run_impl() {
     let _log_guard = init_logging();
     install_crash_reporter();
-    let updater_enabled = std::env::var("PISCI_ENABLE_UPDATER").ok().as_deref() == Some("1");
+    let updater_enabled = std::env::var("PISCIS_ENABLE_UPDATER").ok().as_deref() == Some("1");
 
     if !updater_enabled {
         tracing::info!(
-            "Updater plugin disabled at startup. Set PISCI_ENABLE_UPDATER=1 only after updater pubkey/endpoints are fully configured."
+            "Updater plugin disabled at startup. Set PISCIS_ENABLE_UPDATER=1 only after updater pubkey/endpoints are fully configured."
         );
     }
 
@@ -324,7 +324,7 @@ fn run_impl() {
                 scheduler: state.scheduler.clone(),
                 scheduled_job_ids: state.scheduled_job_ids.clone(),
                 gateway: state.gateway.clone(),
-                pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
                 terminals: state.terminals.clone(),
                 file_watchers: state.file_watchers.clone(),
                 lsp_manager: state.lsp_manager.clone(),
@@ -339,7 +339,7 @@ fn run_impl() {
                 let app_data_dir = app_handle
                     .path()
                     .app_data_dir()
-                    .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+                    .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
                 robotz_automation::calibration::refresh_cache(&app_data_dir);
             }
 
@@ -367,7 +367,7 @@ fn run_impl() {
                 let interactive_resp = state.interactive_responses.clone();
                 let app_h = app_handle.clone();
                 let sched = state.scheduler.clone();
-                let pisci_heartbeat_cursor = state.pisci_heartbeat_cursor.clone();
+                let piscis_heartbeat_cursor = state.piscis_heartbeat_cursor.clone();
                 let terminals = state.terminals.clone();
                 let file_watchers = state.file_watchers.clone();
                 let lsp_manager = state.lsp_manager.clone();
@@ -419,7 +419,7 @@ fn run_impl() {
                                         scheduler: sched.clone(),
                                         scheduled_job_ids: scheduled_job_ids.clone(),
                                         gateway: gateway.clone(),
-                                        pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                        piscis_heartbeat_cursor: piscis_heartbeat_cursor.clone(),
                                         terminals: terminals.clone(),
                                         file_watchers: file_watchers.clone(),
                                         lsp_manager: lsp_manager.clone(),
@@ -584,7 +584,7 @@ fn run_impl() {
                                     scheduler: sched.clone(),
                                     scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
-                                    pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                    piscis_heartbeat_cursor: piscis_heartbeat_cursor.clone(),
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
                                     lsp_manager: lsp_manager.clone(),
@@ -659,7 +659,7 @@ fn run_impl() {
                                     scheduler: sched.clone(),
                                     scheduled_job_ids: scheduled_job_ids.clone(),
                                     gateway: gateway.clone(),
-                                    pisci_heartbeat_cursor: pisci_heartbeat_cursor.clone(),
+                                    piscis_heartbeat_cursor: piscis_heartbeat_cursor.clone(),
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
                                     lsp_manager: lsp_manager.clone(),
@@ -786,7 +786,7 @@ fn run_impl() {
             }
 
             let startup_heartbeat_disabled =
-                std::env::var("PISCI_DISABLE_STARTUP_HEARTBEAT").ok().as_deref() == Some("1");
+                std::env::var("PISCIS_DISABLE_STARTUP_HEARTBEAT").ok().as_deref() == Some("1");
 
             if !startup_heartbeat_disabled {
                 let settings_arc = state.settings.clone();
@@ -800,7 +800,7 @@ fn run_impl() {
                 let sched_arc = state.scheduler.clone();
                 let scheduled_job_ids_arc = state.scheduled_job_ids.clone();
                 let gateway_arc = state.gateway.clone();
-                let pisci_heartbeat_cursor_arc = state.pisci_heartbeat_cursor.clone();
+                let piscis_heartbeat_cursor_arc = state.piscis_heartbeat_cursor.clone();
                 let terminals_arc = state.terminals.clone();
                 let file_watchers_arc = state.file_watchers.clone();
                 let lsp_manager_arc = state.lsp_manager.clone();
@@ -844,12 +844,12 @@ fn run_impl() {
                             scheduler: sched_arc.clone(),
                             scheduled_job_ids: scheduled_job_ids_arc.clone(),
                             gateway: gateway_arc.clone(),
-                            pisci_heartbeat_cursor: pisci_heartbeat_cursor_arc.clone(),
+                            piscis_heartbeat_cursor: piscis_heartbeat_cursor_arc.clone(),
                             terminals: terminals_arc.clone(),
                             file_watchers: file_watchers_arc.clone(),
                             lsp_manager: lsp_manager_arc.clone(),
                         };
-                        let _ = crate::pisci::heartbeat::dispatch_heartbeat(
+                        let _ = crate::piscis::heartbeat::dispatch_heartbeat(
                             &state_ref,
                             &prompt,
                             "heartbeat",
@@ -949,7 +949,7 @@ fn run_impl() {
                     let app_dir = app_handle_clone
                         .path()
                         .app_data_dir()
-                        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+                        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
                     let skills_dir = app_dir.join("skills");
 
                     let mut loader = crate::skills::loader::SkillLoader::new(&skills_dir);
@@ -1098,8 +1098,8 @@ fn run_impl() {
 
             #[cfg(debug_assertions)]
             {
-                if std::env::var("PISCI_HIDE_WINDOWS_ON_STARTUP").ok().as_deref() == Some("1")
-                    || std::env::var("PISCI_RUN_COLLAB_TRIAL").ok().as_deref() == Some("1")
+                if std::env::var("PISCIS_HIDE_WINDOWS_ON_STARTUP").ok().as_deref() == Some("1")
+                    || std::env::var("PISCIS_RUN_COLLAB_TRIAL").ok().as_deref() == Some("1")
                 {
                     if let Some(main) = app.get_webview_window("main") {
                         let _ = main.hide();
@@ -1118,7 +1118,7 @@ fn run_impl() {
                     scheduler: state.scheduler.clone(),
                     scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
-                    pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                    piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
                     terminals: state.terminals.clone(),
                     file_watchers: state.file_watchers.clone(),
                     lsp_manager: state.lsp_manager.clone(),
@@ -1135,30 +1135,30 @@ fn run_impl() {
                     scheduler: state.scheduler.clone(),
                     scheduled_job_ids: state.scheduled_job_ids.clone(),
                     gateway: state.gateway.clone(),
-                    pisci_heartbeat_cursor: state.pisci_heartbeat_cursor.clone(),
+                    piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
                     terminals: state.terminals.clone(),
                     file_watchers: state.file_watchers.clone(),
                     lsp_manager: state.lsp_manager.clone(),
                 };
 
-                if let Ok(prompt) = std::env::var("PISCI_HEADLESS_PROMPT") {
+                if let Ok(prompt) = std::env::var("PISCIS_HEADLESS_PROMPT") {
                     if !prompt.trim().is_empty() {
                         let state_ref = startup_headless_state;
                         let app_for_headless = app_handle.clone();
                         let exit_after =
-                            std::env::var("PISCI_EXIT_AFTER_HEADLESS_PROMPT").ok().as_deref()
+                            std::env::var("PISCIS_EXIT_AFTER_HEADLESS_PROMPT").ok().as_deref()
                                 == Some("1");
-                        let session_id = std::env::var("PISCI_HEADLESS_SESSION_ID")
+                        let session_id = std::env::var("PISCIS_HEADLESS_SESSION_ID")
                             .unwrap_or_else(|_| "startup_headless".to_string());
-                        let session_title = std::env::var("PISCI_HEADLESS_SESSION_TITLE")
+                        let session_title = std::env::var("PISCIS_HEADLESS_SESSION_TITLE")
                             .unwrap_or_else(|_| "Startup Headless Task".to_string());
-                        let channel = std::env::var("PISCI_HEADLESS_CHANNEL")
+                        let channel = std::env::var("PISCIS_HEADLESS_CHANNEL")
                             .unwrap_or_else(|_| "startup".to_string());
                         let extra_system_context =
-                            std::env::var("PISCI_HEADLESS_EXTRA_SYSTEM_CONTEXT").ok();
+                            std::env::var("PISCIS_HEADLESS_EXTRA_SYSTEM_CONTEXT").ok();
                         tauri::async_runtime::spawn(async move {
                             tracing::info!(
-                                "Startup hook: running headless Pisci task session_id={}",
+                                "Startup hook: running headless Piscis task session_id={}",
                                 session_id
                             );
                             match commands::chat::run_agent_headless(
@@ -1179,27 +1179,27 @@ fn run_impl() {
                             .await
                             {
                                 Ok((text, _, _)) => tracing::info!(
-                                    "Startup hook: headless Pisci task completed, chars={}, preview={}",
+                                    "Startup hook: headless Piscis task completed, chars={}, preview={}",
                                     text.chars().count(),
                                     text.chars().take(400).collect::<String>()
                                 ),
                                 Err(e) => {
-                                    tracing::error!("Startup hook: headless Pisci task failed: {}", e)
+                                    tracing::error!("Startup hook: headless Piscis task failed: {}", e)
                                 }
                             }
                             if exit_after {
-                                tracing::info!("Startup hook: exiting after headless Pisci task");
+                                tracing::info!("Startup hook: exiting after headless Piscis task");
                                 app_for_headless.exit(0);
                             }
                         });
                     }
                 }
 
-                if std::env::var("PISCI_RUN_COLLAB_TRIAL").ok().as_deref() == Some("1") {
+                if std::env::var("PISCIS_RUN_COLLAB_TRIAL").ok().as_deref() == Some("1") {
                     let state_ref = startup_trial_state;
                     let app_for_trial = app_handle.clone();
                     let exit_after_trial =
-                        std::env::var("PISCI_EXIT_AFTER_COLLAB_TRIAL").ok().as_deref()
+                        std::env::var("PISCIS_EXIT_AFTER_COLLAB_TRIAL").ok().as_deref()
                             == Some("1");
                     tauri::async_runtime::spawn(async move {
                         tracing::info!("Startup hook: running real collaboration trial");

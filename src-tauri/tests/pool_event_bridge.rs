@@ -16,7 +16,7 @@
 //! 3. The canonical forward-compatible channel constant is exported as
 //!    a public string the frontend can rely on.
 
-use pisci_core::host::{
+use piscis_core::host::{
     PoolEvent, PoolMessageSnapshot, PoolSessionSnapshot, PoolWaitSummary, TodoChangeAction,
     TodoSnapshot,
 };
@@ -36,7 +36,7 @@ fn sample_message_snapshot() -> PoolMessageSnapshot {
     PoolMessageSnapshot {
         id: 42,
         pool_session_id: "pool-xyz".into(),
-        sender_id: "pisci".into(),
+        sender_id: "piscis".into(),
         content: "hi".into(),
         msg_type: "text".into(),
         metadata: serde_json::Value::Null,
@@ -69,7 +69,7 @@ fn sample_todo_snapshot() -> TodoSnapshot {
         description: String::new(),
         status: "todo".into(),
         priority: "medium".into(),
-        assigned_by: "pisci".into(),
+        assigned_by: "piscis".into(),
         pool_session_id: Some("pool-xyz".into()),
         claimed_by: None,
         depends_on: None,

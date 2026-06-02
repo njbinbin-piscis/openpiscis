@@ -3,7 +3,7 @@
 //!
 //! All commands are registered as Tauri commands by `app::bootstrap`.
 
-use pisci_kernel::proc::tokio_command;
+use piscis_kernel::proc::tokio_command;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -977,7 +977,7 @@ pub async fn ide_git_commit(project_dir: String, message: String) -> Result<Stri
         );
     }
 
-    let tmp = std::env::temp_dir().join(format!("openpisci-commit-{}.txt", std::process::id()));
+    let tmp = std::env::temp_dir().join(format!("openpiscis-commit-{}.txt", std::process::id()));
     std::fs::write(&tmp, message.as_bytes())
         .map_err(|e| format!("failed to write commit message file: {}", e))?;
     let path_str = tmp.to_string_lossy().to_string();
@@ -1293,7 +1293,7 @@ pub async fn ide_stop_watcher(
 
 /// Build a `git` command that never opens a console window on Windows.
 ///
-/// Thin wrapper over [`pisci_kernel::proc::tokio_command`] kept as a named
+/// Thin wrapper over [`piscis_kernel::proc::tokio_command`] kept as a named
 /// helper so all git invocations remain grep-able.
 fn new_git_cmd() -> Command {
     tokio_command("git")

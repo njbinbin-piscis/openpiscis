@@ -1,12 +1,12 @@
 use crate::commands::chat::{persist_task_spine_from_plan_state, render_task_state_section};
 use crate::host::DesktopHostTools;
 use crate::store::{db::ScheduledTask, AppState, Database, Settings};
-use pisci_kernel::agent::harness::HarnessConfig;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::ToolContext;
-use pisci_kernel::llm::{build_client, LlmMessage, MessageContent};
-use pisci_kernel::policy::PolicyGate;
-use pisci_kernel::project_context::render_project_instruction_context;
+use piscis_kernel::agent::harness::HarnessConfig;
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::ToolContext;
+use piscis_kernel::llm::{build_client, LlmMessage, MessageContent};
+use piscis_kernel::policy::PolicyGate;
+use piscis_kernel::project_context::render_project_instruction_context;
 use robotz_browser::SharedBrowserManager;
 use serde::Serialize;
 use std::sync::{atomic::AtomicBool, Arc};
@@ -45,7 +45,7 @@ fn build_scheduler_session_title(task_name: Option<&str>, task_id: &str) -> Stri
     format!("[定时] {}", title)
 }
 
-fn render_pisci_personal_prompt(prompt: &str) -> String {
+fn render_piscis_personal_prompt(prompt: &str) -> String {
     let trimmed = prompt.trim();
     if trimmed.is_empty() {
         String::new()
@@ -78,7 +78,7 @@ fn is_memory_consolidation_prompt(task_prompt: &str) -> bool {
 fn build_memory_consolidation_snapshot(db: &Database) -> String {
     let sessions = db.list_sessions(8, 0).unwrap_or_default();
     let task_states = db.list_recent_task_states(8).unwrap_or_default();
-    let memories = db.list_memories_for_owner("pisci").unwrap_or_default();
+    let memories = db.list_memories_for_owner("piscis").unwrap_or_default();
 
     let session_lines = if sessions.is_empty() {
         "- No recent sessions".to_string()
@@ -176,7 +176,7 @@ fn resolve_memory_consolidation_prompt(task_prompt: &str, db: &Database) -> Stri
 fn build_session_consolidation_snapshot(db: &Database, session_id: &str) -> String {
     let session = db.get_session(session_id).ok().flatten();
     let task_states = db.list_recent_task_states(4).unwrap_or_default();
-    let memories = db.list_memories_for_owner("pisci").unwrap_or_default();
+    let memories = db.list_memories_for_owner("piscis").unwrap_or_default();
 
     let session_line = match session {
         Some(s) => {
@@ -698,7 +698,7 @@ pub async fn execute_task(
         allow_outside_workspace,
         project_instruction_budget_chars,
         enable_project_instructions,
-        pisci_personal_prompt,
+        piscis_personal_prompt,
     ) = {
         let s = settings.lock().await;
         (
@@ -710,13 +710,13 @@ pub async fn execute_task(
             s.max_tokens,
             s.policy_mode.clone(),
             s.tool_rate_limit_per_minute,
-            std::sync::Arc::new(pisci_kernel::agent::tool::ToolSettings::from_settings(&s)),
+            std::sync::Arc::new(piscis_kernel::agent::tool::ToolSettings::from_settings(&s)),
             s.max_iterations,
             s.builtin_tool_enabled.clone(),
             s.allow_outside_workspace,
             s.project_instruction_budget_chars,
             s.enable_project_instructions,
-            s.pisci_personal_prompt.clone(),
+            s.piscis_personal_prompt.clone(),
         )
     };
     let effective_task_prompt = {
@@ -806,7 +806,7 @@ pub async fn execute_task(
         }
     };
 
-    let personal_prompt_section = render_pisci_personal_prompt(&pisci_personal_prompt);
+    let personal_prompt_section = render_piscis_personal_prompt(&piscis_personal_prompt);
     let project_instruction_section = if enable_project_instructions {
         match render_project_instruction_context(
             std::path::Path::new(&workspace_root),
@@ -845,7 +845,7 @@ pub async fn execute_task(
     );
     let scheduler_compaction_settings = {
         let s = settings.lock().await;
-        pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
+        piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
     };
     let agent = HarnessConfig::for_scheduler(
         model,
@@ -868,7 +868,7 @@ pub async fn execute_task(
         bypass_permissions: false,
         settings: tool_settings,
         max_iterations: Some(max_iterations),
-        memory_owner_id: "pisci".to_string(),
+        memory_owner_id: "piscis".to_string(),
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
@@ -948,11 +948,11 @@ pub async fn execute_task(
         // Append the full conversation (user prompt + agent replies).
         for msg in &final_messages {
             let text = match &msg.content {
-                pisci_kernel::llm::MessageContent::Text(t) => t.clone(),
-                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                piscis_kernel::llm::MessageContent::Text(t) => t.clone(),
+                piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks
                     .iter()
                     .filter_map(|b| {
-                        if let pisci_kernel::llm::ContentBlock::Text { text } = b {
+                        if let piscis_kernel::llm::ContentBlock::Text { text } = b {
                             Some(text.as_str())
                         } else {
                             None
@@ -978,11 +978,11 @@ pub async fn execute_task(
         .filter(|m| m.role == "assistant")
         .find_map(|m| {
             let t = match &m.content {
-                pisci_kernel::llm::MessageContent::Text(t) => Some(t.as_str()),
-                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                piscis_kernel::llm::MessageContent::Text(t) => Some(t.as_str()),
+                piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks
                     .iter()
                     .filter_map(|b| {
-                        if let pisci_kernel::llm::ContentBlock::Text { text } = b {
+                        if let piscis_kernel::llm::ContentBlock::Text { text } = b {
                             Some(text.as_str())
                         } else {
                             None

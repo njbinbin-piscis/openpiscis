@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Pisci Desktop — Release Gate Smoke-Test Script
+    Piscis Desktop — Release Gate Smoke-Test Script
 .DESCRIPTION
     Runs a lightweight battery of checks to verify the project is in a
     releasable state.  Exit code 0 means all checks passed; non-zero means

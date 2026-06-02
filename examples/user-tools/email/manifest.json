@@ -2,7 +2,7 @@
   "name": "email",
   "description": "Send emails via SMTP and fetch emails via IMAP. A TypeScript reference implementation for user tools.",
   "version": "1.0.0",
-  "author": "Pisci Desktop",
+  "author": "Piscis Desktop",
   "runtime": "deno",
   "entrypoint": "index.ts",
   "input_schema": {

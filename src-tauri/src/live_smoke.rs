@@ -14,15 +14,15 @@
 //! This test is `#[ignore]`d by default — it makes real network calls.
 //! Run with explicit config:
 //! ```text
-//! $env:PISCI_LIVE_CONFIG_DIR = "$env:APPDATA\com.pisci.desktop"
-//! $env:PISCI_LIVE_OUT        = "C:\path\to\harness-smoke.jsonl"
-//! $env:PISCI_LIVE_MAX_ITERS  = "20"    # optional
-//! $env:PISCI_LIVE_TIMEOUT_S  = "600"   # optional
+//! $env:PISCIS_LIVE_CONFIG_DIR = "$env:APPDATA\com.piscis.desktop"
+//! $env:PISCIS_LIVE_OUT        = "C:\path\to\harness-smoke.jsonl"
+//! $env:PISCIS_LIVE_MAX_ITERS  = "20"    # optional
+//! $env:PISCIS_LIVE_TIMEOUT_S  = "600"   # optional
 //! cargo test --manifest-path src-tauri/Cargo.toml --lib --features "" -- \
 //!     --ignored --nocapture agent::live_smoke::harness_live_smoke
 //! ```
 //!
-//! The test writes one JSONL line per AgentEvent to `PISCI_LIVE_OUT`,
+//! The test writes one JSONL line per AgentEvent to `PISCIS_LIVE_OUT`,
 //! plus a final `summary` line carrying aggregated stats
 //! (iteration count, tool-call histogram, max context utilisation,
 //! final `layered_breakdown`, cumulative tokens).
@@ -30,7 +30,7 @@
 //! Safety:
 //!   - uses an **in-memory** SQLite so we never touch the user's
 //!     production DB
-//!   - runs in a fresh temp workspace (created under `%TEMP%/pisci-live-smoke-<uuid>`
+//!   - runs in a fresh temp workspace (created under `%TEMP%/piscis-live-smoke-<uuid>`
 //!     and deleted on drop)
 //!   - `policy_mode = "sandbox"` to keep shell+file tools bounded to the
 //!     temp workspace
@@ -51,11 +51,11 @@ use tokio::sync::{mpsc, Mutex};
 
 use crate::store::db::Database;
 use crate::store::settings::Settings;
-use pisci_kernel::agent::harness::config::{CompactionSettings, HarnessConfig};
-use pisci_kernel::agent::messages::{AgentEvent, LayeredTokenBreakdownSnapshot};
-use pisci_kernel::agent::tool::{ToolContext, ToolSettings};
-use pisci_kernel::llm::{LlmMessage, MessageContent};
-use pisci_kernel::policy::gate::PolicyGate;
+use piscis_kernel::agent::harness::config::{CompactionSettings, HarnessConfig};
+use piscis_kernel::agent::messages::{AgentEvent, LayeredTokenBreakdownSnapshot};
+use piscis_kernel::agent::tool::{ToolContext, ToolSettings};
+use piscis_kernel::llm::{LlmMessage, MessageContent};
+use piscis_kernel::policy::gate::PolicyGate;
 
 fn env_or(key: &str, default: &str) -> String {
     std::env::var(key)
@@ -66,7 +66,7 @@ fn env_or(key: &str, default: &str) -> String {
 
 fn temp_workspace(tag: &str) -> PathBuf {
     let uuid = uuid::Uuid::new_v4().to_string();
-    let p = std::env::temp_dir().join(format!("pisci-live-smoke-{}-{}", tag, &uuid[..8]));
+    let p = std::env::temp_dir().join(format!("piscis-live-smoke-{}-{}", tag, &uuid[..8]));
     std::fs::create_dir_all(&p).expect("create temp workspace");
     p
 }
@@ -119,7 +119,7 @@ fn format_breakdown(b: &LayeredTokenBreakdownSnapshot) -> Json {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-#[ignore = "real-network: runs a real LLM loop; enable with env PISCI_LIVE_CONFIG_DIR"]
+#[ignore = "real-network: runs a real LLM loop; enable with env PISCIS_LIVE_CONFIG_DIR"]
 async fn harness_live_smoke() {
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -133,16 +133,16 @@ async fn harness_live_smoke() {
 
     // ── 1. Load real settings from disk ───────────────────────────────
     let config_dir = env_or(
-        "PISCI_LIVE_CONFIG_DIR",
+        "PISCIS_LIVE_CONFIG_DIR",
         &format!(
-            "{}\\com.pisci.desktop",
+            "{}\\com.piscis.desktop",
             std::env::var("APPDATA").unwrap_or_else(|_| String::from("."))
         ),
     );
     let config_path = PathBuf::from(&config_dir).join("config.json");
     assert!(
         config_path.exists(),
-        "config.json not found at {} — set PISCI_LIVE_CONFIG_DIR",
+        "config.json not found at {} — set PISCIS_LIVE_CONFIG_DIR",
         config_path.display()
     );
     let settings = Settings::load(&config_path).expect("load settings");
@@ -180,7 +180,7 @@ async fn harness_live_smoke() {
     };
 
     // ── 3. Real LLM client + tool registry (no AppHandle) ─────────────
-    let client = pisci_kernel::llm::build_client_with_timeout(
+    let client = piscis_kernel::llm::build_client_with_timeout(
         &provider,
         &api_key,
         if base_url.is_empty() {
@@ -231,8 +231,10 @@ async fn harness_live_smoke() {
 
     // ── 4. Run the loop ──────────────────────────────────────────────
     let cancel = Arc::new(AtomicBool::new(false));
-    let max_iters: u32 = env_or("PISCI_LIVE_MAX_ITERS", "20").parse().unwrap_or(20);
-    let timeout_secs: u64 = env_or("PISCI_LIVE_TIMEOUT_S", "600").parse().unwrap_or(600);
+    let max_iters: u32 = env_or("PISCIS_LIVE_MAX_ITERS", "20").parse().unwrap_or(20);
+    let timeout_secs: u64 = env_or("PISCIS_LIVE_TIMEOUT_S", "600")
+        .parse()
+        .unwrap_or(600);
 
     let tool_settings = Arc::new(ToolSettings::default());
     let ctx = ToolContext {
@@ -241,7 +243,7 @@ async fn harness_live_smoke() {
         bypass_permissions: true, // no UI to answer permission prompts
         settings: tool_settings,
         max_iterations: Some(max_iters),
-        memory_owner_id: "pisci".to_string(),
+        memory_owner_id: "piscis".to_string(),
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
@@ -256,7 +258,7 @@ async fn harness_live_smoke() {
     let (tx, mut rx) = mpsc::channel::<AgentEvent>(1024);
 
     let out_path = PathBuf::from(env_or(
-        "PISCI_LIVE_OUT",
+        "PISCIS_LIVE_OUT",
         &format!(
             "{}\\harness-smoke-{}.jsonl",
             std::env::temp_dir().display(),

@@ -1,6 +1,6 @@
-/** Line-start `@!Piscis` / `@!pisci` delegated mention (matches backend rules). */
-export function containsDelegatedPisciMention(text: string): boolean {
-  const needle = "@!pisci";
+/** Line-start `@!Piscis` / `@!piscis` delegated mention (matches backend rules). */
+export function containsDelegatedPiscisMention(text: string): boolean {
+  const needle = "@!piscis";
   return text.split("\n").some((line) => {
     const trimmed = line.trimStart();
     const lower = trimmed.toLowerCase();

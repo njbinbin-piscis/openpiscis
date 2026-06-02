@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 
@@ -19,7 +19,7 @@ impl Tool for ChatUiPatchTool {
     fn description(&self) -> &str {
         "Patch a live chat_ui card (Protocol v2) without blocking. Update title, data model, blocks, wizard step, or progress fields. \
          Use after a non-terminal action button (emit=action) so the user can continue on the same card. \
-         Pair with chat_ui_listen when you need another blocking submit. Catalog: docs/pisci.chat.catalog.json."
+         Pair with chat_ui_listen when you need another blocking submit. Catalog: docs/piscis.chat.catalog.json."
     }
 
     fn input_schema(&self) -> Value {

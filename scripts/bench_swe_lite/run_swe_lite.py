@@ -60,7 +60,7 @@ def build_request(
     phase_index: int,
     response_path: Path,
 ) -> dict[str, Any]:
-    mode = profile.get("mode", "pisci")
+    mode = profile.get("mode", "piscis")
     prompt = phase_prompt
     if mode == "pool":
         prompt = "@!all\n\n" + phase_prompt
@@ -101,7 +101,7 @@ def build_request(
 
 def build_supervisor_closeout_prompt(task: dict[str, Any], pool_id: str, workspace: Path) -> str:
     return f"""
-You are Pisci acting as the project pool supervisor for pool `{pool_id}`.
+You are Piscis acting as the project pool supervisor for pool `{pool_id}`.
 
 The Koi workers have reported their todos as done, but their changes are isolated on `koi/*`
 worktree branches. Your job is to close out the collaboration explicitly:
@@ -193,9 +193,9 @@ def run_case_profile(
                     "cargo",
                     "run",
                     "--bin",
-                    "openpisci-headless",
+                    "openpiscis-headless",
                     "--manifest-path",
-                    # openpisci-headless now lives in the extracted piscis-engine repo.
+                    # openpiscis-headless now lives in the extracted piscis-engine repo.
                     "../piscis-engine/Cargo.toml",
                     "--",
                     "run",
@@ -246,7 +246,7 @@ def run_case_profile(
         request: dict[str, Any] = {
             "prompt": supervisor_prompt,
             "workspace": str(workspace),
-            "mode": "pisci",
+            "mode": "piscis",
             "session_id": f"{session_id}__supervisor",
             "session_title": f"{task['title']} [{profile['name']} supervisor]",
             "channel": task.get("channel", "benchmark"),
@@ -309,7 +309,7 @@ def run_case_profile(
         "task_id": task["id"],
         "task_title": task["title"],
         "profile_name": profile["name"],
-        "profile_mode": profile.get("mode", "pisci"),
+        "profile_mode": profile.get("mode", "piscis"),
         "phase_count": len(phase_records),
         "session_id": session_id,
         "wall_clock_secs": round(wall_clock_secs, 3),
@@ -345,10 +345,10 @@ def main() -> None:
     parser.add_argument("--only-tasks", nargs="*", help="Run only selected task ids")
     parser.add_argument("--profiles", nargs="*", help="Run only selected profile names")
     parser.add_argument("--results-dir", default="results", help="Output directory")
-    parser.add_argument("--headless-bin", help="Override openpisci-headless binary path")
+    parser.add_argument("--headless-bin", help="Override openpiscis-headless binary path")
     parser.add_argument(
-        "--pisci-compact-bin",
-        help="Override pisci_compact_one binary path used for HARNESS analysis",
+        "--piscis-compact-bin",
+        help="Override piscis_compact_one binary path used for HARNESS analysis",
     )
     parser.add_argument(
         "--config-template",
@@ -365,8 +365,8 @@ def main() -> None:
     tasks = resolve_tasks(manifest, set(args.only_tasks) if args.only_tasks else None)
     profiles = resolve_profiles(manifest, set(args.profiles) if args.profiles else None)
 
-    headless_bin = find_binary("openpisci-headless", args.headless_bin)
-    compact_bin = find_binary("pisci_compact_one", args.pisci_compact_bin)
+    headless_bin = find_binary("openpiscis-headless", args.headless_bin)
+    compact_bin = find_binary("piscis_compact_one", args.piscis_compact_bin)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = results_root / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -395,7 +395,7 @@ def main() -> None:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "manifest_path": str(manifest_path),
         "headless_bin": str(headless_bin),
-        "pisci_compact_bin": str(compact_bin),
+        "piscis_compact_bin": str(compact_bin),
         "results": all_results,
     }
     run_json = run_dir / "run_results.json"

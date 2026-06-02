@@ -2,7 +2,7 @@
 //!
 //! Extracted from the old monolithic `desktop_app.rs`. Entrypoint is
 //! [`run_cli_headless_request`] which binds an already-built `AppState`
-//! to one of the two CLI modes (`Pisci` single-agent or `Pool`
+//! to one of the two CLI modes (`Piscis` single-agent or `Pool`
 //! coordinator), wires up tool overrides, and optionally blocks until
 //! the pool's todos converge. Result serialization + error-file writing
 //! is handled by [`persist_headless_cli_result`] so the bootstrap layer
@@ -90,7 +90,7 @@ fn cli_extra_system_context(request: &HeadlessCliRequest) -> String {
         }
     }
     match request.mode {
-        HeadlessCliMode::Pisci => {
+        HeadlessCliMode::Piscis => {
             lines.push(
                 "- Stay single-agent. Do not create or manage collaborative pool work in this run."
                     .to_string(),
@@ -294,7 +294,7 @@ pub async fn run_cli_headless_request(
     let disabled_tools = cli_disabled_tools(request.mode);
 
     let (session_id, scene_kind, pool_id) = match request.mode {
-        HeadlessCliMode::Pisci => (
+        HeadlessCliMode::Piscis => (
             request
                 .session_id
                 .clone()
@@ -308,7 +308,7 @@ pub async fn run_cli_headless_request(
                 request
                     .session_id
                     .clone()
-                    .unwrap_or_else(|| commands::chat::pool_pisci_session_id(&pool.id)),
+                    .unwrap_or_else(|| commands::chat::pool_piscis_session_id(&pool.id)),
                 commands::config::scene::SceneKind::PoolCoordinator,
                 Some(pool.id),
             )
@@ -319,12 +319,12 @@ pub async fn run_cli_headless_request(
         .session_title
         .clone()
         .unwrap_or_else(|| match request.mode {
-            HeadlessCliMode::Pisci => "Headless CLI Task".to_string(),
+            HeadlessCliMode::Piscis => "Headless CLI Task".to_string(),
             HeadlessCliMode::Pool => "Headless Pool Coordinator".to_string(),
         });
     let session_source = Some(match request.mode {
-        HeadlessCliMode::Pisci => "headless_cli".to_string(),
-        HeadlessCliMode::Pool => commands::chat::SESSION_SOURCE_PISCI_POOL.to_string(),
+        HeadlessCliMode::Piscis => "headless_cli".to_string(),
+        HeadlessCliMode::Pool => commands::chat::SESSION_SOURCE_PISCIS_POOL.to_string(),
     });
     let channel = request.channel.clone().unwrap_or_else(|| "cli".to_string());
 

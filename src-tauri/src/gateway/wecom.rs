@@ -523,7 +523,7 @@ mod tests {
                 },
                 "msgtype": "text",
                 "text": {
-                    "content": "@Pisci hi",
+                    "content": "@Piscis hi",
                 }
             }
         });

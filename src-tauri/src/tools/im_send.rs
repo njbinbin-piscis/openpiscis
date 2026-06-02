@@ -2,7 +2,7 @@
 //! to an IM conversation using the existing [`crate::gateway::GatewayManager`].
 //!
 //! This is the "native" side of the layered enterprise-capability
-//! architecture (see `pisci-core::scene::SceneKind::IMHeadless` doc):
+//! architecture (see `piscis-core::scene::SceneKind::IMHeadless` doc):
 //! credentials live on the platform application (bot_id/secret,
 //! app_id/secret, app_key/secret), the channel uses them to maintain
 //! a long-running WebSocket transport, and this tool re-uses the
@@ -34,7 +34,7 @@ use crate::app::markers::guess_mime_from_path;
 use crate::gateway::{GatewayManager, MediaAttachment, OutboundMessage};
 use crate::store::Database;
 use async_trait::async_trait;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -262,7 +262,7 @@ impl Tool for ImSendMessageTool {
                 },
                 "media_type": {
                     "type": "string",
-                    "description": "Optional MIME type override for file_path. If omitted, Pisci infers it from the file extension."
+                    "description": "Optional MIME type override for file_path. If omitted, Piscis infers it from the file extension."
                 }
             }
         })

@@ -1,13 +1,13 @@
 //! Desktop-side helpers for headless execution.
 //!
-//! Canonical schemas live in [`pisci_core::host`]. This module only owns
+//! Canonical schemas live in [`piscis_core::host`]. This module only owns
 //! the pieces that require desktop-specific knowledge:
 //!
 //!   * [`disabled_tools_for_mode`] — computed from the desktop tool profile.
 
 use crate::tools::{self, RuntimeToolProfile};
 
-pub use pisci_core::host::{
+pub use piscis_core::host::{
     DisabledToolInfo, HeadlessCliMode, HeadlessCliRequest, HeadlessCliResponse,
     HeadlessContextToggles, PoolWaitSummary,
 };
@@ -17,7 +17,7 @@ pub use pisci_core::host::{
 /// the enum.
 pub(crate) fn tool_profile(mode: HeadlessCliMode) -> RuntimeToolProfile {
     match mode {
-        HeadlessCliMode::Pisci => RuntimeToolProfile::HeadlessPisci,
+        HeadlessCliMode::Piscis => RuntimeToolProfile::HeadlessPiscis,
         HeadlessCliMode::Pool => RuntimeToolProfile::HeadlessPool,
     }
 }

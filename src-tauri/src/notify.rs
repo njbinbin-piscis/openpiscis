@@ -1,7 +1,7 @@
 //! Host-side notification dispatcher.
 //!
-//! Implements [`pisci_kernel::notify`] semantics for the desktop host:
-//! UI toasts go through the Tauri `pisci_toast` event, IM targets are
+//! Implements [`piscis_kernel::notify`] semantics for the desktop host:
+//! UI toasts go through the Tauri `piscis_toast` event, IM targets are
 //! resolved against the persisted `im_session_bindings` table and sent
 //! via the existing [`crate::gateway::GatewayManager`].
 //!
@@ -10,7 +10,7 @@
 
 use crate::gateway;
 use crate::store::Database;
-pub use pisci_kernel::notify::{
+pub use piscis_kernel::notify::{
     NotificationLevel, NotificationOutcome, NotificationRequest, NotificationTarget,
 };
 use serde_json::json;
@@ -103,7 +103,7 @@ fn build_toast_payload(request: &NotificationRequest) -> serde_json::Value {
         "decision_id": request.decision_id,
         "duration_ms": request.effective_duration_ms(),
         "source": if request.source.is_empty() {
-            "pisci".to_string()
+            "piscis".to_string()
         } else {
             request.source.clone()
         },
@@ -119,7 +119,7 @@ fn emit_ui_toast(deps: &NotifierDeps, request: &NotificationRequest) -> Notifica
         );
     };
     let payload = build_toast_payload(request);
-    match app.emit("pisci_toast", payload) {
+    match app.emit("piscis_toast", payload) {
         Ok(()) => {
             debug!(
                 "notify: ui toast emitted level={} title={:?}",
@@ -129,10 +129,10 @@ fn emit_ui_toast(deps: &NotifierDeps, request: &NotificationRequest) -> Notifica
             NotificationOutcome::ok(NotificationTarget::Ui, "toast emitted")
         }
         Err(err) => {
-            warn!("notify: failed to emit pisci_toast: {}", err);
+            warn!("notify: failed to emit piscis_toast: {}", err);
             NotificationOutcome::failed(
                 NotificationTarget::Ui,
-                format!("failed to emit pisci_toast: {}", err),
+                format!("failed to emit piscis_toast: {}", err),
             )
         }
     }

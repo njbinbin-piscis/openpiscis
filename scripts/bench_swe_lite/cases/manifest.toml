@@ -1,13 +1,13 @@
-name = "openpisci-swe-lite"
+name = "openpiscis-swe-lite"
 version = 1
 
 [[profiles]]
-name = "baseline_pisci"
-mode = "pisci"
+name = "baseline_piscis"
+mode = "piscis"
 
 [[profiles]]
 name = "context_lite"
-mode = "pisci"
+mode = "piscis"
 [profiles.context_toggles]
 disable_memory_context = true
 disable_task_state_context = true

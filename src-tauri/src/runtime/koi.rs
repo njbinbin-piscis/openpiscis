@@ -1,12 +1,12 @@
 //! Desktop in-process Koi runtime.
 //!
-//! The desktop product should not depend on `openpisci-headless` for normal
+//! The desktop product should not depend on `openpiscis-headless` for normal
 //! Koi collaboration. This runtime implements the kernel `SubagentRuntime`
 //! contract by running Koi turns inside the already-running Tauri process,
 //! while still reusing the shared headless/Koi scene path.
 
 use async_trait::async_trait;
-use pisci_core::host::{
+use piscis_core::host::{
     KoiTurnExit, KoiTurnHandle, KoiTurnOutcome, KoiTurnRequest, SubagentRuntime,
 };
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ use tauri::Manager;
 use tokio::sync::{oneshot, Mutex};
 use uuid::Uuid;
 
-use crate::commands::chat::{run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCI_POOL};
+use crate::commands::chat::{run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCIS_POOL};
 use crate::commands::config::scene::SceneKind;
 use crate::headless_cli::HeadlessContextToggles;
 use crate::runtime::koi_prompt::assemble_koi_task_system_prompt;
@@ -183,7 +183,7 @@ async fn run_in_process_koi_turn(
         pool_session_id: pool_session_id.map(|s| s.to_string()),
         extra_system_context: Some(koi_system_prompt),
         session_title: None,
-        session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
+        session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
         scene_kind: Some(SceneKind::KoiTask),
         memory_owner_id: Some(request.koi_id.clone()),
         workspace_root_override: request.workspace.clone(),

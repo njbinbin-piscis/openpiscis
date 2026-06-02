@@ -686,7 +686,7 @@ export default function IDE({ projectDir, poolSessionId: _poolSessionId }: IDEPr
             />
           ) : (
             <div className="ide-editor-welcome">
-              <img src="/pisci.png" alt="OpenPiscis" className="welcome-logo" />
+              <img src="/piscis.png" alt="OpenPiscis" className="welcome-logo" />
               <div className="welcome-title">
                 {t("ide.welcome") || "Select a file to start editing"}
               </div>

@@ -1,7 +1,7 @@
 # Upload NSIS installer to an existing GitHub release (same version, replace asset).
 # Usage:
 #   $env:GITHUB_TOKEN = "ghp_xxxx"
-#   .\scripts\upload-release-asset.ps1 -Tag v0.5.16 -File "target\release\bundle\nsis\OpenPisci_0.5.16_x64-setup.exe"
+#   .\scripts\upload-release-asset.ps1 -Tag v0.5.16 -File "target\release\bundle\nsis\OpenPiscis_0.5.16_x64-setup.exe"
 param(
     [string]$Repo = "njbinbin-piscis/openpiscis",
     [Parameter(Mandatory = $true)][string]$Tag,
@@ -14,7 +14,7 @@ if (-not $token) {
 }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $base = "https://api.github.com/repos/$Repo"
-$hdr = @{ Authorization = "token $token"; "User-Agent" = "pisci-upload"; Accept = "application/vnd.github+json" }
+$hdr = @{ Authorization = "token $token"; "User-Agent" = "piscis-upload"; Accept = "application/vnd.github+json" }
 
 $releases = Invoke-RestMethod -Uri "$base/releases" -Headers $hdr
 $rel = $releases | Where-Object { $_.tag_name -eq $Tag } | Select-Object -First 1
@@ -33,6 +33,6 @@ foreach ($a in $rel.assets) {
 
 $uploadUrl = "https://uploads.github.com/repos/$Repo/releases/$($rel.id)/assets?name=$([uri]::EscapeDataString($fileName))"
 $result = Invoke-RestMethod -Uri $uploadUrl -Method POST `
-    -Headers @{ Authorization = "token $token"; "Content-Type" = "application/octet-stream"; "User-Agent" = "pisci-upload" } `
+    -Headers @{ Authorization = "token $token"; "Content-Type" = "application/octet-stream"; "User-Agent" = "piscis-upload" } `
     -Body $bytes
 Write-Host "Uploaded: $($result.browser_download_url)"

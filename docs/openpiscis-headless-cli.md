@@ -4,23 +4,23 @@ OpenPiscis 面向自动化与 benchmark 只发布一个 headless 入口：
 
 | 二进制               | 所属 crate  | 用途                                      |
 |----------------------|-------------|-------------------------------------------|
-| `openpisci-headless` | `pisci-cli` | 无需 Tauri UI 的 kernel 驱动 CLI / 评测 / 自动化宿主 |
+| `openpiscis-headless` | `piscis-cli` | 无需 Tauri UI 的 kernel 驱动 CLI / 评测 / 自动化宿主 |
 
-`openpisci-headless` 支持 `chat`、`run`、`rpc`、`capabilities`、`version` 等子命令。它不是桌面 GUI 的必需 sidecar；桌面主聊天与默认 Koi 协同运行在 `piscis-desktop` 主进程内。
+`openpiscis-headless` 支持 `chat`、`run`、`rpc`、`capabilities`、`version` 等子命令。它不是桌面 GUI 的必需 sidecar；桌面主聊天与默认 Koi 协同运行在 `piscis-desktop` 主进程内。
 
 ## 构建
 
 在仓库 `src-tauri/` 目录下：
 
 ```powershell
-cargo build -p pisci-cli --bin openpisci-headless
+cargo build -p piscis-cli --bin openpiscis-headless
 ```
 
 构建产物写入 `target/{debug,release}/`。GUI 打包不会强制复制或绑定该二进制；需要 CLI / CI / 评测资产时可以单独发布它。
 
 ## 运行模式
 
-### `pisci`
+### `piscis`
 
 单代理基线模式，适合作为 benchmark 的稳定基线：
 
@@ -42,7 +42,7 @@ cargo build -p pisci-cli --bin openpisci-headless
 
 建议 benchmark 分两档统计：
 
-- `baseline-single-agent` -> `--mode pisci`
+- `baseline-single-agent` -> `--mode piscis`
 - `experimental-pool` -> `--mode pool`
 
 ## CLI 速查
@@ -50,20 +50,20 @@ cargo build -p pisci-cli --bin openpisci-headless
 ### 查看能力矩阵
 
 ```powershell
-target\debug\openpisci-headless.exe capabilities --mode pisci
-target\debug\openpisci-headless.exe capabilities --mode pool
+target\debug\openpiscis-headless.exe capabilities --mode piscis
+target\debug\openpiscis-headless.exe capabilities --mode pool
 ```
 
 ### 直接运行
 
 ```powershell
-target\debug\openpisci-headless.exe run --prompt "请总结当前仓库结构" --workspace C:\repo --mode pisci
+target\debug\openpiscis-headless.exe run --prompt "请总结当前仓库结构" --workspace C:\repo --mode piscis
 ```
 
 ### 从 JSON 文件运行
 
 ```powershell
-target\debug\openpisci-headless.exe run --input request.json --output result.json
+target\debug\openpiscis-headless.exe run --input request.json --output result.json
 ```
 
 ## `run` 请求协议
@@ -74,7 +74,7 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
 {
   "prompt": "string, required",
   "workspace": "string, optional",
-  "mode": "pisci | pool, optional, default=pisci",
+  "mode": "piscis | pool, optional, default=piscis",
   "session_id": "string, optional",
   "session_title": "string, optional",
   "channel": "string, optional",
@@ -102,7 +102,7 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
 字段说明：
 
 - `workspace`: 临时覆写本次运行的 workspace root，不改用户持久设置
-- `config_dir`: 本次运行使用的隔离 app-data 目录；其中会读取/写入 `config.json`、`pisci.db`
+- `config_dir`: 本次运行使用的隔离 app-data 目录；其中会读取/写入 `config.json`、`piscis.db`
 - `pool_id`: 复用已有 pool
 - `pool_name`: `pool_id` 不提供时用于创建新 pool
 - `pool_size`: 给协调提示词的目标规模提示，不直接强制限制运行时线程数
@@ -118,14 +118,14 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
 ```json
 {
   "ok": true,
-  "mode": "pisci",
+  "mode": "piscis",
   "session_id": "headless_cli_123",
   "pool_id": null,
   "response_text": "assistant final response",
   "disabled_tools": [
     {
       "name": "call_koi",
-      "reason": "Disabled in headless pisci mode: single-agent baseline should not delegate to Koi."
+      "reason": "Disabled in headless piscis mode: single-agent baseline should not delegate to Koi."
     }
   ],
   "pool_wait": null
@@ -143,7 +143,7 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
   "cancelled_todos": 0,
   "blocked_todos": 0,
   "latest_messages": [
-    "#41 pisci (text): 已完成整体验收"
+    "#41 piscis (text): 已完成整体验收"
   ]
 }
 ```
@@ -156,11 +156,11 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
 {
   "prompt": "修复当前仓库中的 failing test，并给出最终说明。",
   "workspace": "/workspace/repo",
-  "mode": "pisci",
+  "mode": "piscis",
   "session_id": "swebench_case_001",
   "session_title": "SWE-bench Case 001",
   "channel": "benchmark",
-  "config_dir": "/tmp/openpisci-swebench-case-001"
+  "config_dir": "/tmp/openpiscis-swebench-case-001"
 }
 ```
 
@@ -174,7 +174,7 @@ target\debug\openpisci-headless.exe run --input request.json --output result.jso
   "session_id": "swebench_case_001_pool",
   "session_title": "SWE-bench Case 001 Pool",
   "channel": "benchmark",
-  "config_dir": "/tmp/openpisci-swebench-case-001-pool",
+  "config_dir": "/tmp/openpiscis-swebench-case-001-pool",
   "pool_name": "SWE-bench Case 001",
   "pool_size": 3,
   "wait_for_completion": true,

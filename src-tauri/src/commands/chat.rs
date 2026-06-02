@@ -13,15 +13,15 @@ use crate::store::{
     db::ChatMessage, db::Session, db::SessionArtifact, db::SessionContextState, db::TaskSpine,
     db::TaskState, AppState,
 };
-use pisci_core::project_state::build_coordination_event_digest;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::plan::summarize_todos;
-use pisci_kernel::agent::tool::ToolContext;
-use pisci_kernel::llm::{
+use piscis_core::project_state::build_coordination_event_digest;
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::plan::summarize_todos;
+use piscis_kernel::agent::tool::ToolContext;
+use piscis_kernel::llm::{
     build_client_with_timeout, ContentBlock, LlmMessage, MessageContent, ToolDef,
 };
-use pisci_kernel::policy::PolicyGate;
-use pisci_kernel::project_context::render_project_instruction_context;
+use piscis_kernel::policy::PolicyGate;
+use piscis_kernel::project_context::render_project_instruction_context;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -57,7 +57,7 @@ struct SessionMessageContext {
 
 struct ChatPromptArtifacts {
     system_prompt: String,
-    registry: Arc<pisci_kernel::agent::tool::ToolRegistry>,
+    registry: Arc<piscis_kernel::agent::tool::ToolRegistry>,
     tool_defs: Vec<ToolDef>,
     /// When the session workspace matches a pool's `project_dir`.
     bound_pool_id: Option<String>,
@@ -303,7 +303,7 @@ async fn build_session_message_context_from_db(
         db.get_session_state_frame_json(session_id)
             .ok()
             .flatten()
-            .and_then(|raw| pisci_kernel::agent::state_frame::StateFrame::from_json_opt(&raw))
+            .and_then(|raw| piscis_kernel::agent::state_frame::StateFrame::from_json_opt(&raw))
     };
     let latest_user_text = history
         .iter()
@@ -341,7 +341,7 @@ async fn build_session_message_context_from_db(
         let insert_at = summary_offset.min(llm_messages.len());
         llm_messages.insert(
             insert_at,
-            pisci_kernel::agent::state_frame::state_frame_message(&frame),
+            piscis_kernel::agent::state_frame::state_frame_message(&frame),
         );
     }
     Ok(SessionMessageContext {
@@ -402,7 +402,7 @@ fn build_context_messages_summary_only(
     let mut kept = Vec::new();
     let mut token_est = 0usize;
     for message in messages.into_iter().rev() {
-        let message_tokens = pisci_kernel::llm::estimate_request_input_tokens(
+        let message_tokens = piscis_kernel::llm::estimate_request_input_tokens(
             std::slice::from_ref(&message),
             None,
             &[],
@@ -571,7 +571,7 @@ async fn build_chat_prompt_artifacts(
     let registry = Arc::new(registry);
     // Chat budget estimation uses the same Minimal injection mode the
     // harness will actually send, so the token accounting stays honest.
-    let tool_defs = registry.to_tool_defs(pisci_kernel::agent::tool::ToolDefMode::Minimal);
+    let tool_defs = registry.to_tool_defs(piscis_kernel::agent::tool::ToolDefMode::Minimal);
 
     let (bound_pool_id, pool_context, bound_pool_name) = {
         let db = state.db.lock().await;
@@ -610,7 +610,7 @@ async fn build_chat_prompt_artifacts(
         let db = state.db.lock().await;
         let keywords: Vec<&str> = query_text.split_whitespace().take(10).collect();
         let query = keywords.join(" ");
-        match db.search_memories_scoped(&query, "pisci", bound_pool_scope, 5) {
+        match db.search_memories_scoped(&query, "piscis", bound_pool_scope, 5) {
             Ok(mems) if !mems.is_empty() => {
                 let mut ctx = String::from("\n\n## Personal Context (from memory)\n");
                 for m in &mems {
@@ -867,7 +867,7 @@ pub async fn chat_send(
             settings.confirm_file_writes,
             settings.policy_mode.clone(),
             settings.tool_rate_limit_per_minute,
-            std::sync::Arc::new(pisci_kernel::agent::tool::ToolSettings::from_settings(
+            std::sync::Arc::new(piscis_kernel::agent::tool::ToolSettings::from_settings(
                 &settings,
             )),
             settings.max_iterations,
@@ -912,14 +912,14 @@ pub async fn chat_send(
         );
         let decision = gate.check_user_input(&content);
         match decision {
-            pisci_kernel::policy::PolicyDecision::Deny(reason) => {
+            piscis_kernel::policy::PolicyDecision::Deny(reason) => {
                 tracing::warn!(
                     "chat_send: user input rejected by injection detection: {}",
                     reason
                 );
                 return Err(format!("Input rejected: {}", reason));
             }
-            pisci_kernel::policy::PolicyDecision::Warn(reason) => {
+            piscis_kernel::policy::PolicyDecision::Warn(reason) => {
                 tracing::warn!(
                     "chat_send: potential injection detected (proceeding): {}",
                     reason
@@ -934,7 +934,7 @@ pub async fn chat_send(
                     false,
                 );
             }
-            pisci_kernel::policy::PolicyDecision::Allow => {}
+            piscis_kernel::policy::PolicyDecision::Allow => {}
         }
     }
 
@@ -1030,7 +1030,7 @@ pub async fn chat_send(
         let mut plans = state.plan_state.lock().await;
         plans.remove(&session_id);
     }
-    pisci_kernel::agent::vision::clear_selection(&session_id).await;
+    piscis_kernel::agent::vision::clear_selection(&session_id).await;
 
     {
         let db = state.db.lock().await;
@@ -1060,7 +1060,7 @@ pub async fn chat_send(
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(data);
                 let image_block = ContentBlock::Image {
-                    source: pisci_kernel::llm::ImageSource {
+                    source: piscis_kernel::llm::ImageSource {
                         source_type: "base64".to_string(),
                         media_type: media.media_type.clone(),
                         data: b64,
@@ -1121,26 +1121,26 @@ pub async fn chat_send(
         allow_outside_workspace,
     ));
 
-    // Main pisci chat — uses the persistent, UI-attached harness
+    // Main piscis chat — uses the persistent, UI-attached harness
     // shape. Per-run plumbing (`notification_rx`, confirmations) is
     // passed to the bridge rather than stored in the config.
     let (fallback_models, compaction_settings, enable_streaming) = {
         let settings = state.settings.lock().await;
         (
             settings.fallback_models.clone(),
-            pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&settings),
+            piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&settings),
             settings.enable_streaming,
         )
     };
     // Vision delegate: when using a separate vision model (vision_use_main_llm=false),
     // create a dedicated LLM client for image analysis. The main LLM gets vision_override=false,
     // and images are analyzed by the separate vision model before being sent as text.
-    let vision_delegate: Option<Box<dyn pisci_kernel::llm::LlmClient>> = if !vision_use_main_llm
+    let vision_delegate: Option<Box<dyn piscis_kernel::llm::LlmClient>> = if !vision_use_main_llm
         && !vision_provider.is_empty()
         && !vision_model.is_empty()
         && !vision_api_key.is_empty()
     {
-        Some(pisci_kernel::llm::build_client(
+        Some(piscis_kernel::llm::build_client(
             &vision_provider,
             &vision_api_key,
             if vision_base_url.is_empty() {
@@ -1156,17 +1156,17 @@ pub async fn chat_send(
     // File-edit journal (shared kernel impl): snapshot pre-edit content so the
     // UI can offer Undo/replay. Stored per-workspace, independent of the chat DB.
     let journal = std::sync::Arc::new(
-        pisci_kernel::agent::file_journal::FileJournal::open(
+        piscis_kernel::agent::file_journal::FileJournal::open(
             &workspace_root,
             std::path::Path::new(&workspace_root)
-                .join(".pisci")
+                .join(".piscis")
                 .join("journal.db"),
         )
         .map_err(|e| e.to_string())?,
     );
     journal.begin_turn(&session_id);
 
-    let agent = pisci_kernel::agent::harness::HarnessConfig::for_main_chat(
+    let agent = piscis_kernel::agent::harness::HarnessConfig::for_main_chat(
         model.clone(),
         fallback_models,
         registry,
@@ -1174,7 +1174,7 @@ pub async fn chat_send(
         prompt_artifacts.system_prompt,
         max_tokens,
         context_window,
-        pisci_kernel::agent::harness::config::ConfirmFlags {
+        piscis_kernel::agent::harness::config::ConfirmFlags {
             confirm_shell,
             confirm_file_write,
         },
@@ -1196,7 +1196,7 @@ pub async fn chat_send(
         bypass_permissions: false,
         settings: tool_settings,
         max_iterations: Some(max_iterations),
-        memory_owner_id: "pisci".to_string(),
+        memory_owner_id: "piscis".to_string(),
         pool_session_id: bound_pool_id,
         tool_use_id: None,
         cancel: cancel.clone(),
@@ -1301,7 +1301,7 @@ pub async fn chat_send(
                             mem_client,
                             model_for_mem,
                             max_tokens_clone,
-                            "pisci".to_string(),
+                            "piscis".to_string(),
                         )
                         .await;
                     });
@@ -1427,16 +1427,16 @@ pub async fn validate_vision_model(
     model: &str,
     base_url: Option<&str>,
 ) -> Result<(), String> {
-    // Use the project's own pisci icon as the vision test image.
+    // Use the project's own piscis icon as the vision test image.
     // This is large enough for all model providers (Qwen requires >= 10x10 pixels).
-    const PISCI_PNG_BYTES: &[u8] = include_bytes!("../../../public/pisci.png");
+    const PISCIS_PNG_BYTES: &[u8] = include_bytes!("../../../public/piscis.png");
 
     use base64::Engine;
-    let pisci_png_b64 = base64::engine::general_purpose::STANDARD.encode(PISCI_PNG_BYTES);
+    let piscis_png_b64 = base64::engine::general_purpose::STANDARD.encode(PISCIS_PNG_BYTES);
 
-    use pisci_kernel::llm::{ContentBlock, ImageSource, LlmMessage, LlmRequest, MessageContent};
+    use piscis_kernel::llm::{ContentBlock, ImageSource, LlmMessage, LlmRequest, MessageContent};
 
-    let client = pisci_kernel::llm::build_client(provider, api_key, base_url);
+    let client = piscis_kernel::llm::build_client(provider, api_key, base_url);
 
     let req = LlmRequest {
         messages: vec![LlmMessage {
@@ -1449,7 +1449,7 @@ pub async fn validate_vision_model(
                     source: ImageSource {
                         source_type: "base64".into(),
                         media_type: "image/png".into(),
-                        data: pisci_png_b64.clone(),
+                        data: piscis_png_b64.clone(),
                     },
                 },
             ]),
@@ -1546,7 +1546,7 @@ pub struct HeadlessRunOptions {
     pub session_source: Option<String>,
     pub scene_kind: Option<SceneKind>,
     /// Tool-context identity for pool_chat / pool_org / memory scoping.
-    /// Defaults to `"pisci"`; Koi worktree turns must pass the canonical koi id.
+    /// Defaults to `"piscis"`; Koi worktree turns must pass the canonical koi id.
     pub memory_owner_id: Option<String>,
     pub workspace_root_override: Option<String>,
     pub builtin_tool_overrides: HashMap<String, bool>,
@@ -1554,31 +1554,31 @@ pub struct HeadlessRunOptions {
 }
 
 pub(crate) const SESSION_SOURCE_IM_PREFIX: &str = "im_";
-pub(crate) const SESSION_SOURCE_PISCI_POOL: &str = "pisci_pool";
-pub(crate) const SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL: &str = "pisci_heartbeat_global";
-pub(crate) const SESSION_SOURCE_PISCI_INTERNAL: &str = "pisci_internal";
+pub(crate) const SESSION_SOURCE_PISCIS_POOL: &str = "piscis_pool";
+pub(crate) const SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL: &str = "piscis_heartbeat_global";
+pub(crate) const SESSION_SOURCE_PISCIS_INTERNAL: &str = "piscis_internal";
 
-pub(crate) fn pool_pisci_session_id(pool_id: &str) -> String {
-    format!("pisci_pool_{}", pool_id)
+pub(crate) fn pool_piscis_session_id(pool_id: &str) -> String {
+    format!("piscis_pool_{}", pool_id)
 }
 
 fn is_pool_scoped_session_source(source: &str) -> bool {
-    source == SESSION_SOURCE_PISCI_POOL
+    source == SESSION_SOURCE_PISCIS_POOL
 }
 
 fn is_heartbeat_session_source(source: &str) -> bool {
-    source == SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL
+    source == SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL
 }
 
 fn derive_headless_session_source(channel: &str, pool_session_id: Option<&str>) -> String {
     if pool_session_id.is_some() {
-        return SESSION_SOURCE_PISCI_POOL.to_string();
+        return SESSION_SOURCE_PISCIS_POOL.to_string();
     }
     if channel == "heartbeat" {
-        return SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL.to_string();
+        return SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL.to_string();
     }
     match channel {
-        "internal" => SESSION_SOURCE_PISCI_INTERNAL.to_string(),
+        "internal" => SESSION_SOURCE_PISCIS_INTERNAL.to_string(),
         other if other.starts_with(SESSION_SOURCE_IM_PREFIX) => other.to_string(),
         other => format!("{}{}", SESSION_SOURCE_IM_PREFIX, other),
     }
@@ -1589,7 +1589,7 @@ fn resolve_headless_memory_owner_id(options: Option<&HeadlessRunOptions>) -> Str
         .and_then(|o| o.memory_owner_id.as_deref())
         .map(str::trim)
         .filter(|id| !id.is_empty())
-        .unwrap_or("pisci")
+        .unwrap_or("piscis")
         .to_string()
 }
 
@@ -1687,7 +1687,7 @@ pub async fn run_agent_headless(
             settings.context_window,
             settings.policy_mode.clone(),
             settings.tool_rate_limit_per_minute,
-            std::sync::Arc::new(pisci_kernel::agent::tool::ToolSettings::from_settings(
+            std::sync::Arc::new(piscis_kernel::agent::tool::ToolSettings::from_settings(
                 &settings,
             )),
             settings.max_iterations,
@@ -1736,7 +1736,7 @@ pub async fn run_agent_headless(
         let mut plans = state.plan_state.lock().await;
         plans.remove(session_id);
     }
-    pisci_kernel::agent::vision::clear_selection(session_id).await;
+    piscis_kernel::agent::vision::clear_selection(session_id).await;
 
     let pool_session_id = options.as_ref().and_then(|o| o.pool_session_id.clone());
     let context_toggles = options
@@ -2032,7 +2032,7 @@ pub async fn run_agent_headless(
         injection_budget,
     );
     let injected_context_tokens =
-        pisci_kernel::llm::estimate_request_input_tokens(&[], Some(&injected_context), &[]);
+        piscis_kernel::llm::estimate_request_input_tokens(&[], Some(&injected_context), &[]);
     tracing::info!(
         "headless_context_slices scene={:?} session={} history_mode={:?} memory_mode={:?} pool_snapshot_mode={:?} event_digest_mode={:?} memory_chars={} task_state_chars={} pool_chars={} injected_chars={} injected_tokens_est={}",
         scene_kind,
@@ -2075,17 +2075,17 @@ pub async fn run_agent_headless(
         let settings = state.settings.lock().await;
         (
             settings.fallback_models.clone(),
-            pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&settings),
+            piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&settings),
         )
     };
     // Vision delegate for headless path (same logic as chat_send)
-    let headless_vision_delegate: Option<Box<dyn pisci_kernel::llm::LlmClient>> =
+    let headless_vision_delegate: Option<Box<dyn piscis_kernel::llm::LlmClient>> =
         if !vision_use_main_llm
             && !vision_provider.is_empty()
             && !vision_model.is_empty()
             && !vision_api_key.is_empty()
         {
-            Some(pisci_kernel::llm::build_client(
+            Some(piscis_kernel::llm::build_client(
                 &vision_provider,
                 &vision_api_key,
                 if vision_base_url.is_empty() {
@@ -2098,7 +2098,7 @@ pub async fn run_agent_headless(
             None
         };
 
-    let agent = pisci_kernel::agent::harness::HarnessConfig::for_main_headless(
+    let agent = piscis_kernel::agent::harness::HarnessConfig::for_main_headless(
         model,
         headless_fallback_models,
         registry,
@@ -2145,7 +2145,7 @@ pub async fn run_agent_headless(
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(data);
                 let image_block = ContentBlock::Image {
-                    source: pisci_kernel::llm::ImageSource {
+                    source: piscis_kernel::llm::ImageSource {
                         source_type: "base64".to_string(),
                         media_type: media.media_type.clone(),
                         data: b64,
@@ -2245,8 +2245,8 @@ pub async fn run_agent_headless(
         .map(|m| {
             let text = m.content.as_text();
             let img: Option<(Vec<u8>, String)> = match &m.content {
-                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks.iter().find_map(|b| {
-                    if let pisci_kernel::llm::ContentBlock::Image { source } = b {
+                piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks.iter().find_map(|b| {
+                    if let piscis_kernel::llm::ContentBlock::Image { source } = b {
                         if source.source_type == "base64" {
                             use base64::Engine;
                             let bytes = base64::engine::general_purpose::STANDARD
@@ -2376,7 +2376,7 @@ You are coordinating work inside an existing pool.\n\
 - Do not inject unrelated global project rosters or unrelated user-chat context.\n"
 }
 
-fn build_pisci_core_prompt_compact() -> &'static str {
+fn build_piscis_core_prompt_compact() -> &'static str {
     "You are Piscis, the system-level coordinator running on the user's local machine.\n\
 You must be truthful, tool-grounded, and conservative about assumptions.\n\
 - Use only the tools and context available in this run.\n\
@@ -2429,13 +2429,13 @@ fn build_headless_scene_system_prompt(
 ) -> String {
     match scene_kind {
         SceneKind::HeartbeatSupervisor => {
-            let mut prompt = String::from(build_pisci_core_prompt_compact());
+            let mut prompt = String::from(build_piscis_core_prompt_compact());
             prompt.push_str(collaboration_protocol_prompt());
             prompt.push_str(heartbeat_scene_guidance());
             prompt
         }
         SceneKind::PoolCoordinator => {
-            let mut prompt = String::from(build_pisci_core_prompt_compact());
+            let mut prompt = String::from(build_piscis_core_prompt_compact());
             prompt.push_str(collaboration_protocol_prompt());
             prompt.push_str(pool_coordinator_scene_guidance());
             prompt
@@ -2502,14 +2502,14 @@ When in doubt about whether you have real evidence, err on the side of transpare
 When you need to wait for an external event, background process, Koi/Fish response, file change, server startup, screenshot refresh, window appearance, page/app loading, or any other user-visible state, use real elapsed time. Sleep between checks with exponential backoff (for example 1s, 2s, 4s, 8s, then cap at a reasonable interval), record the deadline or elapsed seconds, and only declare timeout after the actual elapsed time reaches a reasonable task-specific limit. This is the default policy for every wait, not an optional optimization. Do not infer timeout from loop/turn count or from several immediate checks.
 
 ## Interactive User Input
-When `chat_ui` / `chat_ui_listen` return `USER_INTERACTIVE_RESPONSE_JSON`, that JSON is the user's latest structured choice (Chat UI Protocol v2 — docs/chat-ui-protocol.md, catalog docs/pisci.chat.catalog.json). Treat field ids, `__data_model__`, `__action__`, and `__action_type__` as authoritative (`action` = non-terminal; then `chat_ui_patch` and optionally `chat_ui_listen` before final submit). Use submitted values exactly; custom options are user-typed text. Prefer `chat_ui` for multi-field forms, wizards, progress, file pickers, and confirm/cancel — not trivial yes/no.
+When `chat_ui` / `chat_ui_listen` return `USER_INTERACTIVE_RESPONSE_JSON`, that JSON is the user's latest structured choice (Chat UI Protocol v2 — docs/chat-ui-protocol.md, catalog docs/piscis.chat.catalog.json). Treat field ids, `__data_model__`, `__action__`, and `__action_type__` as authoritative (`action` = non-terminal; then `chat_ui_patch` and optionally `chat_ui_listen` before final submit). Use submitted values exactly; custom options are user-typed text. Prefer `chat_ui` for multi-field forms, wizards, progress, file pickers, and confirm/cancel — not trivial yes/no.
 
 ## 📦 Deliverables Tracking (Mandatory)
 Every tangible output you produce in a session MUST be submitted as an artifact so the user can see, open, and revisit it from the Artifacts panel. All output must be traceable — if the user cannot see it in the artifacts list, it effectively was not delivered.
 
 ### When to submit (do it in the SAME turn as the work, not as a later afterthought)
 - Any file you create or materially modify via `file_write` / `file_edit` → call `app_control(action="artifact_submit", artifact_name=<filename>, path=<absolute path>, artifact_type="file", content_summary=<1-line description of what was produced or changed>).
-- Any screenshot captured (`screenshot`, `browser_screenshot`, `screen_capture`) → you MUST first persist the image to a real file using the tool's own save parameter (for `screen_capture`, pass `output_path="<absolute path>"`, e.g. `<project_dir>/.pisci/screenshots/shot_<timestamp>.png`). The tool writes the bytes to disk before returning. THEN immediately call `app_control(action="artifact_submit", artifact_name=<label>, path=<the same output_path>, artifact_type="image", content_summary=<1-line>). `screen_capture` returns only base64 when no `output_path` is given — that base64 is NOT a file on disk and `artifact_submit` cannot accept it. Never tell the user you have saved a screenshot unless you actually called `screen_capture` with `output_path` and received the "Saved to disk:" confirmation.
+- Any screenshot captured (`screenshot`, `browser_screenshot`, `screen_capture`) → you MUST first persist the image to a real file using the tool's own save parameter (for `screen_capture`, pass `output_path="<absolute path>"`, e.g. `<project_dir>/.piscis/screenshots/shot_<timestamp>.png`). The tool writes the bytes to disk before returning. THEN immediately call `app_control(action="artifact_submit", artifact_name=<label>, path=<the same output_path>, artifact_type="image", content_summary=<1-line>). `screen_capture` returns only base64 when no `output_path` is given — that base64 is NOT a file on disk and `artifact_submit` cannot accept it. Never tell the user you have saved a screenshot unless you actually called `screen_capture` with `output_path` and received the "Saved to disk:" confirmation.
 - Any web resource you retrieved or referenced as the primary deliverable (a fetched report, a published URL, a documentation link) → `artifact_type="link"`, `url=<URL>`.
 - Any analysis / report / plan you produce primarily as prose in chat → `artifact_type="report"`, `content_summary=<concise summary>`; if you also wrote it to a file, use the file path as above instead.
 - When a Koi working under your coordination completes a todo and reports file paths in `pool_chat`, submit each concrete file path as an artifact on the user-facing session so the deliverable surfaces to the Artifacts panel.
@@ -2835,14 +2835,14 @@ You are the project manager. When a user asks you to "organize a team", "set up 
 - When a Koi reports completion via pool_chat, review the result. If satisfactory, mark the todo as done: `pool_org(action="complete_todo", todo_id="...")`.
 - If a task is no longer needed (scope change, duplicate, superseded), cancel it: `pool_org(action="cancel_todo", todo_id="...", reason="...")`. You can cancel ANY Koi's todo — you have global task authority.
 - Monitor blocked tasks with `pool_org(action="get_todos")`. If a task is stuck, unblock or reassign it.
-- Task status flow: `todo` → `in_progress` → `done` / `cancelled` / `blocked`. Only Piscis and the task owner can change status. Other Koi must @pisci to request task changes.
+- Task status flow: `todo` → `in_progress` → `done` / `cancelled` / `blocked`. Only Piscis and the task owner can change status. Other Koi must @piscis to request task changes.
 - When the project is complete, ensure all remaining todos are either completed or cancelled before even considering archive.
 - **Supervisor integration flow**: When a Koi todo completes with a git branch, merge incrementally — do NOT wait until every todo is done. After reviewing get_messages/get_todos, call `pool_org(action="merge_branches", pool_id=..., branch="koi/...")` for one ready branch at a time when integration_ready branches appear on the board. Use `depends_on` on assign_koi/create_todo to serialize waves per org_spec Integration Model.
 - **Supervisor closeout flow**: When all Koi todos are done AND branches are merged, do NOT treat silence as delivery. Choose rework via assign_koi/resume_todo, post_status explaining gaps, or confirm convergence against org_spec. Koi cannot merge their own branches; Piscis owns integration into the main workspace.
-- **Project completion flow**: After supervisor closeout, summarize results for the user and leave the pool active by default. Only archive if the user explicitly asks you to archive/close the project. Do not treat silence, review readiness, or heartbeat scans as archive approval. Only Piscis can archive a project — Koi should @pisci when they believe all work is finished.
+- **Project completion flow**: After supervisor closeout, summarize results for the user and leave the pool active by default. Only archive if the user explicitly asks you to archive/close the project. Do not treat silence, review readiness, or heartbeat scans as archive approval. Only Piscis can archive a project — Koi should @piscis when they believe all work is finished.
 - **Koi cannot archive**: If a Koi's final message says "ready to archive" or "all done", treat it as a signal to review and confirm with the user, not an automatic archive trigger.
 - **No fixed completion role**: A reviewer, architect, tester, or any other Koi can provide input, but none of them alone decides project completion. You decide based on overall pool state and then the user confirms.
-- Prefer these internal status signals from Koi pool_chat updates when assessing progress: `[ProjectStatus] follow_up_needed`, `[ProjectStatus] waiting`, `[ProjectStatus] ready_for_pisci_review`. Treat them as structured hints, not final authority.
+- Prefer these internal status signals from Koi pool_chat updates when assessing progress: `[ProjectStatus] follow_up_needed`, `[ProjectStatus] waiting`, `[ProjectStatus] ready_for_piscis_review`. Treat them as structured hints, not final authority.
 
 **6. Knowledge Base (kb/)**
 - Each project workspace has a shared `kb/` subdirectory for persistent knowledge. At project start, use `file_list` to browse `<workspace>/kb/` and read relevant files to understand existing context.
@@ -3074,7 +3074,7 @@ pub fn build_im_system_prompt(channel: &str, vision_capable: bool) -> String {
 
 /// Estimate token count for a string. Delegates to `llm::estimate_tokens`.
 pub fn estimate_tokens(text: &str) -> usize {
-    pisci_kernel::llm::estimate_tokens(text)
+    piscis_kernel::llm::estimate_tokens(text)
 }
 
 // ---------------------------------------------------------------------------
@@ -3084,10 +3084,10 @@ pub fn estimate_tokens(text: &str) -> usize {
 /// Compute the token budget for `build_context_messages` from settings.
 /// Delegates to `llm::compute_context_budget`.
 pub fn compute_context_budget(context_window: u32, max_tokens: u32) -> usize {
-    pisci_kernel::llm::compute_context_budget(context_window, max_tokens)
+    piscis_kernel::llm::compute_context_budget(context_window, max_tokens)
 }
 
-pub use pisci_kernel::agent::compaction::{
+pub use piscis_kernel::agent::compaction::{
     CTX_COMPACT_AFTER, CTX_FULL_TURNS, CTX_TRIM_HEAD, CTX_TRIM_TAIL,
 };
 
@@ -3375,7 +3375,7 @@ pub fn build_context_messages(
     let mut turn_groups: Vec<Vec<LlmMessage>> = Vec::new();
     let mut token_est: usize = rolling_summary
         .map(rolling_summary_message)
-        .map(|message| pisci_kernel::llm::estimate_message_tokens(&message))
+        .map(|message| piscis_kernel::llm::estimate_message_tokens(&message))
         .unwrap_or(0);
 
     // Process turns from newest to oldest; we prepend each group later.
@@ -3707,7 +3707,7 @@ fn minimal_tool_result_blocks(results_json: &str) -> Vec<ContentBlock> {
                     } else {
                         tool_name
                     };
-                    pisci_kernel::agent::tool_receipt::render_receipt(
+                    piscis_kernel::agent::tool_receipt::render_receipt(
                         name,
                         &serde_json::Value::Null,
                         &full,
@@ -3727,7 +3727,7 @@ fn minimal_tool_result_blocks(results_json: &str) -> Vec<ContentBlock> {
             // p11: append `[recall:<tool_use_id>]` so the agent can re-fetch
             // the original full content via the recall_tool_result tool.
             let content =
-                pisci_kernel::agent::tool_receipt::with_recall_hint(&content, &tool_use_id);
+                piscis_kernel::agent::tool_receipt::with_recall_hint(&content, &tool_use_id);
             out.push(ContentBlock::ToolResult {
                 tool_use_id,
                 content,
@@ -3788,7 +3788,7 @@ fn extract_tool_minimals_from_results_json(results_json: &str, out: &mut HashMap
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
             .unwrap_or_else(|| {
-                pisci_kernel::agent::tool_receipt::render_receipt(
+                piscis_kernel::agent::tool_receipt::render_receipt(
                     if tool_name.is_empty() {
                         "unknown"
                     } else {
@@ -4008,7 +4008,7 @@ pub(crate) fn sanitize_tool_use_result_pairing(mut msgs: Vec<LlmMessage>) -> Vec
     while i < msgs.len() {
         let has_tool_use = if msgs[i].role == "assistant" {
             match &msgs[i].content {
-                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks
                     .iter()
                     .any(|b| matches!(b, ContentBlock::ToolUse { .. })),
                 _ => false,
@@ -4029,7 +4029,7 @@ pub(crate) fn sanitize_tool_use_result_pairing(mut msgs: Vec<LlmMessage>) -> Vec
             .map(|next| {
                 next.role == "user"
                     && match &next.content {
-                        pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks
+                        piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks
                             .iter()
                             .any(|b| matches!(b, ContentBlock::ToolResult { .. })),
                         _ => false,
@@ -4043,13 +4043,13 @@ pub(crate) fn sanitize_tool_use_result_pairing(mut msgs: Vec<LlmMessage>) -> Vec
                 "sanitize_tool_use_result_pairing: stripping orphaned ToolUse at index {}",
                 i
             );
-            if let pisci_kernel::llm::MessageContent::Blocks(ref mut blocks) = msgs[i].content {
+            if let piscis_kernel::llm::MessageContent::Blocks(ref mut blocks) = msgs[i].content {
                 blocks.retain(|b| !matches!(b, ContentBlock::ToolUse { .. }));
             }
             // If the message is now empty, remove it
             let is_empty = match &msgs[i].content {
-                pisci_kernel::llm::MessageContent::Blocks(blocks) => blocks.is_empty(),
-                pisci_kernel::llm::MessageContent::Text(t) => t.trim().is_empty(),
+                piscis_kernel::llm::MessageContent::Blocks(blocks) => blocks.is_empty(),
+                piscis_kernel::llm::MessageContent::Text(t) => t.trim().is_empty(),
             };
             if is_empty {
                 msgs.remove(i);
@@ -4067,8 +4067,8 @@ pub(crate) fn sanitize_tool_use_result_pairing(mut msgs: Vec<LlmMessage>) -> Vec
 pub async fn auto_extract_memories(
     db_arc: Arc<tokio::sync::Mutex<crate::store::Database>>,
     session_id: String,
-    messages: Vec<pisci_kernel::llm::LlmMessage>,
-    client: Box<dyn pisci_kernel::llm::LlmClient>,
+    messages: Vec<piscis_kernel::llm::LlmMessage>,
+    client: Box<dyn piscis_kernel::llm::LlmClient>,
     model: String,
     max_tokens: u32,
     owner_id: String,
@@ -4113,10 +4113,10 @@ pub async fn auto_extract_memories(
         conv_summary
     );
 
-    let req = pisci_kernel::llm::LlmRequest {
-        messages: vec![pisci_kernel::llm::LlmMessage {
+    let req = piscis_kernel::llm::LlmRequest {
+        messages: vec![piscis_kernel::llm::LlmMessage {
             role: "user".into(),
-            content: pisci_kernel::llm::MessageContent::text(&extraction_prompt),
+            content: piscis_kernel::llm::MessageContent::text(&extraction_prompt),
         }],
         system: Some("You are a memory extraction assistant. Be concise and only extract genuinely useful personal information.".into()),
         tools: vec![],
@@ -4284,34 +4284,35 @@ pub async fn get_context_preview(
     let tool_minimals = session_context.tool_minimals;
     let session_state = session_context.session_state;
     let llm_messages =
-        pisci_kernel::agent::vision::inject_selected_context(&base_llm_messages, &session_id).await;
+        piscis_kernel::agent::vision::inject_selected_context(&base_llm_messages, &session_id)
+            .await;
 
     // Convert LlmMessages to preview-friendly structs with structured blocks
     let messages: Vec<ContextPreviewMessage> = llm_messages
         .iter()
         .map(|m| {
             let blocks: Vec<ContextPreviewBlock> = match &m.content {
-                pisci_kernel::llm::MessageContent::Text(t) => {
+                piscis_kernel::llm::MessageContent::Text(t) => {
                     if t.is_empty() {
                         vec![]
                     } else {
                         vec![ContextPreviewBlock::Text { text: t.clone() }]
                     }
                 }
-                pisci_kernel::llm::MessageContent::Blocks(raw_blocks) => raw_blocks
+                piscis_kernel::llm::MessageContent::Blocks(raw_blocks) => raw_blocks
                     .iter()
                     .map(|b| match b {
-                        pisci_kernel::llm::ContentBlock::Text { text } => {
+                        piscis_kernel::llm::ContentBlock::Text { text } => {
                             ContextPreviewBlock::Text { text: text.clone() }
                         }
-                        pisci_kernel::llm::ContentBlock::ToolUse { id, name, input } => {
+                        piscis_kernel::llm::ContentBlock::ToolUse { id, name, input } => {
                             ContextPreviewBlock::ToolUse {
                                 id: id.clone(),
                                 name: name.clone(),
                                 input: serde_json::to_string_pretty(input).unwrap_or_default(),
                             }
                         }
-                        pisci_kernel::llm::ContentBlock::ToolResult {
+                        piscis_kernel::llm::ContentBlock::ToolResult {
                             tool_use_id,
                             content,
                             is_error,
@@ -4338,7 +4339,7 @@ pub async fn get_context_preview(
                                 truncated,
                             }
                         }
-                        pisci_kernel::llm::ContentBlock::Image { .. } => {
+                        piscis_kernel::llm::ContentBlock::Image { .. } => {
                             ContextPreviewBlock::Image {
                                 note: "[image attachment]".to_string(),
                             }
@@ -4346,7 +4347,7 @@ pub async fn get_context_preview(
                     })
                     .collect(),
             };
-            let tokens = pisci_kernel::llm::estimate_message_tokens(m);
+            let tokens = piscis_kernel::llm::estimate_message_tokens(m);
             ContextPreviewMessage {
                 role: m.role.clone(),
                 blocks,
@@ -4356,29 +4357,29 @@ pub async fn get_context_preview(
         .collect();
 
     let messages_tokens: usize = messages.iter().map(|m| m.tokens).sum();
-    let request_overhead_tokens = pisci_kernel::llm::estimate_request_overhead_tokens(
+    let request_overhead_tokens = piscis_kernel::llm::estimate_request_overhead_tokens(
         Some(&prompt_artifacts.system_prompt),
         &prompt_artifacts.tool_defs,
     );
     let total_input_budget =
-        pisci_kernel::llm::compute_total_input_budget(context_window, max_tokens);
+        piscis_kernel::llm::compute_total_input_budget(context_window, max_tokens);
     let message_budget = total_input_budget.saturating_sub(request_overhead_tokens);
-    let request_view_messages = pisci_kernel::agent::loop_::build_request_view_messages(
+    let request_view_messages = piscis_kernel::agent::loop_::build_request_view_messages(
         &base_llm_messages,
         &tool_minimals,
-        pisci_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
-        pisci_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
+        piscis_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
+        piscis_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
         message_budget,
     );
     let request_view_messages =
-        pisci_kernel::agent::vision::inject_selected_context(&request_view_messages, &session_id)
+        piscis_kernel::agent::vision::inject_selected_context(&request_view_messages, &session_id)
             .await;
-    let total_tokens = pisci_kernel::llm::estimate_request_input_tokens(
+    let total_tokens = piscis_kernel::llm::estimate_request_input_tokens(
         &llm_messages,
         Some(&prompt_artifacts.system_prompt),
         &prompt_artifacts.tool_defs,
     );
-    let request_view_tokens = pisci_kernel::llm::estimate_request_input_tokens(
+    let request_view_tokens = piscis_kernel::llm::estimate_request_input_tokens(
         &request_view_messages,
         Some(&prompt_artifacts.system_prompt),
         &prompt_artifacts.tool_defs,
@@ -4407,19 +4408,19 @@ pub async fn get_context_preview(
             &crate::headless_cli::HeadlessContextToggles::default(),
         )
         .await?;
-        let compacted_request_messages = pisci_kernel::agent::loop_::build_request_view_messages(
+        let compacted_request_messages = piscis_kernel::agent::loop_::build_request_view_messages(
             &compacted_context.llm_messages,
             &compacted_context.tool_minimals,
-            pisci_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
-            pisci_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
+            piscis_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
+            piscis_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
             message_budget,
         );
-        let compacted_request_messages = pisci_kernel::agent::vision::inject_selected_context(
+        let compacted_request_messages = piscis_kernel::agent::vision::inject_selected_context(
             &compacted_request_messages,
             &session_id,
         )
         .await;
-        let compacted_tokens = pisci_kernel::llm::estimate_request_input_tokens(
+        let compacted_tokens = piscis_kernel::llm::estimate_request_input_tokens(
             &compacted_request_messages,
             Some(&prompt_artifacts.system_prompt),
             &prompt_artifacts.tool_defs,
@@ -4461,13 +4462,13 @@ mod tests {
         derive_headless_session_source, extract_tool_minimals_from_history,
         minimal_tool_result_blocks, paths_match_for_pool_binding, resolve_headless_memory_owner_id,
         resolve_headless_scene_kind, resolve_pool_session_for_workspace, HeadlessRunOptions,
-        SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL, SESSION_SOURCE_PISCI_POOL,
+        SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL, SESSION_SOURCE_PISCIS_POOL,
     };
     use crate::commands::config::scene::SceneKind;
     use crate::pool::PoolSession;
     use crate::store::db::ChatMessage;
     use chrono::Utc;
-    use pisci_kernel::llm::{ContentBlock, LlmMessage, MessageContent};
+    use piscis_kernel::llm::{ContentBlock, LlmMessage, MessageContent};
     use serde_json::json;
 
     fn make_chat_message(
@@ -4579,23 +4580,23 @@ mod tests {
     fn heartbeat_and_pool_sessions_use_expected_sources() {
         assert_eq!(
             derive_headless_session_source("heartbeat", None),
-            SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL
+            SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL
         );
         assert_eq!(
             derive_headless_session_source("heartbeat", Some("pool-1")),
-            SESSION_SOURCE_PISCI_POOL
+            SESSION_SOURCE_PISCIS_POOL
         );
         assert_eq!(
             derive_headless_session_source("feishu", Some("pool-1")),
-            SESSION_SOURCE_PISCI_POOL
+            SESSION_SOURCE_PISCIS_POOL
         );
     }
 
     #[test]
     fn paths_match_for_pool_binding_normalizes_slashes() {
         assert!(paths_match_for_pool_binding(
-            "/home/agent/Projects/pisci/CodeZ",
-            "/home/agent/Projects/pisci/CodeZ/"
+            "/home/agent/Projects/piscis/CodeZ",
+            "/home/agent/Projects/piscis/CodeZ/"
         ));
         assert!(paths_match_for_pool_binding("C:\\repo\\app", "C:/repo/app"));
         assert!(!paths_match_for_pool_binding("/repo/a", "/repo/b"));
@@ -4625,8 +4626,8 @@ mod tests {
     }
 
     #[test]
-    fn resolve_headless_memory_owner_id_defaults_to_pisci_and_honors_override() {
-        assert_eq!(resolve_headless_memory_owner_id(None), "pisci".to_string());
+    fn resolve_headless_memory_owner_id_defaults_to_piscis_and_honors_override() {
+        assert_eq!(resolve_headless_memory_owner_id(None), "piscis".to_string());
         assert_eq!(
             resolve_headless_memory_owner_id(Some(&HeadlessRunOptions {
                 memory_owner_id: Some("koi-tester-uuid".into()),
@@ -4639,7 +4640,7 @@ mod tests {
                 memory_owner_id: Some("  ".into()),
                 ..HeadlessRunOptions::default()
             })),
-            "pisci".to_string()
+            "piscis".to_string()
         );
     }
 
@@ -4661,7 +4662,7 @@ mod tests {
         assert_eq!(
             resolve_headless_scene_kind(
                 "heartbeat",
-                SESSION_SOURCE_PISCI_HEARTBEAT_GLOBAL,
+                SESSION_SOURCE_PISCIS_HEARTBEAT_GLOBAL,
                 Some(&heartbeat)
             ),
             SceneKind::HeartbeatSupervisor
@@ -4672,7 +4673,7 @@ mod tests {
             ..HeadlessRunOptions::default()
         };
         assert_eq!(
-            resolve_headless_scene_kind("internal", SESSION_SOURCE_PISCI_POOL, Some(&pool)),
+            resolve_headless_scene_kind("internal", SESSION_SOURCE_PISCIS_POOL, Some(&pool)),
             SceneKind::PoolCoordinator
         );
 
@@ -4683,7 +4684,7 @@ mod tests {
     }
 
     #[test]
-    fn main_prompt_preserves_pisci_routing_heuristics() {
+    fn main_prompt_preserves_piscis_routing_heuristics() {
         let prompt = build_main_chat_system_prompt("", "", false);
         for required in [
             "Pool and Koi state is not preloaded from keyword matches",

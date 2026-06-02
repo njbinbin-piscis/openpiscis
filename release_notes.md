@@ -40,8 +40,8 @@
 
 ### Documentation
 
-- **docs/openclaw-parity-matrix.md**: Full audit and update of PisciDesktop vs OpenClaw capability matrix; corrected statuses for Slack/Discord/Teams/Matrix (partial), resume-after-restart (implemented), prompt injection (implemented), multi-agent routing (implemented), email (implemented); added new rows for UAC elevation, PDF, SSH, code execution, web search, vision, WMI, MCP, secret encryption; added PisciDesktop-specific multi-agent collaboration section
-- **src-tauri/README_CN.md**: Replaced incorrect content with proper OpenPisci Rust backend documentation
+- **docs/openclaw-parity-matrix.md**: Full audit and update of PiscisDesktop vs OpenClaw capability matrix; corrected statuses for Slack/Discord/Teams/Matrix (partial), resume-after-restart (implemented), prompt injection (implemented), multi-agent routing (implemented), email (implemented); added new rows for UAC elevation, PDF, SSH, code execution, web search, vision, WMI, MCP, secret encryption; added PiscisDesktop-specific multi-agent collaboration section
+- **src-tauri/README_CN.md**: Replaced incorrect content with proper OpenPiscis Rust backend documentation
 
 ### Previous releases
 

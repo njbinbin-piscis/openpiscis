@@ -160,7 +160,7 @@
     },
     {
       "sample_id": "sample-01-devops",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 4404,
       "compressed_tokens": 3979,
@@ -215,7 +215,7 @@
     },
     {
       "sample_id": "sample-01-devops",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 4404,
       "compressed_tokens": 3979,
@@ -270,7 +270,7 @@
     },
     {
       "sample_id": "sample-01-devops",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 4404,
       "compressed_tokens": 2168,
@@ -326,7 +326,7 @@
     },
     {
       "sample_id": "sample-01-devops",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 4404,
       "compressed_tokens": 3979,
@@ -630,7 +630,7 @@
     },
     {
       "sample_id": "sample-02-trading",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 3460,
       "compressed_tokens": 3195,
@@ -685,7 +685,7 @@
     },
     {
       "sample_id": "sample-02-trading",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 3460,
       "compressed_tokens": 3195,
@@ -740,7 +740,7 @@
     },
     {
       "sample_id": "sample-02-trading",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 3460,
       "compressed_tokens": 2215,
@@ -796,7 +796,7 @@
     },
     {
       "sample_id": "sample-02-trading",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 3460,
       "compressed_tokens": 3195,
@@ -1134,7 +1134,7 @@
     },
     {
       "sample_id": "sample-03-ml-short",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 1856,
       "compressed_tokens": 1684,
@@ -1189,7 +1189,7 @@
     },
     {
       "sample_id": "sample-03-ml-short",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 1856,
       "compressed_tokens": 1684,
@@ -1244,7 +1244,7 @@
     },
     {
       "sample_id": "sample-03-ml-short",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 1856,
       "compressed_tokens": 441,
@@ -1300,7 +1300,7 @@
     },
     {
       "sample_id": "sample-03-ml-short",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 1856,
       "compressed_tokens": 1684,
@@ -1638,7 +1638,7 @@
     },
     {
       "sample_id": "sample-04-mixed-long",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 4597,
       "compressed_tokens": 4241,
@@ -1693,7 +1693,7 @@
     },
     {
       "sample_id": "sample-04-mixed-long",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 4597,
       "compressed_tokens": 4241,
@@ -1748,7 +1748,7 @@
     },
     {
       "sample_id": "sample-04-mixed-long",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 4597,
       "compressed_tokens": 2345,
@@ -1804,7 +1804,7 @@
     },
     {
       "sample_id": "sample-04-mixed-long",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 4597,
       "compressed_tokens": 4241,
@@ -2142,7 +2142,7 @@
     },
     {
       "sample_id": "sample-05-sysadmin",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 3248,
       "compressed_tokens": 2972,
@@ -2197,7 +2197,7 @@
     },
     {
       "sample_id": "sample-05-sysadmin",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 3248,
       "compressed_tokens": 2972,
@@ -2252,7 +2252,7 @@
     },
     {
       "sample_id": "sample-05-sysadmin",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 3248,
       "compressed_tokens": 2132,
@@ -2308,7 +2308,7 @@
     },
     {
       "sample_id": "sample-05-sysadmin",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 3248,
       "compressed_tokens": 2972,
@@ -2646,7 +2646,7 @@
     },
     {
       "sample_id": "tool-01-bug-hunt",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 1883,
       "compressed_tokens": 1641,
@@ -2701,7 +2701,7 @@
     },
     {
       "sample_id": "tool-01-bug-hunt",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 1883,
       "compressed_tokens": 1641,
@@ -2756,7 +2756,7 @@
     },
     {
       "sample_id": "tool-01-bug-hunt",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 1883,
       "compressed_tokens": 765,
@@ -2812,7 +2812,7 @@
     },
     {
       "sample_id": "tool-01-bug-hunt",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 1883,
       "compressed_tokens": 1641,
@@ -3150,7 +3150,7 @@
     },
     {
       "sample_id": "tool-02-data-pipeline",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 1596,
       "compressed_tokens": 1368,
@@ -3205,7 +3205,7 @@
     },
     {
       "sample_id": "tool-02-data-pipeline",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 1596,
       "compressed_tokens": 1368,
@@ -3260,7 +3260,7 @@
     },
     {
       "sample_id": "tool-02-data-pipeline",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 1596,
       "compressed_tokens": 727,
@@ -3316,7 +3316,7 @@
     },
     {
       "sample_id": "tool-02-data-pipeline",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 1596,
       "compressed_tokens": 1368,
@@ -3654,7 +3654,7 @@
     },
     {
       "sample_id": "tool-03-browser-research",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 1484,
       "compressed_tokens": 1378,
@@ -3709,7 +3709,7 @@
     },
     {
       "sample_id": "tool-03-browser-research",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 1484,
       "compressed_tokens": 1354,
@@ -3764,7 +3764,7 @@
     },
     {
       "sample_id": "tool-03-browser-research",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 1484,
       "compressed_tokens": 691,
@@ -3820,7 +3820,7 @@
     },
     {
       "sample_id": "tool-03-browser-research",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 1484,
       "compressed_tokens": 1378,
@@ -4266,7 +4266,7 @@
     },
     {
       "sample_id": "hard-01-multi-day-project",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 1809,
       "compressed_tokens": 1581,
@@ -4357,7 +4357,7 @@
     },
     {
       "sample_id": "hard-01-multi-day-project",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 1809,
       "compressed_tokens": 1581,
@@ -4448,7 +4448,7 @@
     },
     {
       "sample_id": "hard-01-multi-day-project",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 1809,
       "compressed_tokens": 596,
@@ -4540,7 +4540,7 @@
     },
     {
       "sample_id": "hard-01-multi-day-project",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 1809,
       "compressed_tokens": 1581,
@@ -5024,7 +5024,7 @@
     },
     {
       "sample_id": "hard-02-schema-retry-chain",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 440,
       "compressed_tokens": 405,
@@ -5115,7 +5115,7 @@
     },
     {
       "sample_id": "hard-02-schema-retry-chain",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 440,
       "compressed_tokens": 405,
@@ -5206,7 +5206,7 @@
     },
     {
       "sample_id": "hard-02-schema-retry-chain",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 440,
       "compressed_tokens": 307,
@@ -5298,7 +5298,7 @@
     },
     {
       "sample_id": "hard-02-schema-retry-chain",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 440,
       "compressed_tokens": 405,
@@ -5852,7 +5852,7 @@
     },
     {
       "sample_id": "hard-03-tool-result-flood",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 966,
       "compressed_tokens": 924,
@@ -5943,7 +5943,7 @@
     },
     {
       "sample_id": "hard-03-tool-result-flood",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 966,
       "compressed_tokens": 883,
@@ -6034,7 +6034,7 @@
     },
     {
       "sample_id": "hard-03-tool-result-flood",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 966,
       "compressed_tokens": 873,
@@ -6126,7 +6126,7 @@
     },
     {
       "sample_id": "hard-03-tool-result-flood",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 966,
       "compressed_tokens": 924,
@@ -6429,10 +6429,10 @@
       "notes": {},
       "compression_ratio": 1.0,
       "space_saving_pct": 0.0,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\": \"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 pisci-internal-metrics-relay、端口 9176。下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内——上次约定里防火墙只放行这个段。\n[tool_use:shell] {\"command\": \"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\": \"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 piscis-internal-metrics-relay、端口 9176。下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内——上次约定里防火墙只放行这个段。\n[tool_use:shell] {\"command\": \"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 1.0,
       "info_retention_f1": 1.0,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 4.83,
       "judge_per_question": [
         {
@@ -6443,16 +6443,16 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
-          "cand": "正确，认证使用/etc/pisci/certs/metrics-client.pem。",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
+          "cand": "正确，认证使用/etc/piscis/certs/metrics-client.pem。",
           "score": 5,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
-          "cand": "是的，该网关服务注册名确为pisci-internal-metrics-relay。",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
+          "cand": "是的，该网关服务注册名确为piscis-internal-metrics-relay。",
           "score": 5,
           "kind": "critical"
         },
@@ -6517,10 +6517,10 @@
       "notes": {},
       "compression_ratio": 0.95,
       "space_saving_pct": 5.0,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立:内部 metrics 网关跑在 9176 端口(不是公网 8080),认证走客户端证书 /etc/pisci/certs/metrics-client.pem(不是 bearer token),服务注册名 pisci-internal-metrics-relay,防火墙只放行 10.0.0.0/8. 今天我想把一个新 dashboard 接…\n\nASSISTANT: 按上次确立的信息:dashboard 必须以 9176 为目标端口,TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem.我先确认服务当前是否还在同一台机器上.\n按上次确立的信息:dashboard 必须以 9176 为目标端口,TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem.我先确认服务当前是否还在同一台机器上.\n[tool_use:shell] {\"command\": \"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 pisci-internal-metrics-relay、端口 9176.下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内--上次约定里防火墙只放行这个段.\n[tool_use:shell] {\"command\": \"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44,属于 10.0.0.0/8,不会被防火墙阻断.\n\nUSER: 现在说具体怎么接,包括 URL、认证、网络三部分.\n\nASSISTANT: 完整接线方案:\n\n1) **URL**:`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` (必须走 9176,不是 8080)\n2) **认证**:客户端证书 `/etc/pisci/certs/metrics-client.pem`(**不要**用 bearer token--内部网关禁用了这个路径)\n3) **网络**:dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内,无须额外 firewall change\n\n这三点完全继承上次会话的结论.\n\nUSER: 为什么不是 8080 + bearer token?\n\nASSISTANT: 根据上次会话结论:8080 是公网网关,不暴露内部 metrics;内部 relay 的端口是 9176,认证也被切到客户端证书(bearer token 在上次讨论里显式被拒绝,理由是多次 token 泄漏事件).所以内部只能走 9176 + mTLS.",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立:内部 metrics 网关跑在 9176 端口(不是公网 8080),认证走客户端证书 /etc/piscis/certs/metrics-client.pem(不是 bearer token),服务注册名 piscis-internal-metrics-relay,防火墙只放行 10.0.0.0/8. 今天我想把一个新 dashboard 接…\n\nASSISTANT: 按上次确立的信息:dashboard 必须以 9176 为目标端口,TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem.我先确认服务当前是否还在同一台机器上.\n按上次确立的信息:dashboard 必须以 9176 为目标端口,TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem.我先确认服务当前是否还在同一台机器上.\n[tool_use:shell] {\"command\": \"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 piscis-internal-metrics-relay、端口 9176.下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内--上次约定里防火墙只放行这个段.\n[tool_use:shell] {\"command\": \"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44,属于 10.0.0.0/8,不会被防火墙阻断.\n\nUSER: 现在说具体怎么接,包括 URL、认证、网络三部分.\n\nASSISTANT: 完整接线方案:\n\n1) **URL**:`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` (必须走 9176,不是 8080)\n2) **认证**:客户端证书 `/etc/piscis/certs/metrics-client.pem`(**不要**用 bearer token--内部网关禁用了这个路径)\n3) **网络**:dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内,无须额外 firewall change\n\n这三点完全继承上次会话的结论.\n\nUSER: 为什么不是 8080 + bearer token?\n\nASSISTANT: 根据上次会话结论:8080 是公网网关,不暴露内部 metrics;内部 relay 的端口是 9176,认证也被切到客户端证书(bearer token 在上次讨论里显式被拒绝,理由是多次 token 泄漏事件).所以内部只能走 9176 + mTLS.",
       "rouge_l_f1": 0.6486,
       "info_retention_f1": 1.0,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立:内部 metrics 网关跑在 9176 端口(不是公网 8080),认证走客户端证书 /etc/pisci/certs/metrics-client.pem(不是 bearer token),服务注册名 pisci-internal-metrics-relay,防火墙只放行 10.0.0.0/8. 今天我想把一个新 dashboard 接… ⏎  ⏎ ASSISTANT: 按上次确立的信息:dashboard 必须以 917",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立:内部 metrics 网关跑在 9176 端口(不是公网 8080),认证走客户端证书 /etc/piscis/certs/metrics-client.pem(不是 bearer token),服务注册名 piscis-internal-metrics-relay,防火墙只放行 10.0.0.0/8. 今天我想把一个新 dashboard 接… ⏎  ⏎ ASSISTANT: 按上次确立的信息:dashboard 必须以 917",
       "judge_score": 4.67,
       "judge_per_question": [
         {
@@ -6531,16 +6531,16 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
-          "cand": "是的，完整路径为/etc/pisci/certs/metrics-client.pem。",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
+          "cand": "是的，完整路径为/etc/piscis/certs/metrics-client.pem。",
           "score": 3,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
-          "cand": "是的，服务注册名确为pisci-internal-metrics-relay。",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
+          "cand": "是的，服务注册名确为piscis-internal-metrics-relay。",
           "score": 5,
           "kind": "critical"
         },
@@ -6605,10 +6605,10 @@
       "notes": {},
       "compression_ratio": 0.818,
       "space_saving_pct": 18.2,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n必须以 9176 为目标端口，TLS /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n{\"command\": services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 pisci-internal-metrics-relay、端口 9176。下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内——上次约定里防火墙只放行这个段。\n{\"command\": \"ip show awk $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) （必须走 9176，不是 8080）\ntoken——内部网关禁用了这个路径）\n**网络**：dashboard change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n必须以 9176 为目标端口，TLS /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n{\"command\": services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: 服务注册名仍然是 piscis-internal-metrics-relay、端口 9176。下一步是 dashboard 侧的 outbound 是否在 10.0.0.0/8 之内——上次约定里防火墙只放行这个段。\n{\"command\": \"ip show awk $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) （必须走 9176，不是 8080）\ntoken——内部网关禁用了这个路径）\n**网络**：dashboard change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.8664,
       "info_retention_f1": 0.8421,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 2.33,
       "judge_per_question": [
         {
@@ -6619,16 +6619,16 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
-          "cand": "认证使用位于/etc/pisci/certs/metrics-client.pem的客户端证书。",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
+          "cand": "认证使用位于/etc/piscis/certs/metrics-client.pem的客户端证书。",
           "score": 5,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
-          "cand": "是的，上下文确认其服务注册名确为 pisci-internal-metrics-relay。",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
+          "cand": "是的，上下文确认其服务注册名确为 piscis-internal-metrics-relay。",
           "score": 5,
           "kind": "critical"
         },
@@ -6680,7 +6680,7 @@
     },
     {
       "sample_id": "hard-04-cross-session-recall",
-      "compressor": "Pisci-L1",
+      "compressor": "Piscis-L1",
       "error": null,
       "original_tokens": 500,
       "compressed_tokens": 413,
@@ -6696,10 +6696,10 @@
       },
       "compression_ratio": 0.826,
       "space_saving_pct": 17.4,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.8843,
       "info_retention_f1": 0.9667,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 0.0,
       "judge_per_question": [
         {
@@ -6710,15 +6710,15 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
@@ -6771,7 +6771,7 @@
     },
     {
       "sample_id": "hard-04-cross-session-recall",
-      "compressor": "Pisci-L1+",
+      "compressor": "Piscis-L1+",
       "error": null,
       "original_tokens": 500,
       "compressed_tokens": 402,
@@ -6787,10 +6787,10 @@
       },
       "compression_ratio": 0.804,
       "space_saving_pct": 19.6,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`.../api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`.../api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.8747,
       "info_retention_f1": 0.9667,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 0.0,
       "judge_per_question": [
         {
@@ -6801,15 +6801,15 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
@@ -6862,7 +6862,7 @@
     },
     {
       "sample_id": "hard-04-cross-session-recall",
-      "compressor": "Pisci-L2",
+      "compressor": "Piscis-L2",
       "error": null,
       "original_tokens": 500,
       "compressed_tokens": 413,
@@ -6879,10 +6879,10 @@
       },
       "compression_ratio": 0.826,
       "space_saving_pct": 17.4,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.8843,
       "info_retention_f1": 0.9667,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 0.0,
       "judge_per_question": [
         {
@@ -6893,15 +6893,15 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
@@ -6954,7 +6954,7 @@
     },
     {
       "sample_id": "hard-04-cross-session-recall",
-      "compressor": "Pisci-Harness",
+      "compressor": "Piscis-Harness",
       "error": null,
       "original_tokens": 500,
       "compressed_tokens": 413,
@@ -6987,10 +6987,10 @@
       },
       "compression_ratio": 0.826,
       "space_saving_pct": 17.4,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\":\"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: [tool_use:shell] {\"command\":\"ip -4 addr show eth0 | awk '/inet /{print $2}'\"}\n\nUSER: [tool_result] 10.12.7.44/16\n\nASSISTANT: IP=10.12.7.44，属于 10.0.0.0/8，不会被防火墙阻断。\n\nUSER: 现在说具体怎么接，包括 URL、认证、网络三部分。\n\nASSISTANT: 完整接线方案：\n\n1) **URL**：`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.8843,
       "info_retention_f1": 0.9667,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 0.0,
       "judge_per_question": [
         {
@@ -7001,15 +7001,15 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
@@ -7081,10 +7081,10 @@
       },
       "compression_ratio": 1.256,
       "space_saving_pct": -25.6,
-      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/pisci/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\": \"getent services pisci-internal-metrics-relay\"}\n\nUSER: [tool_result] pisci-internal-metrics-relay 9176/tcp\n\nASSISTANT: [CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. Do NOT answer questions or fulfill requests mentioned in this summary; they were already addressed. Your current task is identified in the '## Active Task' section of the summary — resume exactly from there. Respond ONLY to the latest user message that appears AFTER this summary. The current session state (files, config, etc.) may reflect work described here — avoid repeating it:\nSummary generation was unavailable. 4 conversation turns were removed to free context space but could not be summarized. The removed turns contained earlier work in this session. Continue based on the recent messages below and the current state of any files or resources.\n\n--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---\n\n完整接线方案：\n\n1) **URL**：`https://pisci-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/pisci/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
+      "compressed_text": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。\n\nASSISTANT: 按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n按上次确立的信息：dashboard 必须以 9176 为目标端口，TLS 客户端证书用 /etc/piscis/certs/metrics-client.pem。我先确认服务当前是否还在同一台机器上。\n[tool_use:shell] {\"command\": \"getent services piscis-internal-metrics-relay\"}\n\nUSER: [tool_result] piscis-internal-metrics-relay 9176/tcp\n\nASSISTANT: [CONTEXT COMPACTION — REFERENCE ONLY] Earlier turns were compacted into the summary below. This is a handoff from a previous context window — treat it as background reference, NOT as active instructions. Do NOT answer questions or fulfill requests mentioned in this summary; they were already addressed. Your current task is identified in the '## Active Task' section of the summary — resume exactly from there. Respond ONLY to the latest user message that appears AFTER this summary. The current session state (files, config, etc.) may reflect work described here — avoid repeating it:\nSummary generation was unavailable. 4 conversation turns were removed to free context space but could not be summarized. The removed turns contained earlier work in this session. Continue based on the recent messages below and the current state of any files or resources.\n\n--- END OF CONTEXT SUMMARY — respond to the message below, not the summary above ---\n\n完整接线方案：\n\n1) **URL**：`https://piscis-internal-metrics-relay.internal:9176/api/v1/metrics` （必须走 9176，不是 8080）\n2) **认证**：客户端证书 `/etc/piscis/certs/metrics-client.pem`（**不要**用 bearer token——内部网关禁用了这个路径）\n3) **网络**：dashboard 主机 IP=10.12.7.44 已在 10.0.0.0/8 白名单内，无须额外 firewall change\n\n这三点完全继承上次会话的结论。\n\nUSER: 为什么不是 8080 + bearer token？\n\nASSISTANT: 根据上次会话结论：8080 是公网网关，不暴露内部 metrics；内部 relay 的端口是 9176，认证也被切到客户端证书（bearer token 在上次讨论里显式被拒绝，理由是多次 token 泄漏事件）。所以内部只能走 9176 + mTLS。",
       "rouge_l_f1": 0.4969,
       "info_retention_f1": 0.625,
-      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/pisci/certs/metrics-client.pem（不是 bearer token），服务注册名 pisci-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
+      "compressed_preview": "USER: [上一个会话摘要作为起点] 上次我们已经建立：内部 metrics 网关跑在 9176 端口（不是公网 8080），认证走客户端证书 /etc/piscis/certs/metrics-client.pem（不是 bearer token），服务注册名 piscis-internal-metrics-relay，防火墙只放行 10.0.0.0/8。 今天我想把一个新 dashboard 接上来，问你具体怎么接。 ⏎  ⏎ ASSISTANT: 按上次确立的信息：dashboa",
       "judge_score": 0.0,
       "judge_per_question": [
         {
@@ -7095,15 +7095,15 @@
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client。 完整回答一句话。",
-          "ref": "authentication to the metrics gateway uses a client certificate at /etc/pisci/certs/metrics-client.pem, not a bearer token",
+          "q": "根据之前的对话，请精确回答：authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client。 完整回答一句话。",
+          "ref": "authentication to the metrics gateway uses a client certificate at /etc/piscis/certs/metrics-client.pem, not a bearer token",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"
         },
         {
-          "q": "根据之前的对话，请精确回答：the gateway is named 'pisci-internal-metrics-relay' in the service registry。 完整回答一句话。",
-          "ref": "the gateway is named 'pisci-internal-metrics-relay' in the service registry",
+          "q": "根据之前的对话，请精确回答：the gateway is named 'piscis-internal-metrics-relay' in the service registry。 完整回答一句话。",
+          "ref": "the gateway is named 'piscis-internal-metrics-relay' in the service registry",
           "cand": "__error__: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1006)>",
           "score": 0,
           "kind": "critical"

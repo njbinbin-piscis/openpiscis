@@ -119,7 +119,7 @@ pub async fn scan_skill_catalog(
         .app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
     let skills_dir = app_dir.join("skills");
     let mut loader = crate::skills::loader::SkillLoader::new(&skills_dir);
     loader.load_all().map_err(|e| e.to_string())?;
@@ -161,7 +161,7 @@ pub async fn sync_skills_from_disk(state: State<'_, AppState>) -> Result<SyncSki
         .app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
     let skills_dir = app_dir.join("skills");
 
     // Load all skills from the filesystem
@@ -237,7 +237,7 @@ async fn install_skill_from_content(
         .app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
     let skills_dir = app_dir.join("skills");
 
     // Parse and validate frontmatter
@@ -332,7 +332,7 @@ async fn install_skill_from_content(
             let enrich_skill = skill.clone();
             let enrich_file = skill_file.clone();
             tokio::spawn(async move {
-                let client = pisci_kernel::llm::build_client(
+                let client = piscis_kernel::llm::build_client(
                     &provider,
                     &api_key,
                     if base_url.is_empty() {
@@ -436,7 +436,7 @@ pub async fn install_skill(
             .map_err(|e| e.to_string())?;
         let resp = client
             .get(&source_trimmed)
-            .header("User-Agent", "Pisci-Desktop/1.0")
+            .header("User-Agent", "Piscis-Desktop/1.0")
             .send()
             .await
             .map_err(|e| format!("Download failed: {}", e))?;
@@ -494,7 +494,7 @@ async fn install_skill_from_zip(
             .map_err(|e| e.to_string())?;
         let resp = client
             .get(source)
-            .header("User-Agent", "Pisci-Desktop/1.0")
+            .header("User-Agent", "Piscis-Desktop/1.0")
             .send()
             .await
             .map_err(|e| format!("Download failed: {}", e))?;
@@ -583,7 +583,7 @@ async fn install_skill_from_zip(
         .app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
     let skills_dir = app_dir.join("skills");
 
     let loader = crate::skills::loader::SkillLoader::new(&skills_dir);
@@ -710,7 +710,7 @@ pub async fn uninstall_skill(state: State<'_, AppState>, skill_name: String) -> 
         .app_handle
         .path()
         .app_data_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+        .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
     let skills_dir = app_dir.join("skills");
 
     let safe_name: String = skill_name
@@ -832,7 +832,7 @@ pub async fn clawhub_search(
     let limit = limit.unwrap_or(20).min(50);
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
-        .user_agent("Pisci-Desktop/1.0")
+        .user_agent("Piscis-Desktop/1.0")
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -1027,7 +1027,7 @@ pub async fn check_skill_compat(
             .map_err(|e| e.to_string())?;
         let resp = client
             .get(&source)
-            .header("User-Agent", "Pisci-Desktop/1.0")
+            .header("User-Agent", "Piscis-Desktop/1.0")
             .send()
             .await
             .map_err(|e| format!("Download failed: {}", e))?;
@@ -1068,7 +1068,7 @@ pub async fn clawhub_install(
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
-        .user_agent("Pisci-Desktop/1.0")
+        .user_agent("Piscis-Desktop/1.0")
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -1155,12 +1155,12 @@ fn extract_skill_md_from_zip(zip_bytes: &[u8]) -> anyhow::Result<String> {
 ///
 /// This runs as a background task after installation — failures are non-fatal.
 async fn enrich_triggers_with_llm(
-    client: &dyn pisci_kernel::llm::LlmClient,
+    client: &dyn piscis_kernel::llm::LlmClient,
     model: &str,
     skill: &crate::skills::loader::SkillDefinition,
     skill_file: &std::path::Path,
 ) -> anyhow::Result<()> {
-    use pisci_kernel::llm::{LlmMessage, LlmRequest, MessageContent};
+    use piscis_kernel::llm::{LlmMessage, LlmRequest, MessageContent};
     use tokio::time::{timeout, Duration};
 
     let existing_triggers = if skill.triggers.is_empty() {

@@ -4,9 +4,9 @@
 use crate::commands::config::scene::{MemorySliceMode, SceneKind, ScenePolicy};
 use crate::store::db::TaskState;
 use crate::store::AppState;
-use pisci_core::koi_prompt::build_koi_task_system_prompt;
-use pisci_core::models::KoiDefinition;
-use pisci_core::project_state::build_coordination_event_digest;
+use piscis_core::koi_prompt::build_koi_task_system_prompt;
+use piscis_core::models::KoiDefinition;
+use piscis_core::project_state::build_coordination_event_digest;
 
 fn truncate_chars(content: &str, max_chars: usize) -> String {
     if max_chars == 0 || content.chars().count() <= max_chars {

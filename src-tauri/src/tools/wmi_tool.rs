@@ -2,8 +2,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 /// WMI (Windows Management Instrumentation) query tool.
 /// Executes WQL queries via PowerShell Get-CimInstance for structured system data.
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
-use pisci_kernel::proc::tokio_command;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;

@@ -1,17 +1,17 @@
 # Email User Tool（TypeScript / Deno 参考实现）
 
-这是 Pisci Desktop **用户工具插件系统**的参考实现，演示了：
+这是 Piscis Desktop **用户工具插件系统**的参考实现，演示了：
 
 - 如何用 TypeScript（Deno 运行时）编写用户工具
-- 如何声明 `config_schema` 让 Pisci 自动生成配置表单
+- 如何声明 `config_schema` 让 Piscis 自动生成配置表单
 - 如何在工具脚本中读取注入的配置（SMTP/IMAP 凭据）
-- 如何输出 Pisci 期望的 JSON 格式
+- 如何输出 Piscis 期望的 JSON 格式
 
 ---
 
-## 安装到 Pisci
+## 安装到 Piscis
 
-1. 在 Pisci Desktop 中切换到 **用户工具（🔧）** 标签页
+1. 在 Piscis Desktop 中切换到 **用户工具（🔧）** 标签页
 2. 在「安装工具」输入框中粘贴本目录的**绝对路径**，例如：
    ```
    C:\Users\you\path\to\examples\user-tools\email
@@ -44,21 +44,21 @@ email/
 | `runtime` | `"deno"` / `"node"` / `"powershell"` / `"python"` |
 | `entrypoint` | 相对于工具目录的入口文件 |
 | `input_schema` | JSON Schema，定义 LLM 可传入的参数 |
-| `config_schema` | 用户在 Pisci 设置页填写的字段，`type: "password"` 自动加密 |
+| `config_schema` | 用户在 Piscis 设置页填写的字段，`type: "password"` 自动加密 |
 | `timeout_secs` | 子进程最大运行时间（默认 60s） |
 
 ---
 
 ## 调用协议
 
-Pisci 以子进程方式调用工具：
+Piscis 以子进程方式调用工具：
 
 ```
 deno run --allow-all index.ts '<input_json>' '<config_json>'
 ```
 
 - `argv[1]` = LLM 传入的参数（JSON 字符串）
-- `argv[2]` = 用户在 Pisci 设置的配置（JSON 字符串，**密码字段为明文**，仅在进程内存中，不写日志）
+- `argv[2]` = 用户在 Piscis 设置的配置（JSON 字符串，**密码字段为明文**，仅在进程内存中，不写日志）
 
 脚本必须向 **stdout** 输出单行 JSON：
 
@@ -110,7 +110,7 @@ deno run --allow-all index.ts '<input_json>' '<config_json>'
 查一下我最近收到的10封邮件
 ```
 
-LLM 会自动调用 `email` 工具，Pisci 将凭据安全地注入给脚本执行。
+LLM 会自动调用 `email` 工具，Piscis 将凭据安全地注入给脚本执行。
 
 ---
 

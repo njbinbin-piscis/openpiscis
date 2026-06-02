@@ -20,7 +20,7 @@ def _profile_rows(run: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
 
 def render_review(run: dict[str, Any]) -> str:
     grouped = _profile_rows(run)
-    baseline = grouped.get("baseline_pisci", [])
+    baseline = grouped.get("baseline_piscis", [])
     context_lite = grouped.get("context_lite", [])
     pool = grouped.get("experimental_pool", [])
 
@@ -45,11 +45,11 @@ def render_review(run: dict[str, Any]) -> str:
         return sum(values) / len(values)
 
     lines = [
-        "# OpenPisci Harness Review",
+        "# OpenPiscis Harness Review",
         "",
         "## Summary",
         "",
-        f"- `baseline_pisci` resolved rate: `{resolved_rate(baseline):.2%}`",
+        f"- `baseline_piscis` resolved rate: `{resolved_rate(baseline):.2%}`",
         f"- `context_lite` resolved rate: `{resolved_rate(context_lite):.2%}`",
         f"- `experimental_pool` resolved rate: `{resolved_rate(pool):.2%}`",
         f"- baseline average tool errors: `{avg_tool_errors(baseline):.2f}`",
@@ -64,8 +64,8 @@ def render_review(run: dict[str, Any]) -> str:
         "",
         "## Interpretation Rules",
         "",
-        "- If `context_lite` beats `baseline_pisci`, the runtime context path is likely over-injecting or preserving low-value context.",
-        "- If `baseline_pisci` beats `context_lite` while rolling-summary versions are non-zero, structured summary / memory / project hints are helping complex tasks.",
+        "- If `context_lite` beats `baseline_piscis`, the runtime context path is likely over-injecting or preserving low-value context.",
+        "- If `baseline_piscis` beats `context_lite` while rolling-summary versions are non-zero, structured summary / memory / project hints are helping complex tasks.",
         "- If `experimental_pool` is slower and resolves fewer tasks, pool coordination overhead is dominating task execution.",
         "- If tool errors stay high but recovered-schema errors stay low, schema correction is not closing the loop well enough in end-to-end tasks.",
         "- If channel utilization is already high on failed tasks, failures are more likely due to crowding / wrong prioritization than to missing context.",
@@ -73,11 +73,11 @@ def render_review(run: dict[str, Any]) -> str:
         "",
         "## Runtime Caveat",
         "",
-        "This review uses telemetry from the real `openpisci-headless run` path plus optional post-hoc `HARNESS` breakdown on persisted session transcripts. That means the layered token numbers are diagnostic, not proof that the runtime request path and `ContextBuilder::finalize` are perfectly identical.",
+        "This review uses telemetry from the real `openpiscis-headless run` path plus optional post-hoc `HARNESS` breakdown on persisted session transcripts. That means the layered token numbers are diagnostic, not proof that the runtime request path and `ContextBuilder::finalize` are perfectly identical.",
         "",
         "## Next Checks",
         "",
-        "1. Compare failing tasks where `context_lite` outperforms `baseline_pisci`; inspect whether memory / project instructions / old history were noisy.",
+        "1. Compare failing tasks where `context_lite` outperforms `baseline_piscis`; inspect whether memory / project instructions / old history were noisy.",
         "2. Compare failing tasks with high tool error counts; inspect tool schema retries and whether errors were recovered later in the same session.",
         "3. Compare baseline vs pool on multi-phase tasks; verify whether pool adds resolution or only extra latency.",
         "4. For tasks with low resolved rate and low channel utilization, inspect whether important context never entered the prompt path at all.",

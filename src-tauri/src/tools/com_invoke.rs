@@ -7,8 +7,8 @@ use async_trait::async_trait;
 /// - PowerShell's New-Object -ComObject is fully dynamic: any ProgID, any method, any property.
 /// - 32-bit COM objects (WOW6432Node) require a 32-bit host process — we use SysWOW64\powershell.exe.
 /// - This mirrors exactly what a human would do to automate legacy Windows software.
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
-use pisci_kernel::proc::tokio_command;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::proc::tokio_command;
 use serde_json::{json, Value};
 use std::process::Stdio;
 use std::time::Duration;

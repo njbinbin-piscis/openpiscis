@@ -31,7 +31,7 @@ def find_binary(stem: str, explicit: str | None = None) -> Path:
 
     # The desktop Rust workspace root is `src-tauri/`. The agent runtime
     # crates were extracted into the sibling `piscis-engine` repo, so the
-    # `openpisci-headless` CLI asset is now built there (its binary lands in
+    # `openpiscis-headless` CLI asset is now built there (its binary lands in
     # `piscis-engine/target/{debug,release}/`). We search both trees so either
     # build location resolves.
     engine_root = REPO_ROOT.parent / "piscis-engine"
@@ -64,16 +64,16 @@ def default_user_config_path() -> Path | None:
         local = os.environ.get("LOCALAPPDATA")
         roaming = os.environ.get("APPDATA")
         if local:
-            candidates.append(Path(local) / "com.pisci.desktop" / "config.json")
+            candidates.append(Path(local) / "com.piscis.desktop" / "config.json")
         if roaming:
-            candidates.append(Path(roaming) / "com.pisci.desktop" / "config.json")
+            candidates.append(Path(roaming) / "com.piscis.desktop" / "config.json")
     else:
         xdg = os.environ.get("XDG_DATA_HOME")
         home = Path.home()
         if xdg:
-            candidates.append(Path(xdg) / "com.pisci.desktop" / "config.json")
-        candidates.append(home / ".local" / "share" / "com.pisci.desktop" / "config.json")
-        candidates.append(home / ".config" / "com.pisci.desktop" / "config.json")
+            candidates.append(Path(xdg) / "com.piscis.desktop" / "config.json")
+        candidates.append(home / ".local" / "share" / "com.piscis.desktop" / "config.json")
+        candidates.append(home / ".config" / "com.piscis.desktop" / "config.json")
     for candidate in candidates:
         if candidate.exists():
             return candidate
@@ -136,8 +136,8 @@ def init_git_repo(workspace: Path) -> None:
     if git_dir.exists():
         shutil.rmtree(git_dir)
     _run(["git", "init"])
-    _run(["git", "config", "user.email", "bench@openpisci.local"])
-    _run(["git", "config", "user.name", "OpenPisci Bench"])
+    _run(["git", "config", "user.email", "bench@openpiscis.local"])
+    _run(["git", "config", "user.name", "OpenPiscis Bench"])
     _run(["git", "add", "."])
     _run(["git", "commit", "-m", "seed"])
 
@@ -231,9 +231,9 @@ def collect_session_telemetry(
     session_id: str,
     compact_bin: Path | None = None,
 ) -> dict[str, Any]:
-    db_path = config_dir / "pisci.db"
+    db_path = config_dir / "piscis.db"
     if not db_path.exists():
-        return {"db_path": str(db_path), "error": "pisci.db not found"}
+        return {"db_path": str(db_path), "error": "piscis.db not found"}
 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row

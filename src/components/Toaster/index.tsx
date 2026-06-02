@@ -1,7 +1,7 @@
 /**
  * Toaster — Main-window toast host.
  *
- * Listens for backend `pisci_toast` events (emitted by `app_control.notify_user`
+ * Listens for backend `piscis_toast` events (emitted by `app_control.notify_user`
  * and by heartbeat safety nets for `EscalateToHuman` states) and stacks them in
  * the top-right of the main window.
  *
@@ -68,7 +68,7 @@ export default function Toaster() {
 
   useEffect(() => {
     let unlisten: (() => void) | null = null;
-    listen<ToastPayload>("pisci_toast", (event) => {
+    listen<ToastPayload>("piscis_toast", (event) => {
       const p = event.payload;
       if (!p || !p.message) return;
       const level = normalizeLevel(p.level);
@@ -108,23 +108,23 @@ export default function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pisci-toaster" role="region" aria-label="Piscis notifications">
+    <div className="piscis-toaster" role="region" aria-label="Piscis notifications">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`pisci-toast pisci-toast-${t.level}`}
+          className={`piscis-toast piscis-toast-${t.level}`}
           role={t.level === "critical" || t.level === "error" ? "alert" : "status"}
         >
-          <div className="pisci-toast-icon">{LEVEL_ICONS[t.level]}</div>
-          <div className="pisci-toast-body">
-            <div className="pisci-toast-title">{t.title}</div>
-            <div className="pisci-toast-message">{t.message}</div>
+          <div className="piscis-toast-icon">{LEVEL_ICONS[t.level]}</div>
+          <div className="piscis-toast-body">
+            <div className="piscis-toast-title">{t.title}</div>
+            <div className="piscis-toast-message">{t.message}</div>
             {t.poolId && (
-              <div className="pisci-toast-meta">pool: {t.poolId}</div>
+              <div className="piscis-toast-meta">pool: {t.poolId}</div>
             )}
           </div>
           <button
-            className="pisci-toast-close"
+            className="piscis-toast-close"
             onClick={() => dismiss(t.id)}
             aria-label="Dismiss"
             title="Dismiss"

@@ -9,7 +9,7 @@ import { RootState, koiActions } from "../../../store";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import { isInternalSession } from "../../../utils/session";
 import ConfirmDialog from "../../ConfirmDialog";
-import "./PisciInbox.css";
+import "./PiscisInbox.css";
 
 const INBOX_INITIAL_SIZE = 200;
 const INBOX_LAZY_STEP = 50;
@@ -40,7 +40,7 @@ function inboxMessageDisplayText(message: ChatMessage): string {
 }
 type InboxMode = "coordination" | "koiObserver";
 
-type PisciInboxProps = {
+type PiscisInboxProps = {
   mode?: InboxMode;
   /** Active pool session — scopes coordination / observer to this project. */
   poolSessionId?: string | null;
@@ -80,7 +80,7 @@ function isCoordinationSession(session: Session): boolean {
 function sessionBelongsToPool(session: Session, poolId: string, mode: InboxMode): boolean {
   const id = session.id ?? "";
   if (mode === "coordination") {
-    return id === `pisci_pool_${poolId}`;
+    return id === `piscis_pool_${poolId}`;
   }
   if (id.startsWith("koi_runtime_") || id.startsWith("koi_notify_")) {
     return id.endsWith(`_${poolId}`);
@@ -161,7 +161,7 @@ function inboxMessageRoleLabel(
         return role;
     }
   }
-  return role === "assistant" ? t("chat.pisci") : role;
+  return role === "assistant" ? t("chat.piscis") : role;
 }
 
 function sessionKindLabel(t: (key: string) => string, mode: InboxMode, session: Session): string {
@@ -172,16 +172,16 @@ function sessionKindLabel(t: (key: string) => string, mode: InboxMode, session: 
   }
   if (
     session.id === "heartbeat"
-    || session.id === "pisci_inbox_global"
+    || session.id === "piscis_inbox_global"
     || session.source === "heartbeat"
-    || session.source === "pisci_inbox_global"
+    || session.source === "piscis_inbox_global"
   ) {
     return t("pond.inboxGlobal");
   }
   return t("pond.inboxProject");
 }
 
-export default function PisciInbox({ mode = "coordination", poolSessionId = null }: PisciInboxProps) {
+export default function PiscisInbox({ mode = "coordination", poolSessionId = null }: PiscisInboxProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const kois = useSelector((s: RootState) => s.koi.kois) as KoiWithStats[];
@@ -376,8 +376,8 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
     e.stopPropagation();
     // Check if this inbox session is linked to an active pool
     let blocked = false;
-    if (session.id.startsWith("pisci_pool_")) {
-      const poolId = session.id.replace("pisci_pool_", "");
+    if (session.id.startsWith("piscis_pool_")) {
+      const poolId = session.id.replace("piscis_pool_", "");
       try {
         const pools = await poolApi.listSessions();
         const pool = pools.find((p) => p.id === poolId);
@@ -440,36 +440,36 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
   }, [mode, activeSession, kois]);
 
   return (
-    <div className="pisci-inbox">
-      <div className="pisci-inbox-sidebar">
-        <div className="pisci-inbox-sidebar-header">
+    <div className="piscis-inbox">
+      <div className="piscis-inbox-sidebar">
+        <div className="piscis-inbox-sidebar-header">
           <div>
-            <div className="pisci-inbox-title">{copy.title}</div>
-            <div className="pisci-inbox-subtitle">{copy.subtitle}</div>
+            <div className="piscis-inbox-title">{copy.title}</div>
+            <div className="piscis-inbox-subtitle">{copy.subtitle}</div>
           </div>
-          <button className="pisci-inbox-refresh" onClick={() => loadSessions().catch(console.error)}>
+          <button className="piscis-inbox-refresh" onClick={() => loadSessions().catch(console.error)}>
             {t("pond.inboxRefresh")}
           </button>
         </div>
 
-        <div className="pisci-inbox-session-list">
+        <div className="piscis-inbox-session-list">
           {loadingSessions && internalSessions.length === 0 && (
-            <div className="pisci-inbox-empty">{t("common.loading")}</div>
+            <div className="piscis-inbox-empty">{t("common.loading")}</div>
           )}
           {!loadingSessions && internalSessions.length === 0 && (
-            <div className="pisci-inbox-empty">{copy.empty}</div>
+            <div className="piscis-inbox-empty">{copy.empty}</div>
           )}
           {internalSessions.map((session) => (
             <div
               key={session.id}
-              className={`pisci-inbox-session ${session.id === activeSessionId ? "active" : ""}`}
+              className={`piscis-inbox-session ${session.id === activeSessionId ? "active" : ""}`}
               onClick={() => setActiveSessionId(session.id)}
               style={{ cursor: "pointer" }}
             >
-              <div className="pisci-inbox-session-top">
-                <span className="pisci-inbox-session-name">{session.title || session.id}</span>
+              <div className="piscis-inbox-session-top">
+                <span className="piscis-inbox-session-name">{session.title || session.id}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span className="pisci-inbox-session-kind">{sessionKindLabel(t, mode, session)}</span>
+                  <span className="piscis-inbox-session-kind">{sessionKindLabel(t, mode, session)}</span>
                   <button
                     title={t("common.delete")}
                     disabled={deletingId === session.id}
@@ -480,7 +480,7 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
                   >✕</button>
                 </span>
               </div>
-              <div className="pisci-inbox-session-meta">
+              <div className="piscis-inbox-session-meta">
                 <span>{formatTime(session.updated_at)}</span>
                 <span>{t("pond.inboxMessageCount", { count: session.message_count })}</span>
               </div>
@@ -489,25 +489,25 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
         </div>
       </div>
 
-      <div className="pisci-inbox-main">
+      <div className="piscis-inbox-main">
         {!activeSession && (
-          <div className="pisci-inbox-main-empty">
-            <div className="pisci-inbox-main-empty-icon">📬</div>
+          <div className="piscis-inbox-main-empty">
+            <div className="piscis-inbox-main-empty-icon">📬</div>
             <div>{copy.selectHint}</div>
           </div>
         )}
 
         {activeSession && (
           <>
-            <div className="pisci-inbox-main-header">
+            <div className="piscis-inbox-main-header">
               <div>
-                <div className="pisci-inbox-main-title">{activeSession.title || activeSession.id}</div>
-                <div className="pisci-inbox-main-meta">
+                <div className="piscis-inbox-main-title">{activeSession.title || activeSession.id}</div>
+                <div className="piscis-inbox-main-meta">
                   {sessionKindLabel(t, mode, activeSession)} · {copy.readonly}
                 </div>
               </div>
               <button
-                className="pisci-inbox-refresh"
+                className="piscis-inbox-refresh"
                 onClick={() => loadMessages(activeSession.id).catch(console.error)}
               >
                 {t("pond.inboxRefresh")}
@@ -515,23 +515,23 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
             </div>
 
             <div
-              className="pisci-inbox-messages"
+              className="piscis-inbox-messages"
               ref={messagesContainerRef}
               onScroll={handleScroll}
             >
               {loadingMessages && messages.length === 0 && (
-                <div className="pisci-inbox-empty">{t("common.loading")}</div>
+                <div className="piscis-inbox-empty">{t("common.loading")}</div>
               )}
               {!loadingMessages && messages.length === 0 && (
-                <div className="pisci-inbox-empty">{copy.noMessages}</div>
+                <div className="piscis-inbox-empty">{copy.noMessages}</div>
               )}
               {!loadingMessages && messages.length > 0 && visibleMessages.length === 0 && !hasMore && (
-                <div className="pisci-inbox-empty">{t("pond.inboxOnlyToolRows")}</div>
+                <div className="piscis-inbox-empty">{t("pond.inboxOnlyToolRows")}</div>
               )}
               {hasMore && (
                 <button
                   type="button"
-                  className="pisci-inbox-load-more-btn"
+                  className="piscis-inbox-load-more-btn"
                   disabled={loadingMore}
                   onClick={() => activeSessionId && loadOlderMessages(activeSessionId, messages.length)}
                 >
@@ -539,14 +539,14 @@ export default function PisciInbox({ mode = "coordination", poolSessionId = null
                 </button>
               )}
               {visibleMessages.map(({ message, text }) => (
-                <div key={message.id} className={`pisci-inbox-message pisci-inbox-message--${message.role}`}>
-                  <div className="pisci-inbox-message-header">
-                    <span className="pisci-inbox-message-role">
+                <div key={message.id} className={`piscis-inbox-message piscis-inbox-message--${message.role}`}>
+                  <div className="piscis-inbox-message-header">
+                    <span className="piscis-inbox-message-role">
                       {inboxMessageRoleLabel(t, mode, message.role, activeKoi?.name, activeKoi?.icon)}
                     </span>
-                    <span className="pisci-inbox-message-time">{formatTime(message.created_at)}</span>
+                    <span className="piscis-inbox-message-time">{formatTime(message.created_at)}</span>
                   </div>
-                  <div className="pisci-inbox-message-content"><InboxMessageContent content={text} /></div>
+                  <div className="piscis-inbox-message-content"><InboxMessageContent content={text} /></div>
                 </div>
               ))}
               <div ref={messagesEndRef} />

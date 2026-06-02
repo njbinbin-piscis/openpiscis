@@ -6,10 +6,10 @@ use async_trait::async_trait;
 /// the task as a single user message. No session is created, no DB writes.
 /// While the Fish runs, FishProgress events are forwarded to the parent session
 /// so the user can see real-time progress in the main Chat view.
-use pisci_kernel::agent::harness::HarnessConfig;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult, ToolSettings};
-use pisci_kernel::llm::{LlmMessage, MessageContent};
+use piscis_kernel::agent::harness::HarnessConfig;
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult, ToolSettings};
+use piscis_kernel::llm::{LlmMessage, MessageContent};
 use serde_json::{json, Value};
 use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{AppHandle, Emitter, Manager};
@@ -228,7 +228,7 @@ When you need to wait for an external event, background process, Koi/Fish respon
             content: MessageContent::text(&task),
         }];
 
-        let client = pisci_kernel::llm::build_client(
+        let client = piscis_kernel::llm::build_client(
             &provider,
             &api_key,
             if base_url.is_empty() {
@@ -257,7 +257,7 @@ When you need to wait for an external event, background process, Koi/Fish respon
             .build_registry(),
         );
 
-        let policy = Arc::new(pisci_kernel::policy::PolicyGate::with_profile_and_flags(
+        let policy = Arc::new(piscis_kernel::policy::PolicyGate::with_profile_and_flags(
             &workspace_root,
             &policy_mode,
             tool_rate_limit_per_minute,
@@ -269,7 +269,7 @@ When you need to wait for an external event, background process, Koi/Fish respon
         // literal does not leak here.
         let fish_compaction_settings = {
             let s = state.settings.lock().await;
-            pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
+            piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
         };
         let agent = HarnessConfig::for_fish(
             model,

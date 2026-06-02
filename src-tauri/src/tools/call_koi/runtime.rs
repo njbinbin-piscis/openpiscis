@@ -4,11 +4,11 @@
 //! Historically this module owned the entire multi-agent coordinator
 //! (execute_todo / handle_mention / resume_todo / replace_todo / watchdog
 //! / activate_pending / …). Those responsibilities now live in
-//! [`pisci_kernel::pool::coordinator`], and production desktop commands
+//! [`piscis_kernel::pool::coordinator`], and production desktop commands
 //! reach the kernel via [`crate::pool::bridge`].
 //!
 //! What remains here is deliberately scoped to the in-process Koi path
-//! Pisci still uses when it invokes a Koi as a tool call
+//! Piscis still uses when it invokes a Koi as a tool call
 //! (`call_koi` → [`execute_koi_agent`]), and the soft-fence retry that
 //! [`reconcile_managed_pool_completion`] hands off to after such a run
 //! exits with unreconciled claimed todos on the board.
@@ -465,7 +465,7 @@ impl KoiRuntime {
         workspace_override: Option<&str>,
         await_completion: bool,
     ) -> anyhow::Result<String> {
-        use pisci_kernel::agent::tool::{Tool, ToolContext, ToolSettings};
+        use piscis_kernel::agent::tool::{Tool, ToolContext, ToolSettings};
 
         if let Some(app) = self.try_get_app_handle() {
             let state = app.state::<crate::store::AppState>();

@@ -5,8 +5,8 @@ use crate::skills::loader::SkillLoader;
 use crate::store::{settings::SshServerConfig, Database, Settings};
 use crate::tools::user_tool::UserToolManifest;
 use async_trait::async_trait;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
-use pisci_kernel::notify::{NotificationLevel, NotificationRequest, NotificationTarget};
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::notify::{NotificationLevel, NotificationRequest, NotificationTarget};
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -252,7 +252,7 @@ impl Tool for AppControlTool {
                 "heartbeat_enabled": { "type": "boolean" },
                 "heartbeat_interval_mins": { "type": "integer" },
                 "heartbeat_prompt": { "type": "string" },
-                "pisci_personal_prompt": { "type": "string", "description": "Personal prompt applied only to Piscis chat, heartbeat, pool coordination, and scheduled task sessions. Does not affect Koi or Fish." },
+                "piscis_personal_prompt": { "type": "string", "description": "Personal prompt applied only to Piscis chat, heartbeat, pool coordination, and scheduled task sessions. Does not affect Koi or Fish." },
                 "feishu_app_id": { "type": "string" },
                 "feishu_app_secret": { "type": "string" },
                 "feishu_domain": { "type": "string" },
@@ -761,7 +761,7 @@ impl AppControlTool {
              - heartbeat_enabled: {hb_enabled}\n\
              - heartbeat_interval_mins: {hb_interval}\n\
              - heartbeat_prompt: {hb_prompt}\n\
-             - pisci_personal_prompt: {pisci_prompt_status}\n\
+             - piscis_personal_prompt: {piscis_prompt_status}\n\
              \nIM Gateways:\n\
              - feishu_enabled: {feishu_enabled}\n\
              - feishu_app_id: {feishu_app_id}\n\
@@ -805,7 +805,7 @@ impl AppControlTool {
             hb_enabled = s.heartbeat_enabled,
             hb_interval = s.heartbeat_interval_mins,
             hb_prompt = s.heartbeat_prompt,
-            pisci_prompt_status = if s.pisci_personal_prompt.trim().is_empty() {
+            piscis_prompt_status = if s.piscis_personal_prompt.trim().is_empty() {
                 "(not set)"
             } else {
                 "(set)"
@@ -914,7 +914,7 @@ impl AppControlTool {
         apply_bool!(heartbeat_enabled, "heartbeat_enabled");
         apply_u32!(heartbeat_interval_mins, "heartbeat_interval_mins");
         apply_str!(heartbeat_prompt, "heartbeat_prompt");
-        apply_str!(pisci_personal_prompt, "pisci_personal_prompt");
+        apply_str!(piscis_personal_prompt, "piscis_personal_prompt");
         apply_str!(feishu_app_id, "feishu_app_id");
         apply_str!(feishu_app_secret, "feishu_app_secret");
         apply_str!(feishu_domain, "feishu_domain");
@@ -1477,7 +1477,7 @@ impl AppControlTool {
 
         let mut request = NotificationRequest::new(title.clone(), message.clone())
             .with_level(level)
-            .with_source("pisci")
+            .with_source("piscis")
             .with_targets(targets);
         if let Some(pid) = pool_id.as_ref() {
             request = request.with_pool(pid.clone());
@@ -2728,7 +2728,7 @@ fn extract_skill_md_from_zip(zip_bytes: &[u8]) -> anyhow::Result<String> {
 }
 
 fn probe_command(cmd: &str, args: &[&str]) -> Option<String> {
-    let mut command = pisci_kernel::proc::std_command(cmd);
+    let mut command = piscis_kernel::proc::std_command(cmd);
     command.args(args);
     let output = command.output().ok()?;
     if output.status.success() {

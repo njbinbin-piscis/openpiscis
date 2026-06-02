@@ -1,4 +1,4 @@
-//! Desktop (Tauri) implementation of the `pisci-core` host traits.
+//! Desktop (Tauri) implementation of the `piscis-core` host traits.
 //!
 //! The kernel consumes these traits to surface events, prompt the user, attach
 //! platform-specific tools, and persist secrets. On desktop we back them onto:
@@ -13,15 +13,15 @@
 //! Creating a host is cheap (just clones `Arc`s). The resulting `DesktopHost`
 //! can be handed to kernel entry points as `Arc<dyn HostRuntime>`.
 
-use pisci_core::host::SubagentRuntime;
-use pisci_core::host::{
+use piscis_core::host::SubagentRuntime;
+use piscis_core::host::{
     ConfirmRequest, EventSink, HostRuntime, HostTools, InteractiveRequest, Notifier, PoolEvent,
     PoolEventSink, SecretsStore, ToolRegistryHandle,
 };
-use pisci_kernel::agent::plan::PlanStore;
-use pisci_kernel::agent::tool::{new_tool_registry_handle, ToolRegistry, ToolRegistryHandleExt};
-use pisci_kernel::pool::coordinator::CoordinatorConfig;
-use pisci_kernel::tools::NeutralToolsConfig;
+use piscis_kernel::agent::plan::PlanStore;
+use piscis_kernel::agent::tool::{new_tool_registry_handle, ToolRegistry, ToolRegistryHandleExt};
+use piscis_kernel::pool::coordinator::CoordinatorConfig;
+use piscis_kernel::tools::NeutralToolsConfig;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -299,7 +299,7 @@ impl Notifier for DesktopNotifier {
 ///
 /// ```ignore
 /// let host = DesktopHost::from_state(app.clone(), &state);
-/// let mut handle = pisci_kernel::agent::tool::new_tool_registry_handle();
+/// let mut handle = piscis_kernel::agent::tool::new_tool_registry_handle();
 /// host.host_tools().register(&mut handle);
 /// let registry = handle.into_registry().unwrap();
 /// ```
@@ -392,7 +392,7 @@ impl DesktopHostTools {
     /// kernel tools (`pool_chat`, `pool_org`) would receive `None` and
     /// silently drop @mention fan-out — Piscis could @-mention Kois in
     /// `pool_chat` and they would stay idle forever because
-    /// [`pisci_kernel::pool::services::send_pool_message`] short-circuits
+    /// [`piscis_kernel::pool::services::send_pool_message`] short-circuits
     /// the coordinator call when `subagent` is `None`.
     ///
     /// [`DesktopHost::from_state`] still wires the runtime explicitly
@@ -462,7 +462,7 @@ impl DesktopHostTools {
 impl HostTools for DesktopHostTools {
     fn register(&self, handle: &mut ToolRegistryHandle) {
         // 1) Neutral tools shared with the CLI host.
-        pisci_kernel::tools::register_neutral_tools(handle, &self.neutral_config());
+        piscis_kernel::tools::register_neutral_tools(handle, &self.neutral_config());
 
         // 2) Platform-specific desktop tools.
         let Some(registry) = handle.as_registry_mut() else {
@@ -715,7 +715,7 @@ impl DesktopHost {
             .path()
             .app_data_dir()
             .ok()
-            .or_else(|| Some(PathBuf::from(".pisci")));
+            .or_else(|| Some(PathBuf::from(".piscis")));
         // Reuse `DesktopEventSink` for both `EventSink` and `PoolEventSink`
         // so session events and pool events share a single
         // `AppHandle` + atomic emit path.
@@ -723,7 +723,7 @@ impl DesktopHost {
         let pool_event_sink_dyn: Arc<dyn PoolEventSink> = event_sink.clone();
 
         // Desktop Koi collaboration defaults to the same GUI process.
-        // `openpisci-headless` remains an optional CLI/eval host, not a
+        // `openpiscis-headless` remains an optional CLI/eval host, not a
         // required desktop sidecar.
         let subagent_runtime: Arc<dyn SubagentRuntime> =
             Arc::new(DesktopInProcessSubagentRuntime::new(app.clone()));
@@ -783,7 +783,7 @@ impl HostRuntime for DesktopHost {
         self.app
             .path()
             .app_data_dir()
-            .unwrap_or_else(|_| PathBuf::from(".pisci"))
+            .unwrap_or_else(|_| PathBuf::from(".piscis"))
     }
 
     fn pool_event_sink(&self) -> Arc<dyn PoolEventSink> {

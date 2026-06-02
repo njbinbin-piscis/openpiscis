@@ -1,4 +1,4 @@
-# Pisci Desktop — Build Guide
+# Piscis Desktop — Build Guide
 
 ## Windows Build (Recommended)
 
@@ -16,8 +16,8 @@
 
 ```powershell
 # Clone the repository
-git clone http://192.168.31.100:9980/njbinbin/piscidesktop.git
-cd piscidesktop
+git clone http://192.168.31.100:9980/njbinbin/piscisdesktop.git
+cd piscisdesktop
 
 # Install frontend dependencies
 npm install
@@ -31,7 +31,7 @@ npm run tauri build
 
 The installer will be at:
 ```
-src-tauri/target/release/bundle/nsis/Pisci_0.1.0_x64-setup.exe
+src-tauri/target/release/bundle/nsis/Piscis_0.1.0_x64-setup.exe
 ```
 
 ### Size Optimization
@@ -70,14 +70,14 @@ Note: Windows-specific tools (UIA, screen capture) are disabled on Linux via `#[
 
 ## First-Run Experience
 
-On first launch, Pisci detects if no API key is configured and shows the **Onboarding Wizard**:
+On first launch, Piscis detects if no API key is configured and shows the **Onboarding Wizard**:
 
 1. Welcome screen
 2. API key configuration (Anthropic Claude or OpenAI GPT)
 3. Workspace directory selection
 4. Ready to chat
 
-The wizard can be re-triggered by clearing `%APPDATA%\com.pisci.desktop\config.json`.
+The wizard can be re-triggered by clearing `%APPDATA%\com.piscis.desktop\config.json`.
 
 ## Signing (Optional)
 

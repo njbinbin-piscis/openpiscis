@@ -1,6 +1,6 @@
 /// WeChat iLink channel.
 ///
-/// In the direct QR-bind flow used by Pisci, we talk to Tencent iLink directly
+/// In the direct QR-bind flow used by Piscis, we talk to Tencent iLink directly
 /// by long-polling `getupdates` with the bound `bot_token`. For compatibility
 /// with the older OpenClaw plugin contract, we still keep a local HTTP server
 /// fallback when no `bot_token` is configured.
@@ -1155,7 +1155,7 @@ fn outbound_to_weixin_message(msg: &OutboundMessage) -> Value {
 
 /// Extract an `InboundMessage` from a `WeixinMessage` JSON value sent by the
 /// plugin. Text is preferred, but non-text user media (including voice) is
-/// preserved as a structured placeholder so Pisci can decide how to handle it.
+/// preserved as a structured placeholder so Piscis can decide how to handle it.
 fn weixin_message_to_inbound(msg: &Value) -> Option<InboundMessage> {
     // Only handle USER messages (message_type == 1).
     let msg_type = msg["message_type"].as_u64().unwrap_or(0);

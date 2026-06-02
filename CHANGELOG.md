@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Pisci Desktop are documented here.
+All notable changes to Piscis Desktop are documented here.
 This project follows [Semantic Versioning](https://semver.org/) and
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
 
@@ -9,7 +9,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.8.26] - 2026-05-31
 
 ### Fixed
-- **CI / Tauri bundle**: `pisci_compact_one` is now a `[[example]]` (bench-only) instead of `[[bin]]`, so release installers no longer expect a binary that is only built with `bench-compact`.
+- **CI / Tauri bundle**: `piscis_compact_one` is now a `[[example]]` (bench-only) instead of `[[bin]]`, so release installers no longer expect a binary that is only built with `bench-compact`.
 
 ---
 
@@ -17,10 +17,10 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 - **Heartbeat / org_spec**: consume `piscis-engine` with a stricter default heartbeat prompt — `HEARTBEAT_OK` is gated on `pool_org(read)` and explicit org_spec convergence checks (no hardcoded phase rules). Supervisor attention stays active when the board is quiet but global coordination may still be required.
-- **Kernel split**: pin `pisci-core` / `pisci-kernel` git dependency to the latest engine commit (`7c04d03`).
+- **Kernel split**: pin `piscis-core` / `piscis-kernel` git dependency to the latest engine commit (`7c04d03`).
 
 ### Fixed
-- **Pool heartbeat context**: per-pool heartbeat runs now remind Pisci to read org_spec before replying `HEARTBEAT_OK`.
+- **Pool heartbeat context**: per-pool heartbeat runs now remind Piscis to read org_spec before replying `HEARTBEAT_OK`.
 - **IDE Git panel**: clearer commit errors (`commitNeedStaged`, `gitNoProjectDir`); backend validates staged files and writes commit messages via `-F` (fixes silent commit failures).
 
 ---
@@ -29,16 +29,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Added
 - **`useScrollPrependedHistory` hook**: shared scroll-up pagination (layout restore, clickable load-more, short-viewport auto-fill) for message lists.
-- **Pool mention ack**: immediate Pisci `post_status` line when automated `@!Pisci` dispatch runs (system paths).
+- **Pool mention ack**: immediate Piscis `post_status` line when automated `@!Piscis` dispatch runs (system paths).
 
 ### Fixed
-- **`@!Pisci` pool dispatch**: forced `build_forced_mention_attention` so mention-triggered heartbeats no longer skip when the periodic cursor advanced; mention channel requires visible `pool_org(post_status)` replies.
+- **`@!Piscis` pool dispatch**: forced `build_forced_mention_attention` so mention-triggered heartbeats no longer skip when the periodic cursor advanced; mention channel requires visible `pool_org(post_status)` replies.
 - **Chat history lazy-load**: prepend scroll restore via `useLayoutEffect`, clickable「加载更多历史」, auto-load when the viewport is shorter than one screen.
-- **Pisci coordination console**: show tool-call rows with summaries; fix empty right pane with thousands of messages and a stuck「加载更多」.
+- **Piscis coordination console**: show tool-call rows with summaries; fix empty right pane with thousands of messages and a stuck「加载更多」.
 - **Collab / ChatPool lazy-load**: same prepend-scroll fixes as main chat.
 
 ### Changed
-- **Pool chat identity**: humans send as **`sender_id: pisci`** (act as Pisci coordinator); `user` sender rejected; `@!Pisci` self-delegation blocked — use **IDE Pisci CLI** for 1:1 Pisci chat (main session · Pool CLI).
+- **Pool chat identity**: humans send as **`sender_id: piscis`** (act as Piscis coordinator); `user` sender rejected; `@!Piscis` self-delegation blocked — use **IDE Piscis CLI** for 1:1 Piscis chat (main session · Pool CLI).
 - **Pool `@` autocomplete**: Koi only; hint documents **Ctrl+Enter** send and **Enter** newline.
 
 ---
@@ -48,7 +48,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ### Added
 - **Chat UI Protocol v2**: wizard (`mode: "wizard"` + `steps`), layout blocks (`row` / `column` / `card`), display blocks (`image`, `code_preview`, `progress`, `link_list`), `file_picker`, and `data` model with `__data_model__` on submit/action.
 - **Non-terminal actions**: button `emit: "action"`; companion tools `chat_ui_patch` (live card updates) and `chat_ui_listen` (resume blocking submit on same `request_id`).
-- **Catalog**: `docs/pisci.chat.catalog.json` — allowed block types and agent authoring constraints.
+- **Catalog**: `docs/piscis.chat.catalog.json` — allowed block types and agent authoring constraints.
 
 ### Changed
 - Interactive card renderer and agent prompts updated for v2; v1 cards remain compatible.
@@ -76,7 +76,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 - **Interactive cards no longer leak across sessions** or duplicate at the bottom after `done`.
 
 ### Changed
-- **`chat_ui` tool schema** and Pisci system prompt reference Protocol v1 and the protocol doc.
+- **`chat_ui` tool schema** and Piscis system prompt reference Protocol v1 and the protocol doc.
 
 ---
 
@@ -99,12 +99,12 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Fixed
 - **Tab switch no longer discards Chat / Pond state**: main views stay mounted (hidden) after first visit so switching pages does not remount and lose in-progress UI state.
-- **`@!pisci` pool mentions now trigger dispatch**: `contains_pisci_mention` recognizes `@!pisci` (previously only matched the `@pisci` substring, so forced-mention scheduling never fired).
+- **`@!piscis` pool mentions now trigger dispatch**: `contains_piscis_mention` recognizes `@!piscis` (previously only matched the `@piscis` substring, so forced-mention scheduling never fired).
 - **Koi observation console filtered by current project**: inbox / observation streams only show messages for the active pool session suffix and related todo sessions.
-- **Pisci coordination console shows pool traffic again**: coordination feed scoped to `pisci_pool_{id}` instead of an empty mixed filter.
+- **Piscis coordination console shows pool traffic again**: coordination feed scoped to `piscis_pool_{id}` instead of an empty mixed filter.
 - **Kanban uses the current project only**: removed the redundant project dropdown; board always reflects `filterSessionId`.
 - **Collab IDE Explorer right-click menu**: same VS Code–style context menu wiring as the standalone Pond IDE view.
-- **Pond CLI tab lists existing CLI sessions**: sessions created with `source: "cli"` surface under「鱼池 CLI」; switching to the tab refreshes the session list; IDE assistant reuses existing `Pisci CLI —` sessions instead of duplicating.
+- **Pond CLI tab lists existing CLI sessions**: sessions created with `source: "cli"` surface under「鱼池 CLI」; switching to the tab refreshes the session list; IDE assistant reuses existing `Piscis CLI —` sessions instead of duplicating.
 
 ### Changed
 - **Heartbeat on by default** (`heartbeat_enabled` default `true`) with an updated default prompt covering inbox/todos, project convention checks (§3), and scheduled maintenance (§4).
@@ -121,7 +121,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.8.17] - 2026-05-28
 
 ### Added
-- **Windows UIA mouse precision calibration** (Debug → UIA Test): full-screen 5-point overlay, user ground-truth clicks, Pisci real-click verification via `uia.click` + `GetCursorPos`, OLS linear fit per monitor, persisted to `uia_calibration.json` with DPI/layout fingerprint invalidation.
+- **Windows UIA mouse precision calibration** (Debug → UIA Test): full-screen 5-point overlay, user ground-truth clicks, Piscis real-click verification via `uia.click` + `GetCursorPos`, OLS linear fit per monitor, persisted to `uia_calibration.json` with DPI/layout fingerprint invalidation.
 - **Calibration applied to UIA mouse paths**: `click`, `double_click`, `right_click`, `hover`, `scroll`, and `drag_drop` automatically apply the active per-monitor transform; internal `_skip_calibration` bypass for the calibration run itself.
 
 ### Fixed
@@ -149,16 +149,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
   - Root cause: Monaco fires `onChange` with the new content during its internal model update (before React's `useEffect` runs). The previous guard used `lastContentRef` which was only updated in `useEffect` — too late. The `onChange` handler compared new content against the OLD file's content, saw a mismatch, and set `isDirty = true`.
   - Fix: `CodeEditor` now tracks `lastPathRef` and resets `lastContentRef.current` synchronously during render when `tab.path` changes. Monaco's subsequent `onChange` fires with content that matches `lastContentRef.current`, so the tab stays clean.
 - **`assign_koi` no longer crashes with a cryptic "FOREIGN KEY constraint failed"** (reported as "尝试通过 assign_koi 将任务分配给 Contrarian，但系统返回了 FOREIGN KEY constraint failed 错误").
-  - Root cause: `pool::services::assign_koi` (`src-tauri/pisci-kernel/src/pool/services.rs`) trimmed the caller-supplied `koi_id` and passed it straight into `create_koi_todo`'s `owner_id`, which carries `FOREIGN KEY(owner_id) REFERENCES kois(id)`. If the Koi had been removed (e.g. by the startup `dedup_kois`) or was passed as a display name that didn't match any current id, SQLite rejected the INSERT with a generic FK error instead of a useful diagnostic.
+  - Root cause: `pool::services::assign_koi` (`src-tauri/piscis-kernel/src/pool/services.rs`) trimmed the caller-supplied `koi_id` and passed it straight into `create_koi_todo`'s `owner_id`, which carries `FOREIGN KEY(owner_id) REFERENCES kois(id)`. If the Koi had been removed (e.g. by the startup `dedup_kois`) or was passed as a display name that didn't match any current id, SQLite rejected the INSERT with a generic FK error instead of a useful diagnostic.
   - Fix: `assign_koi` now calls `resolve_koi_identifier` up-front (same helper used by `execute_managed_koi_turn`), replaces the raw input with the canonical `kois.id`, and bails with an actionable error listing the available Kois when the lookup fails.
-- **`@!Pisci` pool mentions no longer crash with "FOREIGN KEY constraint failed"** (reported as "@!Pisci 在聊天室里发送多次都没有任何回应").
-  - Root cause: `coordinator::handle_mention` (`src-tauri/pisci-kernel/src/pool/coordinator.rs`) created a `koi_todo` with `owner_id = "pisci"`, but `"pisci"` is a synthetic sentinel that is NOT seeded by `ensure_starter_kois` (only Architect/Coder/Reviewer are). With `PRAGMA foreign_keys=ON` and `FOREIGN KEY(owner_id) REFERENCES kois(id)`, the INSERT failed silently on every mention, so the todo was never persisted and the subsequent `spawn_mention_dispatch` had nothing to act on.
-  - Fix: `handle_mention` now calls `db.upsert_koi_with_id("pisci", "Pisci")` (`INSERT OR IGNORE`) inside the same write closure before creating the todo. The upsert is idempotent and cheap, so it's safe on every call.
-- **Unused `spawn_immediate_dispatch` helper suppressed** (`src-tauri/src/pisci/heartbeat.rs`).
+- **`@!Piscis` pool mentions no longer crash with "FOREIGN KEY constraint failed"** (reported as "@!Piscis 在聊天室里发送多次都没有任何回应").
+  - Root cause: `coordinator::handle_mention` (`src-tauri/piscis-kernel/src/pool/coordinator.rs`) created a `koi_todo` with `owner_id = "piscis"`, but `"piscis"` is a synthetic sentinel that is NOT seeded by `ensure_starter_kois` (only Architect/Coder/Reviewer are). With `PRAGMA foreign_keys=ON` and `FOREIGN KEY(owner_id) REFERENCES kois(id)`, the INSERT failed silently on every mention, so the todo was never persisted and the subsequent `spawn_mention_dispatch` had nothing to act on.
+  - Fix: `handle_mention` now calls `db.upsert_koi_with_id("piscis", "Piscis")` (`INSERT OR IGNORE`) inside the same write closure before creating the todo. The upsert is idempotent and cheap, so it's safe on every call.
+- **Unused `spawn_immediate_dispatch` helper suppressed** (`src-tauri/src/piscis/heartbeat.rs`).
   - Workspace-wide lint policy denies dead code as errors. The function is superseded by `spawn_mention_dispatch` (pool-scoped); added `#[allow(dead_code)]` and a doc note so the crate still compiles.
-- **`screen_capture` / `browser screenshot` can now persist the image to disk** (reported as "Pisci 说截图保存为 artifact 了，但 Artifacts 面板是空的").
-  - Root cause: both tools returned the screenshot only as a base64 blob inside the tool result. Pisci has no built-in "decode base64 → write file" action, so there was never a real file on disk for `app_control(action="artifact_submit")` to reference. The system-prompt rule for deliverables tracking told Pisci to submit the image path, but no such path existed.
-  - Fix: `screen_capture` now accepts an optional `output_path` parameter (absolute path); when provided, the encoded bytes are written to that path before the tool returns. `browser(action="screenshot")` exposes the same capability via its existing `save_path` field. The result string includes an explicit "Saved to disk: <path>" line (or a WARNING on failure) and a reminder to call `artifact_submit` with that path. The Pisci system prompt's "Deliverables Tracking" rule now spells out this two-step flow and explicitly tells the model: "Never tell the user you have saved a screenshot unless you actually called `screen_capture` with `output_path` and received the 'Saved to disk:' confirmation."
+- **`screen_capture` / `browser screenshot` can now persist the image to disk** (reported as "Piscis 说截图保存为 artifact 了，但 Artifacts 面板是空的").
+  - Root cause: both tools returned the screenshot only as a base64 blob inside the tool result. Piscis has no built-in "decode base64 → write file" action, so there was never a real file on disk for `app_control(action="artifact_submit")` to reference. The system-prompt rule for deliverables tracking told Piscis to submit the image path, but no such path existed.
+  - Fix: `screen_capture` now accepts an optional `output_path` parameter (absolute path); when provided, the encoded bytes are written to that path before the tool returns. `browser(action="screenshot")` exposes the same capability via its existing `save_path` field. The result string includes an explicit "Saved to disk: <path>" line (or a WARNING on failure) and a reminder to call `artifact_submit` with that path. The Piscis system prompt's "Deliverables Tracking" rule now spells out this two-step flow and explicitly tells the model: "Never tell the user you have saved a screenshot unless you actually called `screen_capture` with `output_path` and received the 'Saved to disk:' confirmation."
 - **Vision-loop detector no longer fires during normal desktop automation** (reported as "在 desktop automation 操作中频繁出现系统提示消息").
   - Root cause: the previous session started refactoring the detector but left three helper functions (`is_vision_tool`, `is_substantive_desktop_action`, `vision_loop_warning`) undefined, causing a compile error. Additionally, the thresholds (Windows=5, Linux=10) were too strict, and the detector did not distinguish between passive observation (`move_mouse` + `screen_capture`) and substantive actions (`click`, `type_text`).
   - Fix: implemented all three missing helpers. Thresholds raised to Windows=8, Linux=15. On Linux/macOS, `desktop_automation(action="move_mouse"|"get_cursor_position")` is treated as a legitimate calibration step — the `move→screenshot→move→screenshot` pattern no longer increments the vision-only streak counter. On Windows, `uia` calls are recognized as substantive actions (UIA can target elements without screenshot verification). `is_substantive_desktop_action` correctly distinguishes click/type/hotkey/drag/scroll/launch_app from observation-only actions.
@@ -168,19 +168,19 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.8.15] - 2026-05-25
 
 ### Added
-- **Mandatory deliverables-tracking guidance in Pisci's system prompt** (reported as "every session's artifacts list is empty").
-  - Added a new `## Deliverables Tracking (Mandatory)` section to the core Pisci system prompt in `src-tauri/src/commands/chat.rs`. Pisci must now call `app_control(action="artifact_submit", ...)` in the SAME turn it produces each tangible output:
+- **Mandatory deliverables-tracking guidance in Piscis's system prompt** (reported as "every session's artifacts list is empty").
+  - Added a new `## Deliverables Tracking (Mandatory)` section to the core Piscis system prompt in `src-tauri/src/commands/chat.rs`. Piscis must now call `app_control(action="artifact_submit", ...)` in the SAME turn it produces each tangible output:
     - Files created / modified via `file_write` / `file_edit` → `artifact_type="file"`, absolute path
     - Screenshots (`screenshot`, `browser_screenshot`, `screen_capture`) → `artifact_type="image"`
     - Web resources (reports, published URLs, documentation) → `artifact_type="link"`
     - Prose-only reports / analyses → `artifact_type="report"` with `content_summary`
-    - Koi-reported file paths from `pool_chat` → Pisci submits each one as an artifact on the user-facing session
+    - Koi-reported file paths from `pool_chat` → Piscis submits each one as an artifact on the user-facing session
   - Added a "self-check before ending a run" rule: before the final user-facing reply, scan the turn for any file path written, screenshot captured, or URL delivered and submit any that are still missing from the artifacts list.
-- **Koi deliverables reporting format** (`src-tauri/pisci-core/src/koi_prompt.rs` — Reconciling step 3a). Koi must now post file outputs as a `Deliverables:` list of absolute paths (one per line) so Pisci can reliably parse them and surface each as an artifact on the user's session.
+- **Koi deliverables reporting format** (`src-tauri/piscis-core/src/koi_prompt.rs` — Reconciling step 3a). Koi must now post file outputs as a `Deliverables:` list of absolute paths (one per line) so Piscis can reliably parse them and surface each as an artifact on the user's session.
 - The Artifacts panel in the Chat UI (`src/components/Chat/index.tsx` → `ArtifactsPanel`) already supported click-to-open: `openPath(artifact.uri!)` for local files and `<a target="_blank">` for URLs — no UI change needed; the panel now has artifacts to display.
 - **Chat session list now classifies sessions into three category tabs**: **Chat / IM / Pond CLI** (i18n: `chat.filterChat` / `chat.filterIM` / `chat.filterCli`).
-  - `classifySession()` (`src/components/Chat/index.tsx`) now returns a three-way `SessionKind`: `"chat" | "im" | "cli"`. Pond-CLI sessions (`source === "cli"`, set by `src-tauri/pisci-kernel/src/headless/mod.rs` and `src-tauri/pisci-cli/src/runner.rs`) are routed to their own tab instead of being mixed into IM.
-  - The previous "All" tab has been removed. The default filter is now `"chat"`. Internal/system sessions (`pisci_pool`, `heartbeat`, `pisci_inbox_*`, `pisci_heartbeat_*`, `koi_*`, …) remain hidden via `isInternalSession`.
+  - `classifySession()` (`src/components/Chat/index.tsx`) now returns a three-way `SessionKind`: `"chat" | "im" | "cli"`. Pond-CLI sessions (`source === "cli"`, set by `src-tauri/piscis-kernel/src/headless/mod.rs` and `src-tauri/piscis-cli/src/runner.rs`) are routed to their own tab instead of being mixed into IM.
+  - The previous "All" tab has been removed. The default filter is now `"chat"`. Internal/system sessions (`piscis_pool`, `heartbeat`, `piscis_inbox_*`, `piscis_heartbeat_*`, `koi_*`, …) remain hidden via `isInternalSession`.
   - Pond-CLI entries show a 🐟 source icon (added to `sourceIcon()`).
 
 ### Fixed
@@ -237,12 +237,12 @@ This project follows [Semantic Versioning](https://semver.org/) and
 - **Default LLM max output tokens raised from 4096 to 8192.** Applies to:
   - `Settings` form initial state (`src/components/Settings/index.tsx` — first-install default)
   - `Settings` max-tokens input fallback (`?? 8192` instead of `?? 4096`, so an unset field renders as 8192)
-  - Rust `default_max_tokens()` in `pisci-kernel/src/store/settings.rs` (backend default when a user's config predates the field)
+  - Rust `default_max_tokens()` in `piscis-kernel/src/store/settings.rs` (backend default when a user's config predates the field)
   - The onboarding wizard saves only `provider/model/policy_mode/api_key`, so new users inherit the backend default — which is now 8192 automatically.
 - This bumps `compute_context_budget` from the 64k tier to the 128k tier for users who haven't set `context_window` manually — giving the agent more input room to work with on top of the larger per-response output allowance.
 
 ### Fixed
-- **CI `cargo fmt --check` failure on `rust-kernel` job** (v0.8.11 tag run #287). The previous `detect()` method signature in `pisci-kernel/src/agent/loop_.rs` was formatted on one line, exceeding `rustfmt`'s 100-char width threshold. Re-formatted with `cargo fmt` so the signature spans multiple lines. This was the only failure on the last CI run; frontend / clippy / tests / headless / desktop-cross jobs were all green.
+- **CI `cargo fmt --check` failure on `rust-kernel` job** (v0.8.11 tag run #287). The previous `detect()` method signature in `piscis-kernel/src/agent/loop_.rs` was formatted on one line, exceeding `rustfmt`'s 100-char width threshold. Re-formatted with `cargo fmt` so the signature spans multiple lines. This was the only failure on the last CI run; frontend / clippy / tests / headless / desktop-cross jobs were all green.
 
 ---
 
@@ -262,7 +262,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.8.10] - 2026-05-28
 
 ### Fixed
-- **Vision-model screenshot-analyze loop**: when driving desktop automation through a vision model (WeChat/QQ input, screen-control tasks), the agent occasionally gets stuck in a "describe-then-verify" loop — `move_mouse → take_screenshot → screen_analyze → move → screenshot → analyze …` — repeatedly re-describing the scene without ever committing to the target action (click, type, press Enter). Generic loop detectors (same-input repeat, no-progress streak, ping-pong) all miss this because each iteration uses fresh coordinates / fresh screenshots / different analysis prompts, so hashes differ. Added a dedicated **VisionLoop density detector** in `pisci-kernel/src/agent/loop_.rs`: if 3 or more of the last 8 tool calls are screenshot / vision-analyze (matched by substring against `screenshot`, `screen_analyze`, `screen_capture`, `vision_analyze`, `vision_context`), a Warning-level nudge is injected telling the model to stop over-verifying and commit to a concrete action sequence (click input → type text → press Enter, all in one turn, no more screenshots). A cooldown of 3 real-action turns prevents the nudge from firing on every single iteration. The screenshot tool itself is never *blocked* (only nudged) — legitimate multi-step vision work still proceeds, just with periodic prompts to keep the agent on-task.
+- **Vision-model screenshot-analyze loop**: when driving desktop automation through a vision model (WeChat/QQ input, screen-control tasks), the agent occasionally gets stuck in a "describe-then-verify" loop — `move_mouse → take_screenshot → screen_analyze → move → screenshot → analyze …` — repeatedly re-describing the scene without ever committing to the target action (click, type, press Enter). Generic loop detectors (same-input repeat, no-progress streak, ping-pong) all miss this because each iteration uses fresh coordinates / fresh screenshots / different analysis prompts, so hashes differ. Added a dedicated **VisionLoop density detector** in `piscis-kernel/src/agent/loop_.rs`: if 3 or more of the last 8 tool calls are screenshot / vision-analyze (matched by substring against `screenshot`, `screen_analyze`, `screen_capture`, `vision_analyze`, `vision_context`), a Warning-level nudge is injected telling the model to stop over-verifying and commit to a concrete action sequence (click input → type text → press Enter, all in one turn, no more screenshots). A cooldown of 3 real-action turns prevents the nudge from firing on every single iteration. The screenshot tool itself is never *blocked* (only nudged) — legitimate multi-step vision work still proceeds, just with periodic prompts to keep the agent on-task.
 
 ---
 
@@ -281,7 +281,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 - **IDE Explorer inline-create UX**: replaced the system `window.prompt()` dialog with a VS Code–style inline text input that appears at the correct depth in the file tree. Inside-directory selection creates inside that directory; file selection creates at sibling level; no selection creates at project root. Enter commits, Escape cancels, the target directory auto-expands, and the input auto-focuses.
 
 ### Added
-- **Pisci CLI assistant panel**: new 🤖 button in the right-side icon strip (above the terminal toggle) opens a CLI-style chat in the same bottom slot as the terminal. Designed for users unfamiliar with shell commands — ask in plain language ("build the project", "git status", "find TODOs in src/") and Pisci runs the corresponding actions through its standard tool stack. Implementation: `src/components/Pond/IDE/AssistantPanel.tsx` lazily creates a per-project `Pisci CLI — {project}` session bound to the project workspace, streams `agent_event_*` `text_delta` to a monospaced log, and surfaces tool start/end + errors as muted lines. Terminal and assistant are mutually exclusive in the bottom slot; toggling one closes the other. Localized via `ide.assistant`, `ide.assistantTitle`, `ide.assistantHint`, `ide.assistantInputPlaceholder`, `ide.assistantSend`, `ide.assistantClear`.
+- **Piscis CLI assistant panel**: new 🤖 button in the right-side icon strip (above the terminal toggle) opens a CLI-style chat in the same bottom slot as the terminal. Designed for users unfamiliar with shell commands — ask in plain language ("build the project", "git status", "find TODOs in src/") and Piscis runs the corresponding actions through its standard tool stack. Implementation: `src/components/Pond/IDE/AssistantPanel.tsx` lazily creates a per-project `Piscis CLI — {project}` session bound to the project workspace, streams `agent_event_*` `text_delta` to a monospaced log, and surfaces tool start/end + errors as muted lines. Terminal and assistant are mutually exclusive in the bottom slot; toggling one closes the other. Localized via `ide.assistant`, `ide.assistantTitle`, `ide.assistantHint`, `ide.assistantInputPlaceholder`, `ide.assistantSend`, `ide.assistantClear`.
 
 ---
 
@@ -299,7 +299,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Fixed
 - **Chat-room session-switch scroll position**: switching between Collab projects landed at the first message instead of the latest one. Root cause: a single `requestAnimationFrame` after the messages array changed fired before `MessageBubble` had finished progressive markdown / code-block layout, so `scrollHeight` was still smaller than the final value. Replaced with a `ResizeObserver` that pins the container to the bottom for ~600ms while content settles.
-- **@!Pisci no response in chat room**: `coordinator::handle_mention` only records `@!Pisci` as a board todo (because Pisci is not a Koi and `activate_pending_todos` skips `db.get_koi("pisci") == None`); execution then waited for the periodic heartbeat timer (up to `heartbeat_interval_mins`). Added an immediate `dispatch_heartbeat` fan-out from `send_pool_message` so `@!Pisci` mentions are processed right away.
+- **@!Piscis no response in chat room**: `coordinator::handle_mention` only records `@!Piscis` as a board todo (because Piscis is not a Koi and `activate_pending_todos` skips `db.get_koi("piscis") == None`); execution then waited for the periodic heartbeat timer (up to `heartbeat_interval_mins`). Added an immediate `dispatch_heartbeat` fan-out from `send_pool_message` so `@!Piscis` mentions are processed right away.
 - **KoiManager nested scrollbars + flicker**: the wide modal (`.koi-modal--wide`) and its inner `.koi-manager` both had `overflow-y: auto`, producing a barely-scrollable outer scrollbar and a flicker when the wheel switched between them. The modal is now a flex column with `overflow: hidden`; the inner manager owns scroll with `scrollbar-gutter: stable` to prevent layout flicker.
 
 ---
@@ -318,8 +318,8 @@ This project follows [Semantic Versioning](https://semver.org/) and
 - **@mention autocomplete trigger**: typing `@` now immediately shows the agent dropdown; previously the empty-string filter was treated as falsy, preventing the list from appearing until additional characters were typed.
 - **@mention dropdown keyboard navigation**: up/down arrow keys now scroll the highlighted item into view when it moves outside the visible area.
 - **Missing i18n keys**: IDE file preview area now shows localized placeholder text (`ide.openFileHint`, `ide.searchHint`, `ide.gitHint`) instead of raw key strings.
-- **@!Pisci mention dispatch**: sending `@!Pisci` in a new project now correctly creates a board todo owned by the Pisci coordinator; previously `parse_mention_targets` only iterated DB Kois and Pisci (not being a Koi) was silently ignored.
-- **Koi stuck in "busy" state**: when Pisci manually completes a Koi's todo via `pool_org`, the Koi's status is now reset to "idle" instead of remaining permanently busy.
+- **@!Piscis mention dispatch**: sending `@!Piscis` in a new project now correctly creates a board todo owned by the Piscis coordinator; previously `parse_mention_targets` only iterated DB Kois and Piscis (not being a Koi) was silently ignored.
+- **Koi stuck in "busy" state**: when Piscis manually completes a Koi's todo via `pool_org`, the Koi's status is now reset to "idle" instead of remaining permanently busy.
 - **Timezone consistency**: all system prompt time injections now use UTC (`chrono::Utc::now()`) with an explicit "UTC" label, preventing 8-hour offset confusion when the agent compares prompt time with DB timestamps (which are always UTC/RFC 3339).
 - **Chat room scroll position on session switch**: switching between project chat rooms now reliably scrolls to the latest messages at the bottom. Replaced fragile `no-deps useEffect` + `initialLoadDoneRef` pattern with a `[activeSessionId, messages.length]` effect guarded by `scrolledSessionRef`.
 
@@ -335,7 +335,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Added
 - **First-class Language Server Protocol (LSP) integration**:
-  - New `pisci-desktop` `lsp` module: `LspManager` spawns and lifecycle-manages per-project+language LSP processes (rust-analyzer, typescript-language-server, pyright, clangd) auto-detected from `PATH`. Each session gets its own WebSocket bridge that frames LSP JSON-RPC for the front-end.
+  - New `piscis-desktop` `lsp` module: `LspManager` spawns and lifecycle-manages per-project+language LSP processes (rust-analyzer, typescript-language-server, pyright, clangd) auto-detected from `PATH`. Each session gets its own WebSocket bridge that frames LSP JSON-RPC for the front-end.
   - Monaco IDE wires to the bridge through `monaco-languageclient` + `vscode-ws-jsonrpc`, delivering diagnostics, hover, completion, go-to-definition, references, document symbols, and rename inside the embedded editor.
   - New Tauri commands `ide_lsp_list_languages` / `ide_lsp_start` / `ide_lsp_stop`.
 - **`lsp` agent tool**: actions `diagnostics`, `hover`, `complete`, `definition`, `references`, `rename`. The agent can now navigate and understand code without grepping.
@@ -349,7 +349,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 - **Windows console popup on every IDE Search / enterprise capability check**: `rg` (search) and `npx`/`npx.cmd` (enterprise node check) were spawned without `CREATE_NO_WINDOW`, causing a blue console window to flash on every keystroke in the Search panel and every time the enterprise settings page was opened. Both sites now use the new centralised spawn helper.
 
 ### Added
-- **`pisci_kernel::proc::{tokio_command, std_command}` — centralised popup-safe spawn helpers**: a single module now applies `CREATE_NO_WINDOW = 0x0800_0000` on Windows for every child process spawned by the application. All call sites across `pisci-kernel` and `pisci-desktop` (~50 sites) have been migrated.
+- **`piscis_kernel::proc::{tokio_command, std_command}` — centralised popup-safe spawn helpers**: a single module now applies `CREATE_NO_WINDOW = 0x0800_0000` on Windows for every child process spawned by the application. All call sites across `piscis-kernel` and `piscis-desktop` (~50 sites) have been migrated.
 - **`clippy::disallowed_methods` workspace lint**: `src-tauri/clippy.toml` bans `tokio::process::Command::new` and `std::process::Command::new` with a clear error message. This makes a missing-`CREATE_NO_WINDOW` mistake structurally impossible going forward and will be caught in CI. Build scripts and integration-test binaries are properly opted out via `#[allow(clippy::disallowed_methods)]`.
 - **Frontend file-change refresh debounce (250 ms)**: `IDE/index.tsx` now coalesces `ide-file-changed` events with a 250 ms trailing-edge debounce. A save-burst of 50 files from Koi agents now triggers one pair of `loadFileTree + loadGitStatus` instead of 50, eliminating the process storm that previously caused the agent to appear to be looping.
 
@@ -358,8 +358,8 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ### Fixed
 - **Vision image re-injection loop: same screenshot re-processed every iteration causing LLM to output identical content**: `inject_selected_context` injects selected vision artifacts into `req_messages` (a per-call local variable). Since `req_messages` is discarded after each LLM call, the persistent `messages` vector never received the vision analysis text. On every subsequent iteration, the same selected images were re-injected, the vision delegate (or main model) produced the same description, and the main LLM saw an identical context — causing it to output the same response repeatedly. Fixed by calling `vision::clear_selection()` immediately after images have been consumed by `inject_selected_context`, for both the vision-delegate path and the main-model-as-vision path. Agents can re-select via `vision_context(action="select")` if they need to examine an image again.
 - **Todo reminder injection loop: agent loops indefinitely when it has unfinished todos but emits no tool calls**: when the LLM returned a text-only response with unfinished plan todos, the loop injected a reminder message and continued — but there was no upper bound, so if the model kept producing text without tool calls the reminder was injected forever. Added `TODO_REMINDER_MAX = 3` cap: after 3 consecutive reminder injections the loop exits normally.
-- **Vision validation test image rejected by Qwen/Alibaba models**: the 1×1 transparent PNG used to probe vision support was rejected by Qwen3.6-plus with "image length and width do not meet model restrictions" (minimum 10×10). Replaced the test image with the project's own pisci icon (512×512, embedded via `include_bytes!`). Also added an `is_image_size_error` guard so image-dimension rejection is correctly interpreted as "model supports vision" rather than "model does not support vision".
-- **`tauri.conf.json` version not bumped to match release tag**: Tauri reads `version` from `tauri.conf.json` to name build artefacts (e.g. `OpenPisci_0.7.35_amd64.deb`). This field was left at 0.7.35 when the v0.7.36 tag was cut, so all artefact filenames showed the wrong version. Now kept in sync with `package.json` and `Cargo.toml`.
+- **Vision validation test image rejected by Qwen/Alibaba models**: the 1×1 transparent PNG used to probe vision support was rejected by Qwen3.6-plus with "image length and width do not meet model restrictions" (minimum 10×10). Replaced the test image with the project's own piscis icon (512×512, embedded via `include_bytes!`). Also added an `is_image_size_error` guard so image-dimension rejection is correctly interpreted as "model supports vision" rather than "model does not support vision".
+- **`tauri.conf.json` version not bumped to match release tag**: Tauri reads `version` from `tauri.conf.json` to name build artefacts (e.g. `OpenPiscis_0.7.35_amd64.deb`). This field was left at 0.7.35 when the v0.7.36 tag was cut, so all artefact filenames showed the wrong version. Now kept in sync with `package.json` and `Cargo.toml`.
 
 ### Fixed
 - **Vision model delegation broken: separate vision model ignored, "missing model parameter" error**: when a non-vision main model was paired with a separate vision model (e.g. DeepSeek + qwen3.6-plus), the vision model name was never passed to the API — `delegate_vision_analysis()` always used `model: ""` in the request, causing providers to reject it. Additionally, `vision_base_url` was never forwarded to the vision delegate client, breaking custom endpoints (DashScope, etc.). Fixed by:
@@ -391,7 +391,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.7.23] - 2026-05-21
 
 ### Fixed
-- **Cancelled streaming replies now keep partial assistant text**: if a streaming LLM response is cancelled after some tokens have already arrived, Pisci now preserves that partial assistant output in session history instead of dropping it, and a regression test covers this path.
+- **Cancelled streaming replies now keep partial assistant text**: if a streaming LLM response is cancelled after some tokens have already arrived, Piscis now preserves that partial assistant output in session history instead of dropping it, and a regression test covers this path.
 
 ## [0.7.22] - 2026-05-21
 
@@ -401,7 +401,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
 ## [0.7.21] - 2026-05-21
 
 ### Fixed
-- **WeChat inbound media now arrives as real files**: image, voice, file, and video messages from the iLink gateway are now downloaded from the WeChat CDN, decrypted with AES-128-ECB, and forwarded into Pisci with real attachment bytes instead of placeholder notifications.
+- **WeChat inbound media now arrives as real files**: image, voice, file, and video messages from the iLink gateway are now downloaded from the WeChat CDN, decrypted with AES-128-ECB, and forwarded into Piscis with real attachment bytes instead of placeholder notifications.
 - **WeChat outbound media compatibility**: outbound CDN media payloads now encode `aes_key` in the iLink SDK's base64-hex format, improving compatibility with WeChat clients that previously showed attachments as expired or already cleared.
 
 ## [0.7.19] - 2026-05-10
@@ -451,7 +451,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
      turn no matter what the user actually wrote.
   
   Fixed by switching `get_messages_latest`, `get_messages`, and
-  `get_messages_older` in [db.rs](src-tauri/pisci-kernel/src/store/db.rs) to
+  `get_messages_older` in [db.rs](src-tauri/piscis-kernel/src/store/db.rs) to
   sort by `rowid` (SQLite insert order) instead of `created_at`. `rowid` is
   monotonically increasing and immune to clock drift, so insert order is the
   source of truth for "newest message" regardless of system time anomalies.
@@ -600,7 +600,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
   (`overflow-x:hidden`, `box-sizing:border-box`) so they cannot shift the arena's
   screen position during a running test.
 - **Linux (VMware+Xorg) mouse control**: new `xi_helpers.c` native helper
-  (`pisci-xi-helper`) uses `XIWarpPointer` on the master pointer (device id=2)
+  (`piscis-xi-helper`) uses `XIWarpPointer` on the master pointer (device id=2)
   plus `XTestFakeMotionEvent` to deliver events reliably. `move_mouse` /
   `drag` now execute a 20-step smooth motion matching Windows UIA behavior,
   and events reach WebKit correctly even though the visible cursor stays put
@@ -609,7 +609,7 @@ This project follows [Semantic Versioning](https://semver.org/) and
   IM binding from the current `session_id` when no explicit `binding_key` or
   `channel`+`recipient` is provided, so IM-driven replies don't need explicit
   addressing parameters.
-- Minor borrow fix in `pisci-kernel::agent::loop_` cancellation path.
+- Minor borrow fix in `piscis-kernel::agent::loop_` cancellation path.
 
 ### Changed
 - `screen_capture` default `grid_spacing` is now 100 (was 200); label interval
@@ -621,11 +621,11 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Documentation
 - **Multi-agent architecture docs**: README (Chinese and English) now explains the
-  roles and boundaries of Pisci, Koi, and Fish, plus the structure of the Pond
+  roles and boundaries of Piscis, Koi, and Fish, plus the structure of the Pond
   workspace and the collaboration lifecycle.
 
 ### Changed
-- **Heartbeat guardrails**: Pisci heartbeat now treats follow-up signals without
+- **Heartbeat guardrails**: Piscis heartbeat now treats follow-up signals without
   active todos as a coordination stall, and no longer treats "no todo" as
   sufficient evidence to emit `HEARTBEAT_OK`.
 - **Multi-agent verification**: collaboration regressions are now covered by the

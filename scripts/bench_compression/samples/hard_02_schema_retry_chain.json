@@ -1,7 +1,7 @@
 {
   "session_id": "hard-02-schema-retry-chain",
   "description": "Schema-correction retry chain: 5 consecutive failures on file_write with wrong arg names, each triggering a full-schema nudge, before a successful call. Tests Phase 3 FEC — errors_learned should surface without recreating failed history.",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "notes_for_judge": {
     "critical_facts": [
       "the correct file_write signature uses 'path' (NOT 'pth', 'file', 'filename', or 'fp')",

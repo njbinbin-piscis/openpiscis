@@ -1,9 +1,9 @@
 /// Koi (锦鲤) commands — CRUD for persistent independent Agents.
 use crate::commands::chat::{
-    pool_pisci_session_id, run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCI_POOL,
+    pool_piscis_session_id, run_agent_headless, HeadlessRunOptions, SESSION_SOURCE_PISCIS_POOL,
 };
 use crate::commands::config::scene::SceneKind;
-use crate::pisci::heartbeat::ensure_heartbeat_session;
+use crate::piscis::heartbeat::ensure_heartbeat_session;
 use crate::pool::{KoiDefinition, KOI_COLORS, KOI_ICONS};
 use crate::store::AppState;
 use serde::{Deserialize, Serialize};
@@ -204,7 +204,7 @@ pub async fn update_koi(
         pools
     };
 
-    // Post system messages and build Pisci context
+    // Post system messages and build Piscis context
     let mut change_parts: Vec<String> = Vec::new();
 
     if name_changed {
@@ -268,10 +268,10 @@ pub async fn update_koi(
         }
     }
 
-    // Trigger Pisci to reassess if there are meaningful changes
+    // Trigger Piscis to reassess if there are meaningful changes
     if !change_parts.is_empty() && !affected_pools.is_empty() {
         let pool_names: Vec<&str> = affected_pools.iter().map(|(_, n)| n.as_str()).collect();
-        let pisci_prompt = format!(
+        let piscis_prompt = format!(
             "用户对团队成员 {} ({}) 进行了调整：{}\n\n\
              受影响的项目：{}\n\n\
              请评估是否需要：\n\
@@ -285,27 +285,27 @@ pub async fn update_koi(
             pool_names.join("、")
         );
 
-        // Trigger Pisci in the first affected pool's inbox session
+        // Trigger Piscis in the first affected pool's inbox session
         let (first_pool_id, first_pool_name) = &affected_pools[0];
-        let session_id = pool_pisci_session_id(first_pool_id);
+        let session_id = pool_piscis_session_id(first_pool_id);
         let app_clone = app.clone();
         let session_id_clone = session_id.clone();
         let pool_name_clone = first_pool_name.clone();
         let pool_id_clone = first_pool_id.clone();
-        let pisci_prompt_clone = pisci_prompt.clone();
+        let piscis_prompt_clone = piscis_prompt.clone();
         tokio::spawn(async move {
             let st = app_clone.state::<AppState>();
             let _ = ensure_heartbeat_session(
                 &st,
                 &session_id_clone,
-                &format!("Pisci · {}", pool_name_clone),
-                SESSION_SOURCE_PISCI_POOL,
+                &format!("Piscis · {}", pool_name_clone),
+                SESSION_SOURCE_PISCIS_POOL,
             )
             .await;
             let _ = run_agent_headless(
                 &st,
                 &session_id_clone,
-                &pisci_prompt_clone,
+                &piscis_prompt_clone,
                 None,
                 "heartbeat",
                 Some(HeadlessRunOptions {
@@ -314,8 +314,8 @@ pub async fn update_koi(
                         "用户手动调整了团队成员配置，请根据当前项目状态决定是否需要重新协调工作。"
                             .to_string(),
                     ),
-                    session_title: Some(format!("Pisci · {}", pool_name_clone)),
-                    session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
+                    session_title: Some(format!("Piscis · {}", pool_name_clone)),
+                    session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
                     scene_kind: Some(SceneKind::PoolCoordinator),
                     ..HeadlessRunOptions::default()
                 }),
@@ -412,10 +412,10 @@ pub async fn delete_koi(
         );
     }
 
-    // Trigger Pisci to reassess affected projects
+    // Trigger Piscis to reassess affected projects
     if !affected_pools.is_empty() {
         let pool_names: Vec<&str> = affected_pools.iter().map(|(_, n)| n.as_str()).collect();
-        let pisci_prompt = format!(
+        let piscis_prompt = format!(
             "用户解雇了团队成员 {} {}（角色：{}），其所有任务已取消。\n\n\
              受影响的项目：{}\n\n\
              请评估是否需要：\n\
@@ -430,7 +430,7 @@ pub async fn delete_koi(
         );
 
         let (first_pool_id, first_pool_name) = &affected_pools[0];
-        let session_id = pool_pisci_session_id(first_pool_id);
+        let session_id = pool_piscis_session_id(first_pool_id);
         let app_clone = app.clone();
         let session_id_clone = session_id.clone();
         let pool_name_clone = first_pool_name.clone();
@@ -440,14 +440,14 @@ pub async fn delete_koi(
             let _ = ensure_heartbeat_session(
                 &st,
                 &session_id_clone,
-                &format!("Pisci · {}", pool_name_clone),
-                SESSION_SOURCE_PISCI_POOL,
+                &format!("Piscis · {}", pool_name_clone),
+                SESSION_SOURCE_PISCIS_POOL,
             )
             .await;
             let _ = run_agent_headless(
                 &st,
                 &session_id_clone,
-                &pisci_prompt,
+                &piscis_prompt,
                 None,
                 "heartbeat",
                 Some(HeadlessRunOptions {
@@ -456,8 +456,8 @@ pub async fn delete_koi(
                         "用户解雇了一名团队成员，请根据当前项目状态决定是否需要重新分配工作。"
                             .to_string(),
                     ),
-                    session_title: Some(format!("Pisci · {}", pool_name_clone)),
-                    session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
+                    session_title: Some(format!("Piscis · {}", pool_name_clone)),
+                    session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
                     scene_kind: Some(SceneKind::PoolCoordinator),
                     ..HeadlessRunOptions::default()
                 }),
@@ -496,7 +496,7 @@ pub async fn get_koi_palette() -> Result<KoiPalette, String> {
 /// When deactivating a busy Koi, returns error "BUSY:<name>:<role>" so the
 /// frontend can show a confirmation dialog before force-deactivating.
 /// When deactivated: status → offline, uncompleted todos cancelled, pool notified,
-/// and Pisci is triggered to reassess affected projects.
+/// and Piscis is triggered to reassess affected projects.
 #[tauri::command]
 pub async fn set_koi_active(
     app: tauri::AppHandle,
@@ -522,7 +522,7 @@ pub async fn set_koi_active(
             serde_json::json!({ "id": id, "status": "idle" }),
         );
 
-        // Trigger Pisci to check if there's pending work for this Koi
+        // Trigger Piscis to check if there's pending work for this Koi
         let koi_name = koi.name.clone();
         let koi_role = koi.role.clone();
         let koi_icon = koi.icon.clone();
@@ -544,7 +544,7 @@ pub async fn set_koi_active(
 
         if !affected_pools.is_empty() {
             let pool_names: Vec<&str> = affected_pools.iter().map(|(_, n)| n.as_str()).collect();
-            let pisci_prompt = format!(
+            let piscis_prompt = format!(
                 "{} {}（{}）已回归上班。\n\n\
                  受影响的项目：{}\n\n\
                  请检查是否有待分配或被取消的任务可以重新交给 {}，\
@@ -557,7 +557,7 @@ pub async fn set_koi_active(
                 koi_name
             );
             let (first_pool_id, first_pool_name) = &affected_pools[0];
-            let session_id = pool_pisci_session_id(first_pool_id);
+            let session_id = pool_piscis_session_id(first_pool_id);
             let app_clone = app.clone();
             let session_id_clone = session_id.clone();
             let pool_name_clone = first_pool_name.clone();
@@ -567,14 +567,14 @@ pub async fn set_koi_active(
                 let _ = ensure_heartbeat_session(
                     &st,
                     &session_id_clone,
-                    &format!("Pisci · {}", pool_name_clone),
-                    SESSION_SOURCE_PISCI_POOL,
+                    &format!("Piscis · {}", pool_name_clone),
+                    SESSION_SOURCE_PISCIS_POOL,
                 )
                 .await;
                 let _ = run_agent_headless(
                     &st,
                     &session_id_clone,
-                    &pisci_prompt,
+                    &piscis_prompt,
                     None,
                     "heartbeat",
                     Some(HeadlessRunOptions {
@@ -582,8 +582,8 @@ pub async fn set_koi_active(
                         extra_system_context: Some(
                             "团队成员回归上班，请检查是否有工作需要重新安排。".to_string(),
                         ),
-                        session_title: Some(format!("Pisci · {}", pool_name_clone)),
-                        session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
+                        session_title: Some(format!("Piscis · {}", pool_name_clone)),
+                        session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
                         scene_kind: Some(SceneKind::PoolCoordinator),
                         ..HeadlessRunOptions::default()
                     }),
@@ -639,7 +639,7 @@ pub async fn set_koi_active(
             }
         }
 
-        // Trigger Pisci to reassess affected projects
+        // Trigger Piscis to reassess affected projects
         let affected_pools: Vec<(String, String)> = affected_pool_ids
             .into_iter()
             .filter_map(|psid| {
@@ -656,7 +656,7 @@ pub async fn set_koi_active(
             let koi_name = koi.name.clone();
             let koi_role = koi.role.clone();
             let koi_icon = koi.icon.clone();
-            let pisci_prompt = format!(
+            let piscis_prompt = format!(
                 "用户让 {} {}（{}）进入休假，其进行中的任务已自动取消。\n\n\
                  受影响的项目：{}\n\n\
                  请评估是否需要：\n\
@@ -669,7 +669,7 @@ pub async fn set_koi_active(
                 pool_names.join("、")
             );
             let (first_pool_id, first_pool_name) = &affected_pools[0];
-            let session_id = pool_pisci_session_id(first_pool_id);
+            let session_id = pool_piscis_session_id(first_pool_id);
             let app_clone = app.clone();
             let session_id_clone = session_id.clone();
             let pool_name_clone = first_pool_name.clone();
@@ -680,14 +680,14 @@ pub async fn set_koi_active(
                 let _ = ensure_heartbeat_session(
                     &st,
                     &session_id_clone,
-                    &format!("Pisci · {}", pool_name_clone),
-                    SESSION_SOURCE_PISCI_POOL,
+                    &format!("Piscis · {}", pool_name_clone),
+                    SESSION_SOURCE_PISCIS_POOL,
                 )
                 .await;
                 let _ = run_agent_headless(
                     &st,
                     &session_id_clone,
-                    &pisci_prompt,
+                    &piscis_prompt,
                     None,
                     "heartbeat",
                     Some(HeadlessRunOptions {
@@ -696,8 +696,8 @@ pub async fn set_koi_active(
                             "团队成员进入休假，请根据当前项目状态决定是否需要重新分配工作。"
                                 .to_string(),
                         ),
-                        session_title: Some(format!("Pisci · {}", pool_name_clone)),
-                        session_source: Some(SESSION_SOURCE_PISCI_POOL.to_string()),
+                        session_title: Some(format!("Piscis · {}", pool_name_clone)),
+                        session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
                         scene_kind: Some(SceneKind::PoolCoordinator),
                         ..HeadlessRunOptions::default()
                     }),

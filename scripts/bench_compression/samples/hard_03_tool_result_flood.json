@@ -1,7 +1,7 @@
 {
   "session_id": "hard-03-tool-result-flood",
   "description": "Tool-result flood: many repeated grep/file_read calls returning overlapping chunks. Tests whether L1+ rule preprocessing folds the duplication and receipts survive. Inflates with RLE-foldable log runs.",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "notes_for_judge": {
     "critical_facts": [
       "the root cause of the PaymentWebhookService timeout was a missing index on payment_events(webhook_ref_id)",

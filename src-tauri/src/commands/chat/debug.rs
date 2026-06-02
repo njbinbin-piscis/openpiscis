@@ -7,11 +7,11 @@ use crate::store::AppState;
 /// - `run_debug_scenario`: Run a named test scenario through the real agent loop
 /// - `get_debug_report`: Collect a full diagnostic snapshot (settings, tools, recent audit, logs)
 /// - `get_log_tail`: Read the last N lines of the rolling log file
-use pisci_kernel::agent::harness::HarnessConfig;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::ToolContext;
-use pisci_kernel::llm::{build_client, LlmMessage, MessageContent};
-use pisci_kernel::policy::PolicyGate;
+use piscis_kernel::agent::harness::HarnessConfig;
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::ToolContext;
+use piscis_kernel::llm::{build_client, LlmMessage, MessageContent};
+use piscis_kernel::policy::PolicyGate;
 use serde::{Deserialize, Serialize};
 use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{Manager, State};
@@ -324,10 +324,10 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             name_en: "File Write & Read".into(),
             description: "写入一个测试文件，然后读取并验证内容".into(),
             description_en: "Write a test file then read it back and verify content".into(),
-            prompt: "请用 file_write 工具在工作区（见 Debug context）写文件 debug_test.txt，内容为 'PISCI_DEBUG_OK'.\
+            prompt: "请用 file_write 工具在工作区（见 Debug context）写文件 debug_test.txt，内容为 'PISCIS_DEBUG_OK'.\
                      然后用 file_read 工具读取该文件，告诉我文件内容.\
                      注意：使用工作区路径下的 debug_test.txt，不要使用其他路径。".into(),
-            expected_keywords: vec!["PISCI_DEBUG_OK".into()],
+            expected_keywords: vec!["PISCIS_DEBUG_OK".into()],
             expected_tools: vec!["file_write".into(), "file_read".into()],
             requires_config: None,
             platforms: None,
@@ -494,10 +494,10 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             description_en: "Search file contents for keywords to verify grep functionality".into(),
             prompt: "请完成以下步骤:\
                      1) 用 file_write 工具在工作区（见 Debug context）写文件 grep_test.txt,\
-                        内容为三行：line1: hello\nline2: world\nline3: pisci_grep_ok\n;\
-                     2) 用 file_search 工具（action: grep）在工作区目录搜索关键词 'pisci_grep_ok';\
+                        内容为三行：line1: hello\nline2: world\nline3: piscis_grep_ok\n;\
+                     2) 用 file_search 工具（action: grep）在工作区目录搜索关键词 'piscis_grep_ok';\
                      3) 告诉我搜索结果。".into(),
-            expected_keywords: vec!["pisci_grep_ok".into()],
+            expected_keywords: vec!["piscis_grep_ok".into()],
             expected_tools: vec!["file_write".into(), "file_search".into()],
             requires_config: None,
             platforms: None,
@@ -1097,12 +1097,12 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
                      1. 用 PowerShell 创建一个测试定时任务:\
                         $action = New-ScheduledTaskAction -Execute 'notepad.exe'; \
                         $trigger = New-ScheduledTaskTrigger -Once -At '2099-01-01 00:00:00'; \
-                        Register-ScheduledTask -TaskName 'PisciDebugTest' -Action $action -Trigger $trigger -Force.\
-                     2. 用 PowerShell 查询该任务是否创建成功：Get-ScheduledTask -TaskName 'PisciDebugTest'.\
-                     3. 用 PowerShell 删除该任务：Unregister-ScheduledTask -TaskName 'PisciDebugTest' -Confirm:$false.\
+                        Register-ScheduledTask -TaskName 'PiscisDebugTest' -Action $action -Trigger $trigger -Force.\
+                     2. 用 PowerShell 查询该任务是否创建成功：Get-ScheduledTask -TaskName 'PiscisDebugTest'.\
+                     3. 用 PowerShell 删除该任务：Unregister-ScheduledTask -TaskName 'PiscisDebugTest' -Confirm:$false.\
                      4. 确认任务已被删除.\
                      5. 告诉我任务创建和删除是否都成功。".into(),
-            expected_keywords: vec!["PisciDebugTest".into(), "成功".into(), "删除".into()],
+            expected_keywords: vec!["PiscisDebugTest".into(), "成功".into(), "删除".into()],
             expected_tools: vec!["shell".into()],
             requires_config: None,
             platforms: Some(vec!["windows".into()]),
@@ -1262,7 +1262,7 @@ pub async fn run_debug_scenario(
             settings.max_tokens,
             settings.policy_mode.clone(),
             settings.tool_rate_limit_per_minute,
-            Arc::new(pisci_kernel::agent::tool::ToolSettings::from_settings(
+            Arc::new(piscis_kernel::agent::tool::ToolSettings::from_settings(
                 &settings,
             )),
             settings.max_iterations,
@@ -1398,7 +1398,7 @@ pub async fn run_debug_scenario(
     );
     let debug_compaction_settings = {
         let s = state.settings.lock().await;
-        pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
+        piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
     };
     let agent = HarnessConfig::for_debug(
         model,
@@ -1422,7 +1422,7 @@ pub async fn run_debug_scenario(
         bypass_permissions: false,
         settings: tool_settings,
         max_iterations: Some(max_iterations.min(10)),
-        memory_owner_id: "pisci".to_string(),
+        memory_owner_id: "piscis".to_string(),
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
@@ -1786,18 +1786,18 @@ fn read_log_tail(n: usize) -> Vec<String> {
     let log_dir = crate::app::logging::log_dir();
 
     let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
-    let log_file = log_dir.join(format!("pisci.log.{}", today));
+    let log_file = log_dir.join(format!("piscis.log.{}", today));
 
-    // Fallback: if the dated JSON log doesn't exist, try pisci.latest.log
+    // Fallback: if the dated JSON log doesn't exist, try piscis.latest.log
     let log_file = if log_file.exists() {
         log_file
     } else {
-        let latest = log_dir.join("pisci.latest.log");
+        let latest = log_dir.join("piscis.latest.log");
         if latest.exists() {
             latest
         } else {
             return vec![format!(
-                "Log file not found: {} (also checked pisci.latest.log)",
+                "Log file not found: {} (also checked piscis.latest.log)",
                 log_file.display()
             )];
         }

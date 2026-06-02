@@ -2,7 +2,7 @@ use crate::commands::chat::gateway::connect_gateway_channels;
 use crate::gateway::{ChannelInfo, ChannelStatus, GatewayManager};
 use crate::store::{AppState, Database, Settings};
 use async_trait::async_trait;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
@@ -294,7 +294,7 @@ impl Tool for ImChannelBindingLookupTool {
                 },
                 "session_id": {
                     "type": "string",
-                    "description": "Resolve the most recent IM binding associated with this Pisci session_id."
+                    "description": "Resolve the most recent IM binding associated with this Piscis session_id."
                 },
                 "pool_id": {
                     "type": "string",
@@ -574,9 +574,9 @@ impl Tool for ImChannelBindingListTool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pisci_kernel::agent::tool::ToolSettings;
-    use pisci_kernel::store::db::ImSessionBindingUpsert;
-    use pisci_kernel::store::Settings;
+    use piscis_kernel::agent::tool::ToolSettings;
+    use piscis_kernel::store::db::ImSessionBindingUpsert;
+    use piscis_kernel::store::Settings;
     use std::path::PathBuf;
     use std::sync::atomic::AtomicBool;
     use tokio::sync::Mutex;
@@ -588,7 +588,7 @@ mod tests {
             bypass_permissions: false,
             settings: Arc::new(ToolSettings::default()),
             max_iterations: None,
-            memory_owner_id: "pisci".to_string(),
+            memory_owner_id: "piscis".to_string(),
             pool_session_id: Some("pool_123".to_string()),
             tool_use_id: None,
             cancel: Arc::new(AtomicBool::new(false)),

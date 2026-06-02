@@ -92,12 +92,12 @@ def render_summary(run: dict[str, Any]) -> str:
     by_profile = aggregate_by_profile(rows)
 
     lines = [
-        "# OpenPisci SWE-lite Results",
+        "# OpenPiscis SWE-lite Results",
         "",
         f"- Run ID: `{run.get('run_id', '-')}`",
         f"- Manifest: `{run.get('manifest_path', '-')}`",
         f"- Headless CLI: `{run.get('headless_bin', '-')}`",
-        f"- HARNESS Binary: `{run.get('pisci_compact_bin', '-')}`",
+        f"- HARNESS Binary: `{run.get('piscis_compact_bin', '-')}`",
         "",
         "## Profile Summary",
         "",

@@ -1,5 +1,5 @@
 /**
- * Pisci User Tool: Email (TypeScript / Deno reference implementation)
+ * Piscis User Tool: Email (TypeScript / Deno reference implementation)
  *
  * Protocol:
  *   argv[1] = JSON string of LLM tool input

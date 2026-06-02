@@ -1,7 +1,7 @@
 {
   "session_id": "tool-01-bug-hunt",
   "description": "Tool-heavy debugging session: find null-check bug in checkout flow via file_read / grep / code_run",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "message_count": 22,
   "messages": [
     {

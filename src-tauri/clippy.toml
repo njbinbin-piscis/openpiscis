@@ -2,13 +2,13 @@
 #
 # `disallowed-methods` makes the missing-`CREATE_NO_WINDOW` foot-gun structurally
 # impossible: any new call site that spawns a child process is forced through
-# `pisci_kernel::proc::tokio_command` / `pisci_kernel::proc::std_command`, which
+# `piscis_kernel::proc::tokio_command` / `piscis_kernel::proc::std_command`, which
 # uniformly applies the popup-suppression flag on Windows.
 #
 # If a call site legitimately needs the raw `Command::new` (e.g. integration
 # tests, build scripts, the helpers themselves), annotate it with
 # `#[allow(clippy::disallowed_methods)]`.
 disallowed-methods = [
-    { path = "tokio::process::Command::new", reason = "Use pisci_kernel::proc::tokio_command to avoid Windows console-window popups" },
-    { path = "std::process::Command::new",   reason = "Use pisci_kernel::proc::std_command to avoid Windows console-window popups" },
+    { path = "tokio::process::Command::new", reason = "Use piscis_kernel::proc::tokio_command to avoid Windows console-window popups" },
+    { path = "std::process::Command::new",   reason = "Use piscis_kernel::proc::std_command to avoid Windows console-window popups" },
 ]

@@ -1,5 +1,5 @@
-# The agent runtime crates (pisci-core / pisci-kernel / pisci-cli) were
-# extracted into the standalone `piscis-engine` repo so that both `openpisci`
+# The agent runtime crates (piscis-core / piscis-kernel / piscis-cli) were
+# extracted into the standalone `piscis-engine` repo so that both `openpiscis`
 # (this desktop host) and `codez` can share one kernel. They are consumed as
 # a git dependency (see `[workspace.dependencies]` below). For local engine
 # hacking, add a `[patch."https://github.com/njbinbin-piscis/piscis-engine.git"]`
@@ -40,8 +40,8 @@ thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Shared agent runtime — the standalone piscis-engine repo (also consumed by codez).
-pisci-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "pisci-core" }
-pisci-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "pisci-kernel" }
+piscis-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-core" }
+piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-kernel" }
 
 [package]
 name = "piscis-desktop"
@@ -62,10 +62,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 name = "piscis-desktop"
 path = "src/main.rs"
 
-# NOTE: the bench-only `pisci_compact_one` CLI used to live here as a target of
+# NOTE: the bench-only `piscis_compact_one` CLI used to live here as a target of
 # this crate, which made Tauri's bundler try to ship it. It now lives in the
-# `bench/` workspace member (crate `pisci-bench`) so it is never bundled.
-# Build it with: cargo build -p pisci-bench --release
+# `bench/` workspace member (crate `piscis-bench`) so it is never bundled.
+# Build it with: cargo build -p piscis-bench --release
 
 [features]
 default = []
@@ -75,14 +75,14 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Pure collaboration/core logic
-pisci-core = { workspace = true }
-pisci-kernel = { workspace = true }
+piscis-core = { workspace = true }
+piscis-kernel = { workspace = true }
 
 # Desktop-automation + browser capabilities, extracted into the standalone
-# RobotZ toolkit. The `pisci-kernel` feature makes the RobotZ tools implement
-# `pisci_kernel::Tool`, so the desktop host registers them like any other tool.
-robotz-automation = { git = "https://github.com/njbinbin-piscis/RobotZ.git", branch = "master", features = ["pisci-kernel"] }
-robotz-browser = { git = "https://github.com/njbinbin-piscis/RobotZ.git", branch = "master", features = ["pisci-kernel"] }
+# RobotZ toolkit. The `piscis-kernel` feature makes the RobotZ tools implement
+# `piscis_kernel::Tool`, so the desktop host registers them like any other tool.
+robotz-automation = { git = "https://github.com/njbinbin-piscis/RobotZ.git", branch = "master", features = ["piscis-kernel"] }
+robotz-browser = { git = "https://github.com/njbinbin-piscis/RobotZ.git", branch = "master", features = ["piscis-kernel"] }
 
 # Tauri
 tauri = { version = "2", features = ["tray-icon"] }

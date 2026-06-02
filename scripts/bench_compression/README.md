@@ -1,11 +1,11 @@
 # Cross-Framework Context Compression Benchmark
 
-在**同一批样本**、**同一把尺**、**同一个 LLM（Qwen via Pisci 的 config）** 下，对比 7 种压缩策略：
+在**同一批样本**、**同一把尺**、**同一个 LLM（Qwen via Piscis 的 config）** 下，对比 7 种压缩策略：
 
 | 选手 | 类型 | LLM 调用 |
 |---|---|---|
-| Pisci-L1 | 规则：receipt demotion | 0 |
-| Pisci-L2 | 语义：滚动摘要 | 1 |
+| Piscis-L1 | 规则：receipt demotion | 0 |
+| Piscis-L2 | 语义：滚动摘要 | 1 |
 | Hermes | 语义：token-budget tail + 迭代摘要 | 1+ |
 | Engram | 语义：Observer + Reflector | 2 |
 | RuleCompressor | 规则：5 层确定性 | 0 |
@@ -14,9 +14,9 @@
 
 ## 依赖
 
-- 已构建好的 `target/release/pisci_compact_one.exe`（`cargo build -p pisci-bench --release --manifest-path src-tauri/Cargo.toml`）
+- 已构建好的 `target/release/piscis_compact_one.exe`（`cargo build -p piscis-bench --release --manifest-path src-tauri/Cargo.toml`）
 - Python 3.9+：`pip install --user openai pyyaml tiktoken`
-- Pisci 的 `config.json` 里已配好 Qwen key（用于所有 LLM 压缩器和 judge）
+- Piscis 的 `config.json` 里已配好 Qwen key（用于所有 LLM 压缩器和 judge）
 
 ## 运行
 
@@ -24,14 +24,14 @@
 cd scripts\bench_compression
 py -3 run_bench.py                            # 纯规则 + 文本相似度指标
 py -3 run_bench.py --with-judge               # 加 LLM-as-judge 下游保真度
-py -3 run_bench.py --only Pisci-L2 Hermes     # 只跑两家对比
+py -3 run_bench.py --only Piscis-L2 Hermes     # 只跑两家对比
 py -3 run_bench.py --samples sample_03_ml_short tool_01_bug_hunt    # 小范围
 ```
 
 ## 样本
 
 - `references/claw-compactor/benchmark/data/sample_0[1-5]*.json` — 5 个长对话（纯文本，1.8k–4.6k tokens，合成）
-- `scripts/bench_compression/samples/tool_0[1-3]*.json` — 3 个工具密集会话（含 `tool_use` / `tool_result`，用于触发 Pisci-L1）
+- `scripts/bench_compression/samples/tool_0[1-3]*.json` — 3 个工具密集会话（含 `tool_use` / `tool_result`，用于触发 Piscis-L1）
 
 ## 指标
 
@@ -48,13 +48,13 @@ py -3 run_bench.py --samples sample_03_ml_short tool_01_bug_hunt    # 小范围
 ## 架构
 
 ```
-src-tauri/src/bin/pisci_compact_one.rs           ← Rust 一次性压缩 CLI
-src-tauri/src/agent/bench_compact.rs             ← Pisci compaction 的 JSON facade
+src-tauri/src/bin/piscis_compact_one.rs           ← Rust 一次性压缩 CLI
+src-tauri/src/agent/bench_compact.rs             ← Piscis compaction 的 JSON facade
 scripts/bench_compression/
 ├─ run_bench.py                                   ← 编排器
 ├─ judge.py                                       ← LLM-as-judge
 ├─ adapters/
-│  ├─ pisci.py                                    ← subprocess → Rust bin
+│  ├─ piscis.py                                    ← subprocess → Rust bin
 │  ├─ hermes.py                                   ← import hermes-agent
 │  ├─ claw.py                                     ← reuse claw-compactor (含 Engram reroute)
 │  └─ common.py                                   ← 从 --print-runtime 自动提取 Qwen runtime

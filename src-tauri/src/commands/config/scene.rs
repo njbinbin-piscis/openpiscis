@@ -2,12 +2,12 @@ use crate::commands::config::mcp::resolve_settings_placeholders_in_mcp_config;
 use crate::host::DesktopHostTools;
 use crate::skills::loader::SkillLoader;
 use crate::store::{Database, Settings};
-use pisci_core::scene::RegistryProfile;
-pub use pisci_core::scene::{
+use piscis_core::scene::RegistryProfile;
+pub use piscis_core::scene::{
     HistorySliceMode, MemorySliceMode, PoolSnapshotMode, SceneKind, ScenePolicy,
 };
-use pisci_kernel::agent::tool::ToolRegistry;
-use pisci_kernel::tools::register_mcp_tools;
+use piscis_kernel::agent::tool::ToolRegistry;
+use piscis_kernel::tools::register_mcp_tools;
 use robotz_browser::SharedBrowserManager;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -190,7 +190,7 @@ pub async fn build_registry_for_scene(
 #[cfg(test)]
 mod tests {
     use super::{SceneKind, ScenePolicy};
-    use pisci_core::scene::{CollaborationContextMode, EventDigestMode};
+    use piscis_core::scene::{CollaborationContextMode, EventDigestMode};
 
     #[test]
     fn heartbeat_scene_policy_is_lightweight_and_disables_proactive_compaction() {
@@ -214,11 +214,11 @@ mod tests {
     }
 
     #[test]
-    fn pisci_profiles_do_not_expose_pool_chat() {
+    fn piscis_profiles_do_not_expose_pool_chat() {
         for kind in [SceneKind::PoolCoordinator, SceneKind::HeartbeatSupervisor] {
             let allowlist = ScenePolicy::for_kind(kind)
                 .tool_allowlist()
-                .expect("pisci coordinator profiles use allowlists");
+                .expect("piscis coordinator profiles use allowlists");
             assert!(!allowlist.contains(&"pool_chat"));
             assert!(allowlist.contains(&"pool_org"));
         }

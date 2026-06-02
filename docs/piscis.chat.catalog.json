@@ -1,6 +1,6 @@
 {
-  "$schema": "https://openpisci.app/schemas/chat-ui-catalog-v2.json",
-  "catalog_id": "https://openpisci.app/catalog/chat-ui/v2",
+  "$schema": "https://openpiscis.app/schemas/chat-ui-catalog-v2.json",
+  "catalog_id": "https://openpiscis.app/catalog/chat-ui/v2",
   "protocol_versions": ["1", "2"],
   "modes": ["form", "display", "wizard"],
   "blocks": {

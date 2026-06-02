@@ -1,4 +1,4 @@
-# PisciDesktop vs OpenClaw Capability Matrix
+# PiscisDesktop vs OpenClaw Capability Matrix
 
 This matrix is the executable baseline for parity tracking.
 
@@ -14,7 +14,7 @@ _Last updated: 2026-03-24_
 
 ## Channels
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Telegram | implemented | implemented | Long-poll `getUpdates`, `sendMessage`, `getMe` | `src-tauri/src/gateway/telegram.rs` |
 | Feishu / Lark | implemented | implemented | WS Protobuf frames, `im.message.receive_v1`, send text/image/file | `src-tauri/src/gateway/feishu.rs` |
@@ -31,7 +31,7 @@ _Last updated: 2026-03-24_
 
 ## Automation & Triggers
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Cron jobs | implemented | implemented | `tokio-cron-scheduler`, 5→7 segment conversion, add/remove at runtime | `src-tauri/src/scheduler/cron.rs` |
 | Webhook / event trigger | implemented | partial | `trigger_task_by_event` command exists with payload injection; no inbound HTTP listener yet | `src-tauri/src/commands/scheduler.rs` |
@@ -43,7 +43,7 @@ _Last updated: 2026-03-24_
 
 ## Windows Tooling
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Browser automation | implemented | implemented | Playwright-style CDP control | `src-tauri/src/tools/browser.rs` |
 | Desktop UI automation | implemented | implemented | UIA tree walk, click, type, find | `src-tauri/src/tools/uia.rs` |
@@ -64,7 +64,7 @@ _Last updated: 2026-03-24_
 
 ## Email
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | SMTP send | implemented | implemented | `lettre` SMTP with auth | `src-tauri/src/tools/email.rs` |
 | IMAP fetch / search | implemented | implemented | `imap` crate, fetch, search, header parse | `src-tauri/src/tools/email.rs` |
@@ -74,7 +74,7 @@ _Last updated: 2026-03-24_
 
 ## Skills
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Built-in skills | implemented | implemented | Seed skills bundled at startup | `src-tauri/src/skills/loader.rs` |
 | Workspace skills | implemented | implemented | Scan `SKILL.md`, YAML frontmatter, platform/`where` compatibility checks | `src-tauri/src/skills/loader.rs` |
@@ -85,7 +85,7 @@ _Last updated: 2026-03-24_
 
 ## Security & Governance
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Policy gate | implemented | implemented | Path / command / URL / UIA / COM / tool-call checks with allow/deny/confirm | `src-tauri/src/policy/gate.rs` |
 | Approval flow | implemented | implemented | Per-tool `needs_confirmation`, user confirm/deny via frontend event | `src-tauri/src/agent/loop_.rs` |
@@ -99,7 +99,7 @@ _Last updated: 2026-03-24_
 
 ## Session Routing
 
-| Capability | OpenClaw | PisciDesktop | Notes | Module |
+| Capability | OpenClaw | PiscisDesktop | Notes | Module |
 |---|---|---|---|---|
 | Channel → session mapping | implemented | implemented | Gateway events mapped to IM sessions by sender ID | `src-tauri/src/lib.rs` |
 | Group routing policies | implemented | partial | Basic source-based routing; no configurable group policies | `src-tauri/src/gateway/mod.rs` |
@@ -107,17 +107,17 @@ _Last updated: 2026-03-24_
 
 ---
 
-## Multi-Agent Collaboration (PisciDesktop-specific)
+## Multi-Agent Collaboration (PiscisDesktop-specific)
 
-_These capabilities exist in PisciDesktop but have no direct OpenClaw equivalent._
+_These capabilities exist in PiscisDesktop but have no direct OpenClaw equivalent._
 
 | Capability | Status | Notes | Module |
 |---|---|---|---|
-| Pisci / Koi / Fish three-tier architecture | implemented | Persistent Koi agents with independent memory, todos and identity | `src-tauri/src/tools/call_koi.rs` |
+| Piscis / Koi / Fish three-tier architecture | implemented | Persistent Koi agents with independent memory, todos and identity | `src-tauri/src/tools/call_koi.rs` |
 | Pool Chat (@mention coordination) | implemented | Koi collaborate via `pool_chat`; @mention triggers async agent runs | `src-tauri/src/tools/pool_chat.rs` |
 | Kanban / todo board | implemented | `koi_todos` with `todo→in_progress→done/blocked/cancelled` lifecycle | `src-tauri/src/tools/plan_todo.rs` |
 | Pool project management | implemented | `pool_org` create/pause/resume/archive with `org_spec` | `src-tauri/src/tools/pool_org.rs` |
-| Heartbeat / inbox patrol | implemented | Configurable cron heartbeat, Pisci Inbox session | `src-tauri/src/scheduler/cron.rs` |
+| Heartbeat / inbox patrol | implemented | Configurable cron heartbeat, Piscis Inbox session | `src-tauri/src/scheduler/cron.rs` |
 | Loop detection | implemented | GenericRepeat / KnownPollNoProgress / PingPong / GlobalCircuitBreaker | `src-tauri/src/agent/loop_.rs` |
 | Context compaction | implemented | Level-1 tool-result trim + Level-2 LLM summarisation with proactive trigger | `src-tauri/src/agent/loop_.rs` |
 | Real-time message persistence | implemented | Every agent message written to DB immediately (not batch on run end) | `src-tauri/src/agent/loop_.rs` |

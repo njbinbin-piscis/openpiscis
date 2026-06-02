@@ -5,7 +5,7 @@ This script demonstrates a hybrid approach to causal discovery:
 1. Use an LLM (simulated here) to generate prior knowledge about variable relationships.
 2. Use the PC algorithm (from causal-learn) with these priors as constraints.
 
-Author: Pisci (The Smart Cat)
+Author: Piscis (The Smart Cat)
 Date: 2026-05-21
 """
 
@@ -118,8 +118,8 @@ plt.figure(figsize=(12, 8))
 pos = nx.spring_layout(nx_graph, seed=42)
 nx.draw(nx_graph, pos, with_labels=True, node_color='lightblue', node_size=2000, font_size=10, font_weight='bold', arrows=True)
 plt.title("Hybrid Causal Discovery: LLM Prior + PC Algorithm")
-plt.savefig("/home/agent/Projects/openpisci/koi_debate_arc/causal_graph.png")
-print("\nGraph saved to /home/agent/Projects/openpisci/koi_debate_arc/causal_graph.png")
+plt.savefig("/home/agent/Projects/openpiscis/koi_debate_arc/causal_graph.png")
+print("\nGraph saved to /home/agent/Projects/openpiscis/koi_debate_arc/causal_graph.png")
 
 # --- 5. Evaluation (Optional) ---
 # In a real experiment, you would compare this graph to the ground truth using SHD or F1 score.

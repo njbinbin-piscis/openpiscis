@@ -1,4 +1,4 @@
-//! call_koi tool — lets Pisci or another Koi delegate a task to a
+//! call_koi tool — lets Piscis or another Koi delegate a task to a
 //! persistent Koi agent.
 //!
 //! This module bundles the in-process desktop path:
@@ -19,7 +19,7 @@ use crate::runtime::koi_prompt::assemble_koi_task_system_prompt;
 use crate::store::db::TaskSpine;
 use crate::store::AppState;
 use async_trait::async_trait;
-/// call_koi tool — lets Pisci or another Koi delegate a task to a persistent Koi agent.
+/// call_koi tool — lets Piscis or another Koi delegate a task to a persistent Koi agent.
 ///
 /// Unlike call_fish (stateless), call_koi:
 /// - Loads the Koi's private memories before execution
@@ -27,10 +27,10 @@ use async_trait::async_trait;
 /// - Records messages in the Chat Pool (if a pool_session_id is provided)
 /// - Sets memory_owner_id so new memories are scoped to the Koi
 /// - Allows the Koi to call other Kois (excluding itself, to prevent recursion)
-use pisci_kernel::agent::harness::HarnessConfig;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult, ToolSettings};
-use pisci_kernel::llm::{LlmMessage, MessageContent};
+use piscis_kernel::agent::harness::HarnessConfig;
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult, ToolSettings};
+use piscis_kernel::llm::{LlmMessage, MessageContent};
 use serde_json::{json, Value};
 use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{AppHandle, Emitter, Manager};
@@ -121,9 +121,9 @@ fn persist_koi_continuity_state(
     }
 }
 
-// The Koi system prompt is assembled by `pisci_core::koi_prompt` as a fixed
+// The Koi system prompt is assembled by `piscis_core::koi_prompt` as a fixed
 // 6-layer structure (Identity → Run Shape → Coordination → Context & Tools →
-// Capabilities → Stop Gate). The contract lives in pisci-core because it is
+// Capabilities → Stop Gate). The contract lives in piscis-core because it is
 // pure coordination logic and is unit-tested there. Desktop only supplies the
 // identity preamble and dynamic context slices and calls
 #[async_trait]
@@ -376,7 +376,7 @@ impl CallKoiTool {
                     )
                 };
             // Koi always works within a project scope.
-            // allow_outside_workspace is a Pisci (general assistant) setting.
+            // allow_outside_workspace is a Piscis (general assistant) setting.
             // When a pool_session_id is present (project context), Koi is confined to the
             // project workspace regardless of the global setting.
             // Only when called with no project context (rare, ad-hoc) does it inherit the setting.
@@ -450,7 +450,7 @@ impl CallKoiTool {
 
         // Record task assignment in Chat Pool
         if !self.managed_externally {
-            let caller_id = self.caller_koi_id.as_deref().unwrap_or("pisci");
+            let caller_id = self.caller_koi_id.as_deref().unwrap_or("piscis");
             if let Some(ref pool_sid) = pool_session_id {
                 let db = state.db.lock().await;
                 let _ = db.insert_pool_message(
@@ -475,7 +475,7 @@ impl CallKoiTool {
             flags.insert(cancel_key.clone(), cancel.clone());
         }
 
-        let client = pisci_kernel::llm::build_client(
+        let client = piscis_kernel::llm::build_client(
             &provider,
             &api_key,
             if base_url.is_empty() {
@@ -523,7 +523,7 @@ impl CallKoiTool {
 
         let registry_tools = Arc::new(registry_tools);
 
-        let policy = Arc::new(pisci_kernel::policy::PolicyGate::with_profile_and_flags(
+        let policy = Arc::new(piscis_kernel::policy::PolicyGate::with_profile_and_flags(
             &workspace_root,
             &policy_mode,
             tool_rate_limit_per_minute,
@@ -536,7 +536,7 @@ impl CallKoiTool {
         let notification_rx = self.notification_rx.lock().unwrap().take();
         let koi_compaction_settings = {
             let s = state.settings.lock().await;
-            pisci_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
+            piscis_kernel::agent::harness::config::CompactionSettings::from_settings(&s)
         };
         let agent = HarnessConfig::for_koi(
             model,
@@ -627,8 +627,8 @@ impl CallKoiTool {
             }
         });
 
-        // Spawn Koi in the background so Pisci is not blocked.
-        // The user can stop Pisci's conversation without interrupting the Koi.
+        // Spawn Koi in the background so Piscis is not blocked.
+        // The user can stop Piscis's conversation without interrupting the Koi.
         // Exception: when `await_completion` is true, the caller explicitly
         // wants to synchronously observe the agent's outcome (e.g., the
         // soft-fence retry path in KoiRuntime).

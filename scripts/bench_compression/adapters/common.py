@@ -17,32 +17,32 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 BENCH_DIR = Path(__file__).resolve().parents[1]
 CLAW_BENCH_DIR = REPO_ROOT / "references" / "claw-compactor" / "benchmark"
 HERMES_DIR = REPO_ROOT / "references" / "hermes-agent"
-PISCI_BIN_CANDIDATES = [
-    REPO_ROOT / "src-tauri" / "target" / "release" / "examples" / "pisci_compact_one.exe",
-    REPO_ROOT / "src-tauri" / "target" / "debug" / "examples" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "release" / "examples" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "debug" / "examples" / "pisci_compact_one.exe",
-    # Current layout: `pisci_compact_one` is the bin of the `pisci-bench`
+PISCIS_BIN_CANDIDATES = [
+    REPO_ROOT / "src-tauri" / "target" / "release" / "examples" / "piscis_compact_one.exe",
+    REPO_ROOT / "src-tauri" / "target" / "debug" / "examples" / "piscis_compact_one.exe",
+    REPO_ROOT / "target" / "release" / "examples" / "piscis_compact_one.exe",
+    REPO_ROOT / "target" / "debug" / "examples" / "piscis_compact_one.exe",
+    # Current layout: `piscis_compact_one` is the bin of the `piscis-bench`
     # workspace member, so it lands directly under target/ (not examples/).
-    REPO_ROOT / "src-tauri" / "target" / "release" / "pisci_compact_one.exe",
-    REPO_ROOT / "src-tauri" / "target" / "debug" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "release" / "pisci_compact_one.exe",
-    REPO_ROOT / "target" / "debug" / "pisci_compact_one.exe",
+    REPO_ROOT / "src-tauri" / "target" / "release" / "piscis_compact_one.exe",
+    REPO_ROOT / "src-tauri" / "target" / "debug" / "piscis_compact_one.exe",
+    REPO_ROOT / "target" / "release" / "piscis_compact_one.exe",
+    REPO_ROOT / "target" / "debug" / "piscis_compact_one.exe",
 ]
 
 
-def find_pisci_bin() -> Path:
-    """Return the freshest pisci_compact_one.exe available.
+def find_piscis_bin() -> Path:
+    """Return the freshest piscis_compact_one.exe available.
 
     Cargo can place the binary under either `./target/` or `./src-tauri/target/`
     depending on whether the invocation used `--manifest-path`. Prefer the
     most recently modified one so stale outputs never mask fresh rebuilds.
     """
-    existing = [p for p in PISCI_BIN_CANDIDATES if p.exists()]
+    existing = [p for p in PISCIS_BIN_CANDIDATES if p.exists()]
     if not existing:
         raise FileNotFoundError(
-            "pisci_compact_one.exe not found; build with "
-            "`cargo build -p pisci-bench --release --manifest-path src-tauri/Cargo.toml`"
+            "piscis_compact_one.exe not found; build with "
+            "`cargo build -p piscis-bench --release --manifest-path src-tauri/Cargo.toml`"
         )
     existing.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return existing[0]
@@ -66,9 +66,9 @@ class CompressorResult:
 
 
 # ---------------------------------------------------------------------------
-# Runtime discovery: read the LLM runtime from Pisci's decrypted settings by
-# calling `pisci_compact_one.exe --print-runtime`. This ensures every LLM-
-# using compressor (Pisci-L2, Hermes, Engram, judge) hits the SAME backend.
+# Runtime discovery: read the LLM runtime from Piscis's decrypted settings by
+# calling `piscis_compact_one.exe --print-runtime`. This ensures every LLM-
+# using compressor (Piscis-L2, Hermes, Engram, judge) hits the SAME backend.
 # ---------------------------------------------------------------------------
 
 _RUNTIME_CACHE: dict | None = None
@@ -78,7 +78,7 @@ def get_qwen_runtime() -> dict:
     global _RUNTIME_CACHE
     if _RUNTIME_CACHE is not None:
         return _RUNTIME_CACHE
-    bin_path = find_pisci_bin()
+    bin_path = find_piscis_bin()
     try:
         out = subprocess.check_output(
             [str(bin_path), "--print-runtime"],
@@ -86,7 +86,7 @@ def get_qwen_runtime() -> dict:
             timeout=30,
         )
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"pisci_compact_one --print-runtime failed: {e}") from e
+        raise RuntimeError(f"piscis_compact_one --print-runtime failed: {e}") from e
     rt = json.loads(out.decode("utf-8").strip())
     # Hermes expects provider="custom" to force the custom-endpoint path.
     if rt["provider"] != "custom":

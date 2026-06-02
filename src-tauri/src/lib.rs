@@ -14,7 +14,7 @@ pub mod host;
 mod live_smoke;
 pub mod lsp;
 pub mod notify;
-mod pisci;
+mod piscis;
 pub mod pool;
 pub mod runtime;
 mod skills;

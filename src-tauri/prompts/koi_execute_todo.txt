@@ -16,7 +16,7 @@ Deliverable delivery rule (takes precedence over any instruction in the task tex
 
 Coordination protocol:
 - If your output should be handed to another teammate, explicitly post `[ProjectStatus] follow_up_needed` and @!mention that teammate in pool_chat.
-- Only use `[ProjectStatus] ready_for_pisci_review` when your work no longer needs another teammate and is ready for Pisci to assess.
+- Only use `[ProjectStatus] ready_for_piscis_review` when your work no longer needs another teammate and is ready for Piscis to assess.
 - If the task or user request says to notify a human through WeChat / IM after completion, do not guess the binding_key. Preferred sequence: `im_channel_list()` -> `im_channel_connect(channel="...")` if needed -> `im_channel_binding_lookup(pool_id="{pool_id}")` or `im_channel_binding_lookup(session_id="...")` -> `im_send_message(binding_key="...", text="...")`.
 - If no binding can be resolved, say so in pool_chat rather than claiming the IM notification was sent.
 

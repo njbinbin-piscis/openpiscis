@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use pisci_core::host::{PoolEvent, PoolEventSink, TodoChangeAction, TodoSnapshot};
+use piscis_core::host::{PoolEvent, PoolEventSink, TodoChangeAction, TodoSnapshot};
 use serde::Deserialize;
 use tauri::State;
 

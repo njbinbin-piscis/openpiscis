@@ -3,7 +3,7 @@
 We do not claim to measure true Shannon mutual information — that would require
 a ground-truth joint distribution we don't have. Instead we report four
 *operational surrogates* that correlate with the quantities referenced in the
-Pisci 压缩内核 v2 plan:
+Piscis 压缩内核 v2 plan:
 
   • H_token_bits_per_tok(text)           — Shannon entropy of whitespace tokens
   • h_conditional_bits_per_tok(orig,comp) — H(orig) × (1 − IR_F1), "what IR-F1

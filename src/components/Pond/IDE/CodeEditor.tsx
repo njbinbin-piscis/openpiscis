@@ -89,7 +89,11 @@ export default function CodeEditor({ tab, theme, projectDir, onChange, onSave }:
                 fullPath,
                 tab.content,
               );
-              const reg = registerLspProviders(monaco, client, fullPath);
+              const reg = registerLspProviders(
+                monaco as Parameters<typeof registerLspProviders>[0],
+                client,
+                fullPath,
+              );
               lspRef.current = reg;
 
               // Trigger initial diagnostics

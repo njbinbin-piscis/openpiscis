@@ -1,7 +1,7 @@
 {
   "session_id": "tool-03-browser-research",
   "description": "Tool-heavy research session: web_search + browser_visit + memory_store to compile a comparison brief",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "message_count": 18,
   "messages": [
     {

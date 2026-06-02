@@ -2,7 +2,7 @@
 
 **Open-source cross-platform AI Agent Desktop**
 
-OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Rust + React. As of `v0.7.0`, the project has been substantially refactored into a layered architecture: `pisci-core` (pure collaboration/domain logic), `pisci-kernel` (OS/UI-neutral runtime kernel), `piscis-desktop` (Tauri desktop shell), and `pisci-cli` (headless runner). **Piscis** is the main coordinator agent, **Koi** are persistent collaboration agents, and **Fish** are stateless temporary sub-agents.
+OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Rust + React. As of `v0.7.0`, the project has been substantially refactored into a layered architecture: `piscis-core` (pure collaboration/domain logic), `piscis-kernel` (OS/UI-neutral runtime kernel), `piscis-desktop` (Tauri desktop shell), and `piscis-cli` (headless runner). **Piscis** is the main coordinator agent, **Koi** are persistent collaboration agents, and **Fish** are stateless temporary sub-agents.
 
 **Current platform status**
 - **Windows**: primary supported desktop release target
@@ -14,7 +14,7 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 > If you cloned this project, please take 2 seconds to give it a ⭐ — it's the only way we know where the code ends up.
 > [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
-![Chat Interface](./resources/pisci2.jpg)
+![Chat Interface](./resources/piscis2.jpg)
 
 ---
 
@@ -62,7 +62,7 @@ Use it AFTER edits to verify code without running a full build. Pairs with the `
 | Role | Positioning | Lifecycle | Typical Responsibility | Relationship |
 |------|-------------|-----------|------------------------|--------------|
 | `Piscis` | Main agent / project manager / user-facing entry point | Persistent | Talks to the user, uses tools, creates project pools, coordinates multi-agent work, decides whether a project can wrap up | Organizes Koi and can delegate one-off work to Fish |
-| `Koi` | Persistent collaboration agent | Persistent and reusable across projects | Owns long-running project roles such as architect, coder, tester, reviewer, researcher | Collaborates inside a pool through `pool_chat`, @mentions peers, and escalates to @pisci when needed |
+| `Koi` | Persistent collaboration agent | Persistent and reusable across projects | Owns long-running project roles such as architect, coder, tester, reviewer, researcher | Collaborates inside a pool through `pool_chat`, @mentions peers, and escalates to @piscis when needed |
 | `Fish` | Stateless temporary sub-agent | Ephemeral / on-demand | Handles focused work such as batch scanning, research, summarization, and context-isolated sub-tasks | Invoked through `call_fish`; does not directly participate in pool collaboration |
 
 **A simple mental model:**
@@ -77,7 +77,7 @@ Use it AFTER edits to verify code without running a full build. Pairs with the `
 
 ### 🏞️ What Is Inside the Pond
 
-![Koi Management](./resources/pisci3.jpg)
+![Koi Management](./resources/piscis3.jpg)
 
 The Pond is not a single agent. It is the collaboration workspace around a project:
 
@@ -85,13 +85,13 @@ The Pond is not a single agent. It is the collaboration workspace around a proje
 - **Pool Chat**: the shared conversation space where Piscis and Koi discuss, hand off work, ask questions, and @mention each other
 - **Board / Kanban**: visualizes Koi todos as `todo / in_progress / blocked / done / cancelled`
 - **Koi Panel**: shows each Koi's identity, role, availability, and workload
-- **Piscis Inbox / Heartbeat**: Piscis's project-level inbox for `@pisci`, heartbeat scans, and state signals
+- **Piscis Inbox / Heartbeat**: Piscis's project-level inbox for `@piscis`, heartbeat scans, and state signals
 - **Knowledge Base (`kb/`)**: shared project documentation space for architecture, API notes, bugs, decisions, and research
 - **Project Directory / Git Worktrees**: when `project_dir` is configured, Koi can work in isolated branches/worktrees to reduce file conflicts
 
 ### 🤝 How Collaboration Works in a Pond
 
-![Pool Chat Multi-Koi Collaboration](./resources/pisci4.jpg) ![Pool Kanban Board](./resources/pisci5.jpg)
+![Pool Chat Multi-Koi Collaboration](./resources/piscis4.jpg) ![Pool Kanban Board](./resources/piscis5.jpg)
 
 A typical pond project follows this mechanism:
 
@@ -111,13 +111,13 @@ A typical pond project follows this mechanism:
 
 4. **Todos and state stay in sync**
    - Work is tracked through `koi_todos` with the lifecycle `todo -> in_progress -> done / blocked / cancelled`
-   - Piscis and the task owner can update task state; other Koi must ask via `@pisci`
-   - Structured pool chat signals such as `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` help Piscis reason about the next step
+   - Piscis and the task owner can update task state; other Koi must ask via `@piscis`
+   - Structured pool chat signals such as `[ProjectStatus] follow_up_needed / waiting / ready_for_piscis_review` help Piscis reason about the next step
 
 5. **Piscis heartbeat keeps the project moving**
    - Heartbeat scans new pool messages, todos, and project-state signals
    - If there are active todos, or someone signals `follow_up_needed / waiting`, Piscis should continue coordinating instead of treating the project as finished
-   - Only when work truly converges and someone explicitly hands control back with `ready_for_pisci_review @pisci` should Piscis move into wrap-up review
+   - Only when work truly converges and someone explicitly hands control back with `ready_for_piscis_review @piscis` should Piscis move into wrap-up review
 
 6. **Project wrap-up**
    - Koi may suggest that a project looks ready, but they do not get to unilaterally declare it finished
@@ -156,7 +156,7 @@ A typical pond project follows this mechanism:
 - Define custom sub-agents via `FISH.toml` with their own persona, tool permissions, and configuration
 - Fish are **stateless, ephemeral workers**: the main Agent or a Koi delegates sub-tasks via the `call_fish` tool; the Fish returns only the final result
 - **Key benefit**: intermediate reasoning and tool calls inside the Fish do NOT pollute the main Agent or Koi context, effectively saving context window budget
-- User Fish definitions live in `%APPDATA%\com.pisci.desktop\fish\`
+- User Fish definitions live in `%APPDATA%\com.piscis.desktop\fish\`
 - Ideal for batch file processing, data collection, code scanning, and other focused multi-step tasks, not long-running project collaboration
 
 ### ⚡ Skills System
@@ -188,7 +188,7 @@ A typical pond project follows this mechanism:
 
 ### 📱 Multi-Platform IM Gateway
 
-![IM Channel Settings](./resources/pisci1.jpg)
+![IM Channel Settings](./resources/piscis1.jpg)
 
 | Platform | Mode |
 |----------|------|
@@ -244,9 +244,9 @@ At the moment, Windows installers are the primary published artefact. `v0.7.0` a
 The desktop installer is centered on a single GUI application. The headless console binary is an optional developer / automation asset, not a runtime dependency of the desktop app:
 
 - `piscis-desktop` (or `piscis-desktop.exe`): the GUI application.
-- `openpisci-headless` (or `openpisci-headless.exe`): an optional headless agent runner for CLI use, CI, evals, and scripted automation.
+- `openpiscis-headless` (or `openpiscis-headless.exe`): an optional headless agent runner for CLI use, CI, evals, and scripted automation.
 
-Running the headless binary without arguments now drops into an **interactive REPL** (multi-turn conversation, streamed to stdout, `:help` for commands) that shares the same `pisci.db` / `config.json` as the desktop app. Use `openpisci-headless run --prompt "..."` for scripted one-shot invocations, or `openpisci-headless capabilities` to inspect which tools are available in the current build. See `openpisci-headless --help` for the full surface.
+Running the headless binary without arguments now drops into an **interactive REPL** (multi-turn conversation, streamed to stdout, `:help` for commands) that shares the same `piscis.db` / `config.json` as the desktop app. Use `openpiscis-headless run --prompt "..."` for scripted one-shot invocations, or `openpiscis-headless capabilities` to inspect which tools are available in the current build. See `openpiscis-headless --help` for the full surface.
 
 > **⚠️ Security Warning**: OpenPiscis is an AI Agent desktop with high-privilege capabilities including file read/write, command execution, and UI automation. It is strongly recommended to run it inside a virtual machine (VMware, VirtualBox, Hyper-V) to prevent accidental damage to your host system. The developers are not responsible for any data loss or system damage caused by running it directly on a host machine.
 
@@ -274,7 +274,7 @@ Running the headless binary without arguments now drops into an **interactive RE
 
 ```bash
 git clone https://github.com/njbinbin-piscis/openpiscis.git
-cd openpisci
+cd openpiscis
 
 # Install frontend dependencies
 npm install
@@ -296,7 +296,7 @@ npm run icon:emoji
 
 ## 🐠 Creating a Custom Fish
 
-Create `%APPDATA%\com.pisci.desktop\fish\my-fish\FISH.toml`:
+Create `%APPDATA%\com.piscis.desktop\fish\my-fish\FISH.toml`:
 
 ```toml
 id = "my-fish"
@@ -324,7 +324,7 @@ Restart the app and the new Fish will appear on the Fish page. The main Agent wi
 
 ## ⚡ Creating a Custom Skill
 
-Create `%APPDATA%\com.pisci.desktop\skills\my-skill\SKILL.md`:
+Create `%APPDATA%\com.piscis.desktop\skills\my-skill\SKILL.md`:
 
 ```markdown
 ---
@@ -351,7 +351,7 @@ When the user needs to..., follow these steps:
 
 Install TypeScript plugins from the Tools page. Each plugin can declare its own configuration interface (e.g. SMTP credentials, API keys).
 
-User tools are stored in: `%APPDATA%\com.pisci.desktop\user-tools\`
+User tools are stored in: `%APPDATA%\com.piscis.desktop\user-tools\`
 
 ---
 
@@ -359,11 +359,11 @@ User tools are stored in: `%APPDATA%\com.pisci.desktop\user-tools\`
 
 | Path | Contents |
 |------|----------|
-| `%APPDATA%\com.pisci.desktop\` | Config, database |
-| `%APPDATA%\com.pisci.desktop\skills\` | Skills directory |
-| `%APPDATA%\com.pisci.desktop\fish\` | User-defined Fish |
-| `%APPDATA%\com.pisci.desktop\user-tools\` | User-defined tools |
-| `%LOCALAPPDATA%\pisci\logs\` | Logs and crash reports |
+| `%APPDATA%\com.piscis.desktop\` | Config, database |
+| `%APPDATA%\com.piscis.desktop\skills\` | Skills directory |
+| `%APPDATA%\com.piscis.desktop\fish\` | User-defined Fish |
+| `%APPDATA%\com.piscis.desktop\user-tools\` | User-defined tools |
+| `%LOCALAPPDATA%\piscis\logs\` | Logs and crash reports |
 
 ---
 
@@ -372,9 +372,9 @@ User tools are stored in: `%APPDATA%\com.pisci.desktop\user-tools\`
 ```
 OpenPiscis
 ├── src-tauri/
-│   ├── pisci-core/      # Pure domain logic: scenes, pool/project state, prompts, shared types
-│   ├── pisci-kernel/    # OS/UI-neutral runtime kernel: agent loop, LLM, memory, storage, neutral tools
-│   ├── pisci-cli/       # Headless CLI runner built on top of the kernel
+│   ├── piscis-core/      # Pure domain logic: scenes, pool/project state, prompts, shared types
+│   ├── piscis-kernel/    # OS/UI-neutral runtime kernel: agent loop, LLM, memory, storage, neutral tools
+│   ├── piscis-cli/       # Headless CLI runner built on top of the kernel
 │   ├── src/             # Tauri desktop adapter: IPC commands, desktop integration, platform-gated tools
 │   └── Cargo.toml       # Workspace root + desktop package
 └── src/
@@ -395,7 +395,7 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - Desktop-only concerns (Tauri commands, tray, updater, platform integrations) are now isolated in the desktop layer instead of leaking into core runtime code.
 - Frontend service/store modules were reorganized by domain to make the codebase easier to extend and audit.
 - Cross-platform desktop compilation and packaging were wired into CI so Windows, macOS, and Linux releases can be produced from native runners.
-- Source layering is intentionally a source-code boundary, not a forced multi-process product boundary: desktop chat and Koi collaboration run inside the GUI runtime by default, while `openpisci-headless` remains optional for CLI/eval/automation.
+- Source layering is intentionally a source-code boundary, not a forced multi-process product boundary: desktop chat and Koi collaboration run inside the GUI runtime by default, while `openpiscis-headless` remains optional for CLI/eval/automation.
 
 ---
 
@@ -403,12 +403,12 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 
 ### v0.7.9
 - **UIA precision drag test**: the agent now receives exact ball/target physical-screen coordinates from the frontend via IPC (computed from `innerPosition()` + `getBoundingClientRect()` × `devicePixelRatio`) and performs the drag in a single `desktop_automation`/`uia` tool call — no vision OCR, no grid estimation.
-- **Linux mouse control under VMware+Xorg**: new `xi_helpers.c` native helper (`pisci-xi-helper`) uses `XIWarpPointer` on the master pointer (device id=2) plus `XTestFakeMotionEvent` to deliver events reliably. Mouse movement is now a 20-step smooth motion matching Windows UIA behavior.
+- **Linux mouse control under VMware+Xorg**: new `xi_helpers.c` native helper (`piscis-xi-helper`) uses `XIWarpPointer` on the master pointer (device id=2) plus `XTestFakeMotionEvent` to deliver events reliably. Mouse movement is now a 20-step smooth motion matching Windows UIA behavior.
 - **Layout stability**: the UIA test arena is fixed-width (800px) and centered; tool-call log and result panels can no longer shift the arena's screen position during a running test.
 - **IM send auto-resolve**: `im_send_message` now automatically resolves the IM binding from the current session when no explicit `binding_key` or `channel`+`recipient` is provided, so IM-driven replies don't need explicit addressing.
 
 ### v0.7.8
-- **Per-Koi `memory_owner_id`**: Koi-driven headless turns now use the Koi's own ID as the tool-context memory owner instead of the hardcoded `"pisci"`. This means `pool_chat` posts, memory writes, and privilege checks correctly attribute to the Koi rather than to Piscis, and scoped-memory retrieval uses the Koi's scope instead of Piscis's.
+- **Per-Koi `memory_owner_id`**: Koi-driven headless turns now use the Koi's own ID as the tool-context memory owner instead of the hardcoded `"piscis"`. This means `pool_chat` posts, memory writes, and privilege checks correctly attribute to the Koi rather than to Piscis, and scoped-memory retrieval uses the Koi's scope instead of Piscis's.
 - **Collaboration trial prompt tightening**: The trial kickoff message is now content-only (what to design) while the execution wrapper (`koi_execute_todo.txt`) owns all procedural instructions. The previous verbose kickoff crammed four responsibilities into one iteration budget, causing Architect to frequently stop without posting to `pool_chat` — which triggered Piscis's `replace_todo` retry. The wrapper now also states plainly that plain assistant text is invisible to the pool, promotes the >500-word "write to file, post path" rule to take precedence over task-text instructions, and ends with an explicit three-step end-of-turn checklist.
 
 ### v0.7.7
@@ -416,7 +416,7 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 
 ### v0.7.6
 - **Koi runtime observer**: added a runtime observer in the Pond UI that shows each Koi's real-time execution state (active run slot, checkpoint status)
-- **NSIS packaging fix**: moved `pisci_compact_one` into `pisci-cli` so the Tauri NSIS installer no longer fails on a missing binary
+- **NSIS packaging fix**: moved `piscis_compact_one` into `piscis-cli` so the Tauri NSIS installer no longer fails on a missing binary
 
 ### v0.7.5
 - **WeChat IM file upload**: the WeChat gateway now supports receiving and forwarding file attachments from users
@@ -429,11 +429,11 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **Koi collaboration handoff stabilization**: fixed several race conditions and state inconsistencies in Koi-to-Koi task handoffs, reducing spurious `blocked` todos and lost mentions during busy coordination
 
 ### v0.7.2
-- **Desktop runtime correction**: restored desktop Koi collaboration to the in-process GUI runtime. Source layering remains (`pisci-core` / `pisci-kernel` / `pisci-cli` / `piscis-desktop`), but the desktop product no longer depends on `openpisci-headless` for normal chat or Koi coordination.
-- **Packaging simplification**: removed the GUI bundle's mandatory `openpisci-headless` sidecar requirement. Headless builds remain available via `npm run build:headless` or `cargo build -p pisci-cli --release --bin openpisci-headless`.
+- **Desktop runtime correction**: restored desktop Koi collaboration to the in-process GUI runtime. Source layering remains (`piscis-core` / `piscis-kernel` / `piscis-cli` / `piscis-desktop`), but the desktop product no longer depends on `openpiscis-headless` for normal chat or Koi coordination.
+- **Packaging simplification**: removed the GUI bundle's mandatory `openpiscis-headless` sidecar requirement. Headless builds remain available via `npm run build:headless` or `cargo build -p piscis-cli --release --bin openpiscis-headless`.
 
 ### v0.7.0
-- **Major architecture refactor**: split the Rust codebase into `pisci-core` (pure collaboration/domain logic), `pisci-kernel` (OS/UI-neutral runtime kernel), `pisci-cli` (headless runner), and `piscis-desktop` (Tauri shell), substantially reducing cross-layer coupling.
+- **Major architecture refactor**: split the Rust codebase into `piscis-core` (pure collaboration/domain logic), `piscis-kernel` (OS/UI-neutral runtime kernel), `piscis-cli` (headless runner), and `piscis-desktop` (Tauri shell), substantially reducing cross-layer coupling.
 - **Desktop / kernel decoupling**: pool and multi-agent orchestration logic were pulled out of UI-facing codepaths, legacy runtime leftovers were removed, and the codebase is now much closer to a clean "core + adapter" structure.
 - **Streaming main-chat output**: the main chat can now stream LLM output incrementally, controlled by a user-facing setting.
 - **MCP integration completed**: scene-aware tool registry assembly now registers MCP tools where appropriate instead of leaving the integration partially wired.
@@ -442,7 +442,7 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 
 ### v0.6.0
 - **Koi collaboration prompt redesigned (6-layer structure)**: Koi system prompts are now built from a fixed `Identity → Run Shape → Coordination Protocol → Context & Tools → Capabilities → Stop Gate` layering; `Run Shape` carries explicit side-effect invariants (claim / progress / complete), `Stop Gate` forbids stopping mid-todo, and handoff messages must state "what to do / where inputs are / how to report completion". Structural tests lock these guarantees in place.
-- **New `pisci-core` crate**: extracted project-state assessment, pool-attention collection, heartbeat message composition, and Koi prompt sections into a pure-Rust library (`src-tauri/pisci-core/`) with 36 unit/integration tests, decoupling collaboration logic from the Tauri runtime.
+- **New `piscis-core` crate**: extracted project-state assessment, pool-attention collection, heartbeat message composition, and Koi prompt sections into a pure-Rust library (`src-tauri/piscis-core/`) with 36 unit/integration tests, decoupling collaboration logic from the Tauri runtime.
 - **Runtime reconciliation soft fence**: if a Koi finishes its turn with `in_progress` todos still unreconciled, the runtime posts a `[SoftFence]` notice and re-engages the Koi for exactly one extra turn to call `complete_todo` / `block_todo` / `fail_todo`, before falling back to the existing `protocol_reminder` hard fence. Prevents projects from silently stalling on "done but not marked done".
 - **Configurable `max_iterations` hierarchy**: per-Koi → system settings → built-in default. Collaboration trials and `call_koi` delegations now inherit the user-visible global iteration budget instead of a hardcoded 8-iteration cap.
 - **Piscis global-supervision state machine**: `ProjectDecision` gains `SupervisorDecisionRequired` (workers locally finished but no global sign-off) and `EscalateToHuman` (unrecoverable failures / timeouts). Heartbeat now raises attention for both states even without new messages, and the heartbeat prompt tells Piscis to make the explicit global decision or surface human escalation instead of silently continuing.
@@ -471,7 +471,7 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **Excel chart fix**: fixed a logic inversion in sheet_check that caused named-sheet selection to always fall through to ActiveSheet; dd_chart now re-applies ChartType after SetSourceData to prevent Excel from silently resetting it to the default type; strengthened tool description to require explicit chart_type (line/column/bar/pie/scatter/area) so the AI no longer defaults to pie charts
 
 ### v0.5.18
-- **Koi timeout fix**: when a Koi times out, its in_progress todos are automatically blocked and a @pisci notice is posted to the pool; the heartbeat scanner now wakes Piscis whenever blocked todos exist, preventing projects from stalling permanently after a Koi failure
+- **Koi timeout fix**: when a Koi times out, its in_progress todos are automatically blocked and a @piscis notice is posted to the pool; the heartbeat scanner now wakes Piscis whenever blocked todos exist, preventing projects from stalling permanently after a Koi failure
 - **File encoding improvements**: ile_read transparently handles UTF-8 BOM, UTF-16 LE/BE, and GBK/GB18030; ile_write/ile_edit preserve the original BOM on write-back; tool descriptions and the system prompt now include a Windows file encoding guide
 
 ### v0.5.17

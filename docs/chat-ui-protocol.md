@@ -217,7 +217,7 @@ Buttons may set `"emit": "action"` (vs `"submit"`):
 2. Agent may `chat_ui_patch` (update `data`, `blocks`, `progress`, `wizard_step`) and/or `chat_ui_listen` (re-open submit wait on same `request_id`).
 3. User final submit → `__action_type__: "submit"`.
 
-Patch tool: `chat_ui_patch { request_id, patch }`. Catalog: `docs/pisci.chat.catalog.json`.
+Patch tool: `chat_ui_patch { request_id, patch }`. Catalog: `docs/piscis.chat.catalog.json`.
 
 ### Wizard example
 
@@ -247,4 +247,4 @@ Patch tool: `chat_ui_patch { request_id, patch }`. Catalog: `docs/pisci.chat.cat
 - Renderer: `src/components/Chat/InteractiveCard.tsx`
 - Types & validation: `src/components/Chat/interactiveUi/`
 - Tools: `chat_ui`, `chat_ui_patch`, `chat_ui_listen` in `src-tauri/src/tools/`
-- Catalog: `docs/pisci.chat.catalog.json`
+- Catalog: `docs/piscis.chat.catalog.json`

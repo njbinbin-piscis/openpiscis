@@ -10,7 +10,7 @@ i18n
       zh: { translation: zh },
       en: { translation: en },
     },
-    lng: localStorage.getItem("pisci-language") || "zh",
+    lng: localStorage.getItem("piscis-language") || "zh",
     fallbackLng: "zh",
     interpolation: {
       escapeValue: false,
@@ -22,5 +22,5 @@ export default i18n;
 /** 切换语言并持久化 */
 export function setLanguage(lang: "zh" | "en") {
   i18n.changeLanguage(lang);
-  localStorage.setItem("pisci-language", lang);
+  localStorage.setItem("piscis-language", lang);
 }

@@ -5,7 +5,7 @@ different environments:
 
 1. **Desktop** — Tauri app on Windows, rich UI, platform tools (UIA, screen
    capture, PowerShell / WMI / COM, browser automation, IM gateways).
-2. **Headless CLI** — `openpisci-headless` binary, used by benchmark scripts
+2. **Headless CLI** — `openpiscis-headless` binary, used by benchmark scripts
    (SWE-lite), CI harnesses and IDE integrations. No UI; reads JSON requests
    from stdin/args, streams NDJSON events to stdout.
 3. **Future hosts** — web server deployments, mobile shells, plugin embeds.
@@ -16,15 +16,15 @@ rooted at `src-tauri/`:
 ```text
 src-tauri/
 ├── Cargo.toml          # workspace manifest (members + shared deps)
-├── pisci-core/         # pure data model + host trait contracts
-├── pisci-kernel/       # OS/UI-neutral agent runtime
-├── pisci-cli/          # headless host adapter + openpisci-headless bin
+├── piscis-core/         # pure data model + host trait contracts
+├── piscis-kernel/       # OS/UI-neutral agent runtime
+├── piscis-cli/          # headless host adapter + openpiscis-headless bin
 └── src/                # piscis-desktop: Tauri host adapter (the UI shell)
 ```
 
 ## Crate responsibilities
 
-### `pisci-core` — contracts only, no I/O
+### `piscis-core` — contracts only, no I/O
 
 * Stable schema types shared by every crate and by external tools
   (`HeadlessCliRequest`, `HeadlessCliResponse`, `HeadlessContextToggles`,
@@ -40,10 +40,10 @@ src-tauri/
   * `HostRuntime` — aggregate trait bundling the four above plus
     `app_data_dir()`.
 
-`pisci-core` intentionally depends only on `serde`, `serde_json`, `chrono`,
+`piscis-core` intentionally depends only on `serde`, `serde_json`, `chrono`,
 `async-trait` and `anyhow`. No Tokio, no reqwest, no rusqlite, no Tauri.
 
-### `pisci-kernel` — the agent runtime
+### `piscis-kernel` — the agent runtime
 
 Owns every piece of OpenPiscis that should behave identically on every host:
 
@@ -70,7 +70,7 @@ it needs to surface an event, prompt the user, look up a secret, or discover
 a platform-specific tool, it goes through an `Arc<dyn HostRuntime>` handed
 in at construction time.
 
-### `pisci-cli` — headless host adapter
+### `piscis-cli` — headless host adapter
 
 Tiny crate that implements the host traits for a non-interactive
 environment:
@@ -82,19 +82,19 @@ environment:
   tools).
 * `CliSecretsStore` — environment variables.
 * `CliHost` — bundles the above into `HostRuntime`.
-* `openpisci-headless` binary — fully host-agnostic CLI entry point.
+* `openpiscis-headless` binary — fully host-agnostic CLI entry point.
   Exposes three subcommands:
-  * `capabilities [--mode pisci|pool]` — prints a JSON report of OS, mode,
+  * `capabilities [--mode piscis|pool]` — prints a JSON report of OS, mode,
     kernel version, and the list of disabled (desktop-only) tools.
   * `version` — prints the kernel version string.
-  * `run --prompt <text> …` — runs a single `pisci`-mode agent turn
+  * `run --prompt <text> …` — runs a single `piscis`-mode agent turn
     entirely through the kernel via
-    [`pisci_cli::runner::run_pisci_once`], which in turn drives
-    [`pisci_kernel::headless::run_pisci_turn`]. It boots a `CliHost`,
-    opens the kernel DB/settings under `OPENPISCI_CONFIG_DIR`, registers
+    [`piscis_cli::runner::run_piscis_once`], which in turn drives
+    [`piscis_kernel::headless::run_piscis_turn`]. It boots a `CliHost`,
+    opens the kernel DB/settings under `OPENPISCIS_CONFIG_DIR`, registers
     only neutral tools, and streams `AgentEvent`s as NDJSON on stdout.
-* `pisci_cli::runner::run_pisci_once(request)` — shared helper for
-  `openpisci-headless` pisci-mode runs, guaranteeing that a single code
+* `piscis_cli::runner::run_piscis_once(request)` — shared helper for
+  `openpiscis-headless` piscis-mode runs, guaranteeing that a single code
   path owns tool registration, event-sink wiring, timeout semantics, and
   response shape.
 
@@ -112,7 +112,7 @@ The pre-existing Tauri app. After the refactor its role is:
     backs `request_confirmation` / `request_interactive` with the
     oneshot-channel maps already kept in `AppState`.
   * `DesktopHostTools` — implements `HostTools::register`, which first
-    calls `pisci_kernel::tools::register_neutral_tools` to install the
+    calls `piscis_kernel::tools::register_neutral_tools` to install the
     shared neutral set and then layers platform-specific tools on top
     (browser, UIA, screen, app_control, plan_todo, chat_ui, call_fish/koi,
     pool_org, pool_chat, PowerShell, WMI, COM, Office, skill_list).
@@ -127,14 +127,14 @@ The pre-existing Tauri app. After the refactor its role is:
   `call_fish`, `call_koi`, `chat_ui`, `plan_todo`, `pool_chat`, `pool_org`,
   `skill_list`, and the Windows-only `com_invoke`, `com_tool`, `screen`,
   `uia`, `powershell`, `wmi_tool`, `office`, `dpi`).
-* Transparently re-export kernel modules via `pub use pisci_kernel::...`
+* Transparently re-export kernel modules via `pub use piscis_kernel::...`
   so legacy `crate::agent::...`, `crate::llm::...`, `crate::store::...`
   call sites inside `piscis-desktop` keep resolving without edits.
 
 ## Key design decisions
 
 * **One-time kernel extraction.** Rather than a gradual strangler
-  migration, the whole agent runtime moved to `pisci-kernel` in a single
+  migration, the whole agent runtime moved to `piscis-kernel` in a single
   pass. This keeps the kernel API consistent between crates and avoids
   half-migrated code paths that drift apart over time.
 * **Plan state over AppHandle.** The old `AgentLoop::app_handle:
@@ -151,11 +151,11 @@ The pre-existing Tauri app. After the refactor its role is:
   their glue code in `piscis-desktop` and reach the kernel via
   `HostTools::register`.
 * **Shared headless schema.** `HeadlessCliRequest` / `Response` and the
-  context toggles moved to `pisci-core` so Python benchmark scripts,
+  context toggles moved to `piscis-core` so Python benchmark scripts,
   Tauri command handlers, and the CLI crate all deserialize the same
   shape.
 * **CI matrix.** The workflow now builds
-  `pisci-core + pisci-kernel + pisci-cli` on Ubuntu, macOS, and Windows
+  `piscis-core + piscis-kernel + piscis-cli` on Ubuntu, macOS, and Windows
   (kernel tests must work on every platform). Only the Tauri bundle and
   desktop clippy stay Windows-only.
 
@@ -165,24 +165,24 @@ The pre-existing Tauri app. After the refactor its role is:
 # From src-tauri/
 
 # Kernel-only lint + tests (any OS):
-cargo clippy -p pisci-core -p pisci-kernel -p pisci-cli --all-targets -- -D warnings
-cargo test   -p pisci-core -p pisci-kernel -p pisci-cli --lib --bins
+cargo clippy -p piscis-core -p piscis-kernel -p piscis-cli --all-targets -- -D warnings
+cargo test   -p piscis-core -p piscis-kernel -p piscis-cli --lib --bins
 
 # Headless binary:
-cargo build -p pisci-cli --release --bin openpisci-headless
+cargo build -p piscis-cli --release --bin openpiscis-headless
 
 # Full desktop build (Windows):
 cargo build --release -p piscis-desktop
 ```
 
-Headless benchmark harnesses should invoke `openpisci-headless[.exe]`
+Headless benchmark harnesses should invoke `openpiscis-headless[.exe]`
 from `target/{debug,release}/` or from a separately published CLI asset.
 
 ## Future work
 
 * Continue hardening pool-mode orchestration (`pool_org` / `pool_chat`
   tools plus the optional CLI subprocess runtime) inside
-  `openpisci-headless` so the headless story stays independent from the
+  `openpiscis-headless` so the headless story stays independent from the
   desktop crate.
 * Route pool-mode UI flows (in-app task board, Koi status) through the
   same NDJSON event contract the CLI uses, so a future headless pool
@@ -198,27 +198,27 @@ verified in CI:
   `tools::build_registry` free function (and its multi-arg signature)
   has been retired — scene / koi / fish / scheduler / debug / system
   call sites build a `DesktopHostTools` struct literal directly.
-* `pisci-core::host::ToolRegistryHandle` exposes a type-safe downcast
+* `piscis-core::host::ToolRegistryHandle` exposes a type-safe downcast
   API (`downcast_ref`, `with_mut`, `into_inner`, `type_name`). The
   kernel adds `ToolRegistryHandleExt` so hosts can `register_tool` /
   `as_registry_mut` / `into_registry` without unsafe casts.
-* `openpisci-headless` now runs a true kernel-only agent loop via
-  `pisci_kernel::headless::run_pisci_turn` with a `CliHost` driver.
-* `openpisci-headless run` drives the CLI host through
-  `pisci_cli::runner::run_pisci_once`; the desktop GUI uses its own
+* `openpiscis-headless` now runs a true kernel-only agent loop via
+  `piscis_kernel::headless::run_piscis_turn` with a `CliHost` driver.
+* `openpiscis-headless run` drives the CLI host through
+  `piscis_cli::runner::run_piscis_once`; the desktop GUI uses its own
   long-lived `piscis-desktop` runtime and no longer depends on a headless
   sidecar for normal chat or Koi coordination.
 * Linux CI gained an opt-in end-to-end LLM smoke test
   (`e2e_run_returns_answer_with_real_api_key`) that skips silently when
-  `OPENPISCI_TEST_API_KEY` is absent and drives a full kernel turn via
-  the compiled `openpisci-headless` binary when it is configured.
+  `OPENPISCIS_TEST_API_KEY` is absent and drives a full kernel turn via
+  the compiled `openpiscis-headless` binary when it is configured.
 * A dedicated Linux step in `.github/workflows/ci.yml` runs
-  `cargo test -p pisci-cli --test headless_cli` to guard the CLI
+  `cargo test -p piscis-cli --test headless_cli` to guard the CLI
   surface (capabilities schema, pool rejection, arg validation, version
   banner) against drift.
 * `piscis-desktop::headless_cli` is a thin adapter — request /
-  response / toggle schemas come from `pisci_core::host`. The desktop
-  crate no longer depends on `pisci-cli`.
+  response / toggle schemas come from `piscis_core::host`. The desktop
+  crate no longer depends on `piscis-cli`.
 * `piscis-desktop 0.7.0` drops several compatibility scaffolds: the
   `tools::build_registry` shim, the `RuntimeToolProfile::Desktop`
   no-op variant, the duplicate `strip_send_markers` in

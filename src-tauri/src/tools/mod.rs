@@ -20,22 +20,22 @@ pub mod system_info;
 pub mod wmi_tool;
 
 // `plan_todo`, `pool_org`, `pool_chat` now live entirely in
-// `pisci-kernel::tools::*` and register themselves through
+// `piscis-kernel::tools::*` and register themselves through
 // `register_neutral_tools` — the desktop no longer carries its own copy.
 
 // ─── Platform-neutral tools re-exported from the kernel.
 //
 // Only modules that are still referenced by their full `crate::tools::<name>::…`
 // path from outside this module need a re-export; everything else is
-// reachable through `pisci_kernel::tools` directly and the `HostTools`
+// reachable through `piscis_kernel::tools` directly and the `HostTools`
 // trait handles all registration internally.
-pub use pisci_kernel::tools::{mcp, user_tool};
+pub use piscis_kernel::tools::{mcp, user_tool};
 
 // Desktop-automation + browser tools now live in the standalone RobotZ
 // toolkit (`robotz-automation` / `robotz-browser`). They are re-exported here
 // so the rest of the desktop crate keeps referring to them via
-// `crate::tools::*`. The `pisci-kernel` feature on those crates makes the
-// structs implement `pisci_kernel::Tool` directly, so registration is
+// `crate::tools::*`. The `piscis-kernel` feature on those crates makes the
+// structs implement `piscis_kernel::Tool` directly, so registration is
 // unchanged. The UIA mouse-precision calibration store moved with them
 // (`robotz_automation::calibration`).
 #[cfg(target_os = "windows")]
@@ -55,7 +55,7 @@ use std::collections::HashMap;
 /// the full builtin set — so we only enumerate the headless variants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuntimeToolProfile {
-    HeadlessPisci,
+    HeadlessPiscis,
     HeadlessPool,
 }
 
@@ -86,16 +86,16 @@ const WINDOWS_ORIENTED_TOOLS: &[(&str, &str)] = &[
     ),
 ];
 
-// Tools disabled in headless pisci mode. `pool_org` / `pool_chat` /
+// Tools disabled in headless piscis mode. `pool_org` / `pool_chat` /
 // `plan_todo` are intentionally **not** in this list: they live in
-// `pisci-kernel::tools` and are registered by every headless run so
+// `piscis-kernel::tools` and are registered by every headless run so
 // CLI/eval pool runs can still coordinate through the pool database.
 // `call_koi` remains desktop-only because it needs the in-process Tauri
 // runtime, which the CLI host does not host.
-const HEADLESS_PISCI_DISABLED_TOOLS: &[(&str, &str)] = &[
+const HEADLESS_PISCIS_DISABLED_TOOLS: &[(&str, &str)] = &[
     (
         "call_koi",
-        "Disabled in headless pisci mode: single-agent baseline should not delegate to Koi.",
+        "Disabled in headless piscis mode: single-agent baseline should not delegate to Koi.",
     ),
     (
         "chat_ui",
@@ -150,9 +150,9 @@ pub fn apply_runtime_tool_profile(
         disable_tools(&mut effective, WINDOWS_ORIENTED_TOOLS, &mut ignored);
     }
     match profile {
-        RuntimeToolProfile::HeadlessPisci => {
+        RuntimeToolProfile::HeadlessPiscis => {
             disable_tools(&mut effective, HEADLESS_COMMON_DISABLED_TOOLS, &mut ignored);
-            disable_tools(&mut effective, HEADLESS_PISCI_DISABLED_TOOLS, &mut ignored);
+            disable_tools(&mut effective, HEADLESS_PISCIS_DISABLED_TOOLS, &mut ignored);
         }
         RuntimeToolProfile::HeadlessPool => {
             disable_tools(&mut effective, HEADLESS_COMMON_DISABLED_TOOLS, &mut ignored);
@@ -177,9 +177,9 @@ pub fn runtime_disabled_tools(profile: RuntimeToolProfile) -> Vec<ToolAvailabili
         push_unique(WINDOWS_ORIENTED_TOOLS);
     }
     match profile {
-        RuntimeToolProfile::HeadlessPisci => {
+        RuntimeToolProfile::HeadlessPiscis => {
             push_unique(HEADLESS_COMMON_DISABLED_TOOLS);
-            push_unique(HEADLESS_PISCI_DISABLED_TOOLS);
+            push_unique(HEADLESS_PISCIS_DISABLED_TOOLS);
         }
         RuntimeToolProfile::HeadlessPool => {
             push_unique(HEADLESS_COMMON_DISABLED_TOOLS);

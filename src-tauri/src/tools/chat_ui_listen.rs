@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use pisci_kernel::agent::messages::AgentEvent;
-use pisci_kernel::agent::tool::{Tool, ToolContext, ToolResult};
+use piscis_kernel::agent::messages::AgentEvent;
+use piscis_kernel::agent::tool::{Tool, ToolContext, ToolResult};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
 

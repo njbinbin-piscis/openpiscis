@@ -1,4 +1,4 @@
-//! pisci_compact_one — headless one-shot compression CLI.
+//! piscis_compact_one — headless one-shot compression CLI.
 //!
 //! Reads a JSON `BenchRequest` from stdin and writes a JSON `BenchResponse`
 //! to stdout. All tracing goes to stderr. Used by the cross-framework
@@ -8,10 +8,10 @@
 //! resolution) so it lives in this workspace rather than the extracted
 //! `piscis-engine`. It is its own crate (not a `piscis-desktop` target) so the
 //! Tauri bundler never ships it. Build with:
-//!   cargo build -p pisci-bench --release
+//!   cargo build -p piscis-bench --release
 //!
 //! Usage (PowerShell):
-//!   Get-Content sample.json | .\target\release\pisci_compact_one.exe
+//!   Get-Content sample.json | .\target\release\piscis_compact_one.exe
 
 use std::io::Read;
 
@@ -26,9 +26,9 @@ async fn main() {
         .try_init();
 
     // Special subcommand: `--print-runtime` prints the active LLM runtime
-    // (provider/model/base_url/api_key) resolved from Pisci's config.json.
+    // (provider/model/base_url/api_key) resolved from Piscis's config.json.
     // Used by the cross-framework benchmark harness to route Hermes / Engram
-    // / judge calls to the SAME endpoint Pisci is using, for fair comparison.
+    // / judge calls to the SAME endpoint Piscis is using, for fair comparison.
     let args: Vec<String> = std::env::args().collect();
     if args.iter().any(|a| a == "--print-runtime") {
         let config_path = piscis_desktop_lib::store::settings::Settings::default_config_path();
@@ -75,7 +75,7 @@ async fn main() {
         std::process::exit(2);
     }
 
-    let req: pisci_kernel::agent::bench_compact::BenchRequest = match serde_json::from_str(&raw) {
+    let req: piscis_kernel::agent::bench_compact::BenchRequest = match serde_json::from_str(&raw) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("parse request failed: {}", e);
@@ -83,7 +83,7 @@ async fn main() {
         }
     };
 
-    match pisci_kernel::agent::bench_compact::compact_one(req).await {
+    match piscis_kernel::agent::bench_compact::compact_one(req).await {
         Ok(resp) => {
             let out = serde_json::to_string(&resp).unwrap();
             println!("{}", out);

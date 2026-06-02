@@ -1,6 +1,6 @@
 use crate::host::DesktopHostTools;
 use crate::store::{AppState, Settings};
-use pisci_kernel::proc::std_command;
+use piscis_kernel::proc::std_command;
 use robotz_browser::download;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -138,7 +138,7 @@ pub async fn check_runtimes(state: State<'_, AppState>) -> Result<Vec<RuntimeChe
     // Check system Chrome/Brave first, then cached Chrome for Testing
     let chrome_dir = dirs::data_local_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("com.pisci.desktop")
+        .join("com.piscis.desktop")
         .join("chrome");
     let (browser_available, browser_version, browser_hint) =
         if let Some(sys_path) = download::find_system_chrome() {

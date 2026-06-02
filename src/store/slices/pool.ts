@@ -20,7 +20,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** Parse @mention recipients from message text.
- *  Returns an array of recipient IDs (koi id, "pisci", or "all"). */
+ *  Returns an array of recipient IDs (koi id, "piscis", or "all"). */
 export function parseMentions(text: string): string[] {
   const matches = text.match(/@(\S+)/g);
   if (!matches) return [];

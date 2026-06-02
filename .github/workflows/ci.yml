@@ -37,8 +37,8 @@ jobs:
         run: npm test
 
   # ──────────────────────────────────────────────────────────────────────────
-  # NOTE: the OS/UI-neutral agent runtime crates (pisci-core / pisci-kernel /
-  # pisci-cli) were extracted into the standalone `piscis-engine` repo, which
+  # NOTE: the OS/UI-neutral agent runtime crates (piscis-core / piscis-kernel /
+  # piscis-cli) were extracted into the standalone `piscis-engine` repo, which
   # owns its own cross-platform fmt / clippy / test / headless CI. They are no
   # longer built or tested here.
   #

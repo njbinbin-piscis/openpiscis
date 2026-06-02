@@ -1,7 +1,7 @@
 {
   "session_id": "hard-01-multi-day-project",
   "description": "Cross-day recovery: project discussion day 1, interruption, resumption day 2 where agent must still recall day-1 task contract and open items. Tests whether compression preserves the task spine across a long tail.",
-  "channel": "pisci-agent",
+  "channel": "piscis-agent",
   "notes_for_judge": {
     "critical_facts": [
       "user wants to migrate the billing module from Postgres to ClickHouse for cold-storage analytics; active billing reads stay on Postgres",

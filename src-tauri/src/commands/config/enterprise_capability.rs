@@ -8,7 +8,7 @@ use crate::commands::config::mcp::{
 };
 use crate::store::{AppState, Settings};
 use crate::tools::mcp::{McpServerConfig, McpToolInfo};
-use pisci_kernel::proc::tokio_command;
+use piscis_kernel::proc::tokio_command;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Stdio;
@@ -229,7 +229,7 @@ fn dingtalk_template() -> EnterpriseCapabilityTemplate {
     EnterpriseCapabilityTemplate {
         platform: DINGTALK_PLATFORM.into(),
         title: "DingTalk Enterprise Capability".into(),
-        description: "Official DingTalk MCP Marketplace / AIHub remote MCP URL, registered as a Pisci MCP server.".into(),
+        description: "Official DingTalk MCP Marketplace / AIHub remote MCP URL, registered as a Piscis MCP server.".into(),
         supported: true,
         mcp_server_name: DINGTALK_ENTERPRISE_SERVER.into(),
     }
@@ -568,17 +568,17 @@ mod tests {
 
     #[tokio::test]
     async fn real_feishu_lark_mcp_lists_tools_when_enabled() {
-        if std::env::var("PISCI_REAL_FEISHU_MCP_TEST").ok().as_deref() != Some("1") {
-            eprintln!("skipping real Feishu MCP test; set PISCI_REAL_FEISHU_MCP_TEST=1");
+        if std::env::var("PISCIS_REAL_FEISHU_MCP_TEST").ok().as_deref() != Some("1") {
+            eprintln!("skipping real Feishu MCP test; set PISCIS_REAL_FEISHU_MCP_TEST=1");
             return;
         }
 
-        let config_path = std::env::var("PISCI_REAL_FEISHU_CONFIG_PATH")
+        let config_path = std::env::var("PISCIS_REAL_FEISHU_CONFIG_PATH")
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|_| {
                 let roaming = dirs::data_dir()
                     .unwrap_or_else(crate::app::logging::default_app_data_dir)
-                    .join("com.pisci.desktop")
+                    .join("com.piscis.desktop")
                     .join("config.json");
                 if roaming.exists() {
                     roaming

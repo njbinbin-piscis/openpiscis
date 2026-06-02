@@ -2,7 +2,7 @@
 
 **开源跨平台 AI Agent 桌面应用**
 
-OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Tauri 2 + Rust + React 构建。从 `v0.7.0` 起，项目经过了大规模重构，形成清晰的分层架构：`pisci-core`（纯协作与领域逻辑）、`pisci-kernel`（与操作系统 / UI 解耦的运行时内核）、`piscis-desktop`（Tauri 桌面外壳）、`pisci-cli`（无头 CLI 运行器）。**大鱼（Piscis）** 是主协调 Agent，**锦鲤（Koi）** 是持久化协作 Agent，**小鱼（Fish）** 是无状态临时子 Agent。
+OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Tauri 2 + Rust + React 构建。从 `v0.7.0` 起，项目经过了大规模重构，形成清晰的分层架构：`piscis-core`（纯协作与领域逻辑）、`piscis-kernel`（与操作系统 / UI 解耦的运行时内核）、`piscis-desktop`（Tauri 桌面外壳）、`piscis-cli`（无头 CLI 运行器）。**大鱼（Piscis）** 是主协调 Agent，**锦鲤（Koi）** 是持久化协作 Agent，**小鱼（Fish）** 是无状态临时子 Agent。
 
 **当前平台支持**
 - **Windows**：主要的桌面发行目标
@@ -14,7 +14,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 > 如果你 clone 了这个项目，请花 2 秒点一个 ⭐ — 这是我们了解项目去向的唯一方式。
 > [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
-![会话界面](./resources/pisci2.jpg)
+![会话界面](./resources/piscis2.jpg)
 
 ---
 
@@ -62,7 +62,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 | 角色 | 定位 | 生命周期 | 典型职责 | 与其他角色的关系 |
 |------|------|----------|----------|------------------|
 | `Piscis` | 主 Agent / 项目经理 / 用户入口 | 常驻 | 与用户对话、调用工具、创建鱼池、协调多 Agent、判断项目是否可收尾 | 负责组织 Koi，也可调用 Fish 处理临时子任务 |
-| `Koi` | 持久化协作 Agent | 持久化存在，可多项目复用 | 在鱼池中承担角色分工，如架构、编码、测试、审查、研究 | 通过 `pool_chat` 在鱼池中协作，必要时 @mention 彼此或 @pisci |
+| `Koi` | 持久化协作 Agent | 持久化存在，可多项目复用 | 在鱼池中承担角色分工，如架构、编码、测试、审查、研究 | 通过 `pool_chat` 在鱼池中协作，必要时 @mention 彼此或 @piscis |
 | `Fish` | 无状态临时子 Agent | 一次性 / 按需创建 | 处理批量扫描、资料整理、单次分析、上下文隔离的多步骤工作 | 由 Piscis 或 Koi 通过 `call_fish` 委派，不直接参与鱼池协作 |
 
 **理解方式：**
@@ -77,7 +77,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 
 ### 🏞️ 鱼池（Pond）里有什么
 
-![鱼池 Koi 管理](./resources/pisci3.jpg)
+![鱼池 Koi 管理](./resources/piscis3.jpg)
 
 鱼池不是一个单独 Agent，而是一套围绕项目协作构建的可视化工作区：
 
@@ -85,13 +85,13 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 - **Pool Chat**：Piscis、Koi 在这里自然对话、交接、提问、@mention 协作
 - **看板（Board / Kanban）**：展示 Koi todo 的 `todo / in_progress / blocked / done / cancelled`
 - **Koi 面板**：展示每个 Koi 的身份、角色、在线状态、当前工作负载
-- **Piscis Inbox / Heartbeat**：Piscis 的项目级收件箱，用于接收 `@pisci`、状态信号、心跳巡检结果
+- **Piscis Inbox / Heartbeat**：Piscis 的项目级收件箱，用于接收 `@piscis`、状态信号、心跳巡检结果
 - **知识库（`kb/`）**：项目共享知识区，用于沉淀架构、API、缺陷、决策等文档
 - **项目目录 / Git worktree**：若设置 `project_dir`，每个 Koi 可在自己的分支和 worktree 中工作，减少文件冲突
 
 ### 🤝 鱼池如何协同
 
-![鱼池聊天室多 Koi 协作](./resources/pisci4.jpg) ![鱼池看板](./resources/pisci5.jpg)
+![鱼池聊天室多 Koi 协作](./resources/piscis4.jpg) ![鱼池看板](./resources/piscis5.jpg)
 
 一个标准的鱼池项目通常按下面的机制运行：
 
@@ -111,13 +111,13 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 
 4. **待办与状态同步**
    - 任务通过 `koi_todos` 追踪，状态流转为 `todo -> in_progress -> done / blocked / cancelled`
-   - Piscis 和任务所有者可以更新任务状态；其他 Koi 需要通过 `@pisci` 请求变更
-   - `pool_chat` 中的 `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` 信号会辅助 Piscis判断项目是否继续推进
+   - Piscis 和任务所有者可以更新任务状态；其他 Koi 需要通过 `@piscis` 请求变更
+   - `pool_chat` 中的 `[ProjectStatus] follow_up_needed / waiting / ready_for_piscis_review` 信号会辅助 Piscis判断项目是否继续推进
 
 5. **Piscis 心跳与继续推进**
    - 心跳会扫描池内新消息、待办和状态信号
    - 只要仍有 active todo，或有人发出 `follow_up_needed / waiting`，Piscis 就应继续协调，而不是把项目误判为结束
-   - 只有当工作真正收敛，并且有人明确用 `ready_for_pisci_review @pisci` 把判断权交回时，Piscis 才进入收尾审查
+   - 只有当工作真正收敛，并且有人明确用 `ready_for_piscis_review @piscis` 把判断权交回时，Piscis 才进入收尾审查
 
 6. **项目收尾**
    - Koi 只能建议“可由 Piscis 审查是否结束”，不能单方面宣布项目结束
@@ -156,7 +156,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 - 通过 `FISH.toml` 定义专属子 Agent，拥有独立人设、工具权限和配置
 - 小鱼是**无状态临时工作者**：主 Agent 或 Koi 通过 `call_fish` 工具委派子任务，小鱼执行完毕后仅返回最终结果
 - **核心价值**：小鱼的中间推理和工具调用不会污染主 Agent / Koi 的上下文，有效节省上下文窗口
-- 用户可在 `%APPDATA%\com.pisci.desktop\fish\` 目录放置自定义小鱼
+- 用户可在 `%APPDATA%\com.piscis.desktop\fish\` 目录放置自定义小鱼
 - 适用于批量文件处理、数据收集、代码扫描等多步骤任务，而不是长期项目协作
 
 ### ⚡ 技能系统（Skills）
@@ -189,7 +189,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 
 ### 📱 多平台 IM 网关
 
-![IM 渠道设置](./resources/pisci1.jpg)
+![IM 渠道设置](./resources/piscis1.jpg)
 
 | 平台 | 模式 |
 |------|------|
@@ -247,9 +247,9 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 桌面安装包以单 GUI 主程序为中心。无头控制台二进制是可选的开发者 / 自动化资产，不是桌面应用运行时依赖：
 
 - `piscis-desktop`（或 `piscis-desktop.exe`）：GUI 桌面应用。
-- `openpisci-headless`（或 `openpisci-headless.exe`）：可选的无头 Agent 运行器，用于 CLI、CI、评测和脚本自动化。
+- `openpiscis-headless`（或 `openpiscis-headless.exe`）：可选的无头 Agent 运行器，用于 CLI、CI、评测和脚本自动化。
 
-直接双击或无参数运行 headless 版本会自动进入**交互式 REPL**（多轮对话、流式输出到 stdout，输入 `:help` 查看命令）；它与桌面版共享同一份 `pisci.db` / `config.json`。脚本场景可使用 `openpisci-headless run --prompt "..."` 做单轮执行，使用 `openpisci-headless capabilities` 查看当前构建启用了哪些工具。完整用法参见 `openpisci-headless --help`。
+直接双击或无参数运行 headless 版本会自动进入**交互式 REPL**（多轮对话、流式输出到 stdout，输入 `:help` 查看命令）；它与桌面版共享同一份 `piscis.db` / `config.json`。脚本场景可使用 `openpiscis-headless run --prompt "..."` 做单轮执行，使用 `openpiscis-headless capabilities` 查看当前构建启用了哪些工具。完整用法参见 `openpiscis-headless --help`。
 
 > **⚠️ 安全警告**：OpenPiscis 是一款具备文件读写、命令执行、UI 自动化等高权限操作能力的 AI Agent 桌面应用。建议在虚拟机（如 VMware、VirtualBox、Hyper-V）中运行，以防止 AI 误操作导致宿主机数据损失。开发者不对因直接在宿主机运行而造成的任何数据丢失或系统损坏承担责任。
 
@@ -277,7 +277,7 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 
 ```bash
 git clone https://github.com/njbinbin-piscis/openpiscis.git
-cd openpisci
+cd openpiscis
 
 # 安装前端依赖
 npm install
@@ -299,7 +299,7 @@ npm run icon:emoji
 
 ## 🐠 自定义小鱼（Fish）
 
-在 `%APPDATA%\com.pisci.desktop\fish\my-fish\FISH.toml` 创建文件：
+在 `%APPDATA%\com.piscis.desktop\fish\my-fish\FISH.toml` 创建文件：
 
 ```toml
 id = "my-fish"
@@ -327,7 +327,7 @@ placeholder = "例如：C:\\Users\\你的用户名\\Documents"
 
 ## ⚡ 自定义技能（Skills）
 
-在 `%APPDATA%\com.pisci.desktop\skills\my-skill\SKILL.md` 创建文件：
+在 `%APPDATA%\com.piscis.desktop\skills\my-skill\SKILL.md` 创建文件：
 
 ```markdown
 ---
@@ -354,7 +354,7 @@ tools:
 
 在"工具"页面安装 TypeScript 插件，支持自定义配置接口（如 SMTP 账号、API Key 等）。
 
-用户工具存放路径：`%APPDATA%\com.pisci.desktop\user-tools\`
+用户工具存放路径：`%APPDATA%\com.piscis.desktop\user-tools\`
 
 ---
 
@@ -362,11 +362,11 @@ tools:
 
 | 路径 | 内容 |
 |------|------|
-| `%APPDATA%\com.pisci.desktop\` | 配置文件、数据库 |
-| `%APPDATA%\com.pisci.desktop\skills\` | 技能目录 |
-| `%APPDATA%\com.pisci.desktop\fish\` | 用户自定义小鱼 |
-| `%APPDATA%\com.pisci.desktop\user-tools\` | 用户自定义工具 |
-| `%LOCALAPPDATA%\pisci\logs\` | 日志文件、崩溃报告 |
+| `%APPDATA%\com.piscis.desktop\` | 配置文件、数据库 |
+| `%APPDATA%\com.piscis.desktop\skills\` | 技能目录 |
+| `%APPDATA%\com.piscis.desktop\fish\` | 用户自定义小鱼 |
+| `%APPDATA%\com.piscis.desktop\user-tools\` | 用户自定义工具 |
+| `%LOCALAPPDATA%\piscis\logs\` | 日志文件、崩溃报告 |
 
 ---
 
@@ -375,9 +375,9 @@ tools:
 ```
 OpenPiscis
 ├── src-tauri/
-│   ├── pisci-core/      # 纯领域逻辑：场景、鱼池 / 项目状态、提示词、共享类型
-│   ├── pisci-kernel/    # 与 OS / UI 解耦的运行时内核：Agent Loop、LLM、记忆、存储、中立工具
-│   ├── pisci-cli/       # 基于内核的无头 CLI 运行器
+│   ├── piscis-core/      # 纯领域逻辑：场景、鱼池 / 项目状态、提示词、共享类型
+│   ├── piscis-kernel/    # 与 OS / UI 解耦的运行时内核：Agent Loop、LLM、记忆、存储、中立工具
+│   ├── piscis-cli/       # 基于内核的无头 CLI 运行器
 │   ├── src/             # Tauri 桌面适配层：IPC 命令、桌面集成、平台受限工具
 │   └── Cargo.toml       # Workspace 根 + 桌面包
 └── src/
@@ -398,7 +398,7 @@ OpenPiscis
 - 桌面专属关注点（Tauri 命令、托盘、更新器、平台集成）下沉到桌面层，不再渗入核心运行时。
 - 前端 services / store 模块按业务域重新组织，易于扩展与审阅。
 - 跨平台桌面构建与打包已接入 CI，Windows / macOS / Linux 三平台均可在各自的原生构建机上发布。
-- 源码分层不是强制多进程产品形态：桌面主聊天与 Koi 协同默认在 GUI 运行时内执行，`openpisci-headless` 保留为 CLI / 评测 / 自动化宿主。
+- 源码分层不是强制多进程产品形态：桌面主聊天与 Koi 协同默认在 GUI 运行时内执行，`openpiscis-headless` 保留为 CLI / 评测 / 自动化宿主。
 
 ---
 
@@ -406,12 +406,12 @@ OpenPiscis
 
 ### v0.7.9
 - **UIA 精度拖拽测试**：前端通过 IPC 直接传入小球与目标的精确物理屏幕坐标（由 `innerPosition()` + `getBoundingClientRect()` × `devicePixelRatio` 计算），Agent 仅需一次 `desktop_automation`/`uia` 调用即可完成拖拽——无需截图识别、无需网格估算。
-- **Linux (VMware+Xorg) 鼠标控制**：新增 `xi_helpers.c` 原生助手（`pisci-xi-helper`），对 master pointer (device id=2) 使用 `XIWarpPointer` + `XTestFakeMotionEvent` 可靠投递事件。鼠标移动改为 20 步平滑动画，与 Windows UIA 行为一致。
+- **Linux (VMware+Xorg) 鼠标控制**：新增 `xi_helpers.c` 原生助手（`piscis-xi-helper`），对 master pointer (device id=2) 使用 `XIWarpPointer` + `XTestFakeMotionEvent` 可靠投递事件。鼠标移动改为 20 步平滑动画，与 Windows UIA 行为一致。
 - **布局稳定性**：UIA 测试区域固定宽度（800px）并居中，工具调用日志和结果面板不再能在测试运行中改变区域的屏幕位置。
 - **IM 发送自动解析**：`im_send_message` 在未显式传入 `binding_key` 或 `channel`+`recipient` 时，自动从当前会话解析 IM 绑定，IM 驱动的回复不再需要显式寻址。
 
 ### v0.7.8
-- **Koi 独立 `memory_owner_id`**：Koi 驱动的无头轮次现在使用 Koi 自身 ID 作为工具上下文记忆归属，而非硬编码 `"pisci"`。这意味着 `pool_chat` 发帖、记忆写入和权限检查都会正确归属到 Koi 而不是 Piscis，且范围记忆检索也使用 Koi 自己的作用域。
+- **Koi 独立 `memory_owner_id`**：Koi 驱动的无头轮次现在使用 Koi 自身 ID 作为工具上下文记忆归属，而非硬编码 `"piscis"`。这意味着 `pool_chat` 发帖、记忆写入和权限检查都会正确归属到 Koi 而不是 Piscis，且范围记忆检索也使用 Koi 自己的作用域。
 - **协作试验提示词收紧**：试验启动消息现在只包含内容（设计什么），所有流程指令由执行包装器（`koi_execute_todo.txt`）负责。此前冗长的启动消息把四个职责塞进一个迭代预算，导致 Architect 经常停在前端没有向 `pool_chat` 发帖——从而触发 Piscis 的 `replace_todo` 重试。包装器现在明确声明纯助手回复对鱼池不可见，将 >500 字"写入文件、只发路径"规则提升为优先于任务文本指令，并新增显式的三步回合结束检查清单。
 
 ### v0.7.7
@@ -419,7 +419,7 @@ OpenPiscis
 
 ### v0.7.6
 - **Koi 运行时观察器**：Pond UI 新增 Koi 运行时观察面板，实时展示每个 Koi 的执行状态（活跃运行槽位、checkpoint 状态）
-- **NSIS 打包修复**：将 `pisci_compact_one` 移入 `pisci-cli`，修复 Tauri NSIS 安装包因缺少二进制而构建失败的问题
+- **NSIS 打包修复**：将 `piscis_compact_one` 移入 `piscis-cli`，修复 Tauri NSIS 安装包因缺少二进制而构建失败的问题
 
 ### v0.7.5
 - **微信 IM 文件上传**：微信网关现支持接收并转发用户发送的文件附件
@@ -432,21 +432,21 @@ OpenPiscis
 - **Koi 协作交接稳定性修复**：修复 Koi 间任务交接中的多个竞态条件和状态不一致问题，减少协作中的误报 `blocked` 待办和丢失 mention
 
 ### v0.7.2
-- **桌面运行时纠偏**：Koi 协同默认恢复为 GUI 主进程内运行。源码仍按 `pisci-core` / `pisci-kernel` / `pisci-cli` / `piscis-desktop` 分层，但桌面产品的主聊天与 Koi 协同不再依赖 `openpisci-headless`。
-- **打包收敛**：GUI 安装包取消对 `openpisci-headless` sidecar 的强依赖。Headless 仍可通过 `npm run build:headless` 或 `cargo build -p pisci-cli --release --bin openpisci-headless` 单独构建。
+- **桌面运行时纠偏**：Koi 协同默认恢复为 GUI 主进程内运行。源码仍按 `piscis-core` / `piscis-kernel` / `piscis-cli` / `piscis-desktop` 分层，但桌面产品的主聊天与 Koi 协同不再依赖 `openpiscis-headless`。
+- **打包收敛**：GUI 安装包取消对 `openpiscis-headless` sidecar 的强依赖。Headless 仍可通过 `npm run build:headless` 或 `cargo build -p piscis-cli --release --bin openpiscis-headless` 单独构建。
 
 ### v0.7.0
-- **重大架构重构**：Rust 代码库拆分为 `pisci-core`（纯协作与领域逻辑）、`pisci-kernel`（与 OS / UI 解耦的运行时内核）、`pisci-cli`（无头 CLI 运行器）、`piscis-desktop`（Tauri 外壳）四层，显著降低跨层耦合。
+- **重大架构重构**：Rust 代码库拆分为 `piscis-core`（纯协作与领域逻辑）、`piscis-kernel`（与 OS / UI 解耦的运行时内核）、`piscis-cli`（无头 CLI 运行器）、`piscis-desktop`（Tauri 外壳）四层，显著降低跨层耦合。
 - **桌面 / 内核解耦**：鱼池与多 Agent 编排逻辑从面向 UI 的代码路径中剥离，清理了遗留运行时残留，整体更接近干净的"核心 + 适配器"结构。
 - **主聊天流式输出**：主聊天界面可按增量流式呈现 LLM 输出，由用户可见的设置项控制开关。
 - **MCP 集成完成**：按场景装配的工具注册器会在合适的场景按需注册 MCP 工具，不再留下"只接了一半"的状态。
 - **更严格的质量闸门**：工作区级 Lint 统一跑在 `-D warnings` 下，死代码、未使用路径等被清理干净，前端结构也同步收敛，降低漂移。
-- **Headless 交互式 CLI**：`openpisci-headless` 在无参数或使用 `chat` 子命令时进入多轮交互 REPL，支持流式输出、`:help` / `:status` / `:new` / `:workspace` 等命令，并与桌面版共享 `pisci.db` / `config.json`。
+- **Headless 交互式 CLI**：`openpiscis-headless` 在无参数或使用 `chat` 子命令时进入多轮交互 REPL，支持流式输出、`:help` / `:status` / `:new` / `:workspace` 等命令，并与桌面版共享 `piscis.db` / `config.json`。
 - **跨平台桌面打包铺垫**：Tauri 配置与 GitHub Actions 流水线已支持 Windows / macOS / Linux 三平台的原生桌面打包。
 
 ### v0.6.0
 - **Koi 协作提示词 6 层重构**：Koi 系统提示词现按固定顺序 `Identity → Run Shape → Coordination Protocol → Context & Tools → Capabilities → Stop Gate` 组装；`Run Shape` 显式写入 claim / progress / complete 副作用闭环，`Stop Gate` 禁止 todo 未收尾即停；交接消息强制包含"做什么 / 输入在哪 / 如何汇报完成"。结构性单测锁死这些承诺。
-- **新增 `pisci-core` 基础库**：将项目状态评估、鱼池关注收集、心跳消息生成、Koi 提示词章节抽离到纯 Rust 库 `src-tauri/pisci-core/`，配套 36 个单测 / 集成测试，与 Tauri 运行时解耦。
+- **新增 `piscis-core` 基础库**：将项目状态评估、鱼池关注收集、心跳消息生成、Koi 提示词章节抽离到纯 Rust 库 `src-tauri/piscis-core/`，配套 36 个单测 / 集成测试，与 Tauri 运行时解耦。
 - **运行时协调软栅栏（Soft Fence）**：Koi 本轮结束但仍有未收尾的 `in_progress` 待办时，运行时会在鱼池发布 `[SoftFence]` 通知并立刻再唤起 Koi 一轮，专门用于调用 `complete_todo` / `block_todo` / `fail_todo`；若仍未收尾再交由原有 `protocol_reminder` 硬栅栏兜底，避免项目在"已完成但未标记完成"处静默卡死。
 - **max_iterations 分层配置**：按 "Koi 个体 → 系统设置 → 内置默认" 顺序继承。Collab trial 与 `call_koi` 委派不再使用硬编码的 8 次上限，直接走用户可见的全局迭代预算。
 - **Piscis 全局监督状态机**：`ProjectDecision` 新增 `SupervisorDecisionRequired`（worker 局部完成但无全局结论）与 `EscalateToHuman`（不可恢复失败 / 超时）。心跳扫描即便没有新消息也会为这两种状态抛出 attention，心跳提示词要求 Piscis 做出明确的全局决策或显式上抛人工，而不是"静默继续"。
@@ -475,7 +475,7 @@ OpenPiscis
 - **Excel 图表修复**：修复 sheet_check 逻辑错误导致指定工作表时条件判断反转的 bug；add_chart 在 SetSourceData 之后再次强制设置图表类型，防止 Excel 自动重置为默认类型；强化工具描述，要求 AI 必须显式传 chart_type（折线图=line，柱状图=column，饼图=pie 等），避免误生成饼图
 
 ### v0.5.18
-- **Koi 超时修复**：Koi 超时后自动将其 in_progress 任务改为 blocked 状态，并向鱼池发送 @pisci 通知；心跳扫描新增对 blocked todo 的持久唤醒逻辑，确保项目不会因 Koi 超时而永久卡死
+- **Koi 超时修复**：Koi 超时后自动将其 in_progress 任务改为 blocked 状态，并向鱼池发送 @piscis 通知；心跳扫描新增对 blocked todo 的持久唤醒逻辑，确保项目不会因 Koi 超时而永久卡死
 - **文件编码增强**：file_read 自动识别并透明处理 UTF-8 BOM、UTF-16 LE/BE、GBK/GB18030；file_write/file_edit 写回时自动保留原文件 BOM；工具描述和系统提示词新增文件编码操作指南
 
 ### v0.5.17

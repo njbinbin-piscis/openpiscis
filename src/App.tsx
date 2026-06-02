@@ -38,7 +38,7 @@ function AppContent() {
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(() => new Set(["chat"]));
   const [initialized, setInitialized] = useState(false);
   const [theme, setTheme] = useState<'violet' | 'gold'>(() => {
-    return (localStorage.getItem('pisci-theme') as 'violet' | 'gold') || 'violet';
+    return (localStorage.getItem('piscis-theme') as 'violet' | 'gold') || 'violet';
   });
 
   useEffect(() => {
@@ -52,7 +52,7 @@ function AppContent() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('pisci-theme', theme);
+    localStorage.setItem('piscis-theme', theme);
     console.log('[Theme] data-theme set to:', theme, '| html attr:', document.documentElement.getAttribute('data-theme'));
     // Sync window border/title bar color with theme (Windows 11+)
     if (!IS_OVERLAY) {
@@ -91,7 +91,7 @@ function AppContent() {
           dispatch(settingsActions.setShowOnboarding(true));
         }
 
-        // Load sessions — skip internal sessions (heartbeat, pisci_inbox, etc.)
+        // Load sessions — skip internal sessions (heartbeat, piscis_inbox, etc.)
         // when choosing the initial active session so the user always lands on
         // a real chat session, not an invisible internal one.
         const { sessions } = await sessionsApi.list(100);
@@ -229,7 +229,7 @@ function AppContent() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img src="/pisci.png" className="logo" alt="OpenPiscis" />
+          <img src="/piscis.png" className="logo" alt="OpenPiscis" />
           <span className="app-name">OpenPiscis</span>
         </div>
         <nav className="sidebar-nav">

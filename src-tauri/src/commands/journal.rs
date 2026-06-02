@@ -1,9 +1,9 @@
 //! File-journal commands (Undo / replay).
 //!
 //! The journal implementation is the shared kernel one
-//! ([`pisci_kernel::agent::file_journal`]) — the same component CodeZ uses — so
-//! both hosts stay in lockstep. openpisci stores snapshots per workspace at
-//! `{workspace_root}/.pisci/journal.db`.
+//! ([`piscis_kernel::agent::file_journal`]) — the same component CodeZ uses — so
+//! both hosts stay in lockstep. openpiscis stores snapshots per workspace at
+//! `{workspace_root}/.piscis/journal.db`.
 //!
 //! `chat_send` returns before the agent finishes (the turn runs in a spawned
 //! task), so these commands operate on the *latest* turn that still has
@@ -11,14 +11,14 @@
 
 use std::path::Path;
 
-use pisci_kernel::agent::file_journal::{FileJournal, JournalChange};
+use piscis_kernel::agent::file_journal::{FileJournal, JournalChange};
 use tauri::State;
 
 use crate::commands::chat::resolve_session_workspace_root;
 use crate::store::AppState;
 
 fn open_workspace_journal(workspace_root: &str) -> Result<FileJournal, String> {
-    let db = Path::new(workspace_root).join(".pisci").join("journal.db");
+    let db = Path::new(workspace_root).join(".piscis").join("journal.db");
     FileJournal::open(workspace_root, db).map_err(|e| e.to_string())
 }
 

@@ -1,8 +1,8 @@
 // The low-level storage primitives (`Database`, `Settings`) now live in
-// `pisci-kernel::store`. We re-export them here so existing call sites that
+// `piscis-kernel::store`. We re-export them here so existing call sites that
 // reference `crate::store::db::...` / `crate::store::settings::...` /
 // `crate::store::{Database, Settings}` keep compiling unchanged.
-pub use pisci_kernel::store::{db, settings, Database, Settings};
+pub use piscis_kernel::store::{db, settings, Database, Settings};
 
 use anyhow::Result;
 use std::sync::Arc;
@@ -16,15 +16,16 @@ pub struct AppState {
     pub db: Arc<Mutex<Database>>,
     pub settings: Arc<Mutex<Settings>>,
     /// Current visible execution plan per session
-    pub plan_state:
-        Arc<Mutex<std::collections::HashMap<String, Vec<pisci_kernel::agent::plan::PlanTodoItem>>>>,
+    pub plan_state: Arc<
+        Mutex<std::collections::HashMap<String, Vec<piscis_kernel::agent::plan::PlanTodoItem>>>,
+    >,
     /// Active agent cancellation tokens: session_id -> cancel flag
     pub cancel_flags:
         Arc<Mutex<std::collections::HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
     /// Shared browser manager (Chrome for Testing)
     pub browser: robotz_browser::SharedBrowserManager,
     /// Cron scheduler for recurring tasks
-    pub scheduler: Arc<pisci_kernel::scheduler::cron::CronScheduler>,
+    pub scheduler: Arc<piscis_kernel::scheduler::cron::CronScheduler>,
     /// Active cron job ids keyed by scheduled task id so updates/restarts can replace jobs instead of duplicating them.
     pub scheduled_job_ids: Arc<Mutex<std::collections::HashMap<String, uuid::Uuid>>>,
     /// App handle for emitting events from scheduler tasks
@@ -39,7 +40,7 @@ pub struct AppState {
     /// IM gateway manager
     pub gateway: Arc<crate::gateway::GatewayManager>,
     /// Per-pool heartbeat cursor: pool_id -> last processed pool_message.id
-    pub pisci_heartbeat_cursor: Arc<Mutex<std::collections::HashMap<String, i64>>>,
+    pub piscis_heartbeat_cursor: Arc<Mutex<std::collections::HashMap<String, i64>>>,
     /// IDE terminal session registry
     pub terminals: Arc<Mutex<crate::commands::ide::TerminalRegistry>>,
     /// IDE file watcher registry: project_dir -> notify watcher handle
@@ -52,12 +53,12 @@ impl AppState {
     /// Synchronous construction — scheduler must be provided after async init.
     pub fn new_sync(
         app: &AppHandle,
-        scheduler: pisci_kernel::scheduler::cron::CronScheduler,
+        scheduler: piscis_kernel::scheduler::cron::CronScheduler,
     ) -> Result<Self> {
         let app_dir = app
             .path()
             .app_data_dir()
-            .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+            .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
         Self::new_sync_with_app_dir(app, scheduler, app_dir)
     }
 
@@ -66,12 +67,12 @@ impl AppState {
     /// config + database root without mutating the desktop app's default state.
     pub fn new_sync_with_app_dir(
         app: &AppHandle,
-        scheduler: pisci_kernel::scheduler::cron::CronScheduler,
+        scheduler: piscis_kernel::scheduler::cron::CronScheduler,
         app_dir: std::path::PathBuf,
     ) -> Result<Self> {
         std::fs::create_dir_all(&app_dir)?;
 
-        let db_path = app_dir.join("pisci.db");
+        let db_path = app_dir.join("piscis.db");
         let db = Database::open(&db_path)?;
 
         let config_path = app_dir.join("config.json");
@@ -95,7 +96,7 @@ impl AppState {
             confirmation_responses: Arc::new(Mutex::new(std::collections::HashMap::new())),
             interactive_responses: Arc::new(Mutex::new(std::collections::HashMap::new())),
             gateway: Arc::new(crate::gateway::GatewayManager::new()),
-            pisci_heartbeat_cursor: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            piscis_heartbeat_cursor: Arc::new(Mutex::new(std::collections::HashMap::new())),
             terminals: Arc::new(Mutex::new(crate::commands::ide::TerminalRegistry::new())),
             file_watchers: Arc::new(Mutex::new(std::collections::HashMap::new())),
             lsp_manager: Arc::new(LspManager::new()),
