@@ -24,9 +24,6 @@ pub async fn prepare_shutdown(state: &AppState) {
         }
     }
 
-    info!("Shutdown: cancelling UIA calibration phase 2 (if any)");
-    crate::commands::platform::calibration::cancel_phase2_if_running().await;
-
     info!("Shutdown: stopping IM gateway channels");
     let _ = tokio::time::timeout(SHUTDOWN_PREP_TIMEOUT, state.gateway.stop_all()).await;
 

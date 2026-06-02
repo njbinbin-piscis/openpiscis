@@ -30,18 +30,19 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::oneshot;
 use tokio::sync::Mutex;
 
-use crate::browser::SharedBrowserManager;
+use robotz_browser::SharedBrowserManager;
+
 use crate::lsp::manager::LspManager;
 use crate::runtime::koi::DesktopInProcessSubagentRuntime;
 use crate::skills::loader::SkillLoader;
 use crate::store::{AppState, Database, Settings};
 use crate::tools::{
-    app_control, browser, call_fish, call_koi, chat_ui, chat_ui_listen, chat_ui_patch,
-    desktop_automation, im_channel, im_send, screen, skill_list, system_info,
+    app_control, call_fish, call_koi, chat_ui, chat_ui_listen, chat_ui_patch, im_channel, im_send,
+    skill_list, system_info, BrowserTool, DesktopAutomationTool, ScreenTool,
 };
 
 #[cfg(target_os = "windows")]
-use crate::tools::{com_invoke, com_tool, office, powershell, uia, wmi_tool};
+use crate::tools::{com_invoke, com_tool, office, powershell, wmi_tool, UiaTool};
 
 // ─── Shared maps -------------------------------------------------------------
 
@@ -474,7 +475,7 @@ impl HostTools for DesktopHostTools {
 
         if self.is_enabled("browser") {
             if let Some(ref browser) = self.browser {
-                registry.register(Box::new(browser::BrowserTool::new(browser.clone())));
+                registry.register(Box::new(BrowserTool::new(browser.clone())));
             }
         }
         // `plan_todo`, `pool_org`, and `pool_chat` are registered by the
@@ -571,10 +572,10 @@ impl HostTools for DesktopHostTools {
         }
 
         if self.is_enabled("screen_capture") {
-            registry.register(Box::new(screen::ScreenTool));
+            registry.register(Box::new(ScreenTool));
         }
         if self.is_enabled("desktop_automation") {
-            registry.register(Box::new(desktop_automation::DesktopAutomationTool));
+            registry.register(Box::new(DesktopAutomationTool));
         }
         if self.is_enabled("system_info") {
             registry.register(Box::new(system_info::SystemInfoTool));
@@ -609,7 +610,7 @@ impl HostTools for DesktopHostTools {
                 registry.register(Box::new(office::OfficeTool));
             }
             if self.is_enabled("uia") {
-                registry.register(Box::new(uia::UiaTool));
+                registry.register(Box::new(UiaTool));
             }
             if self.is_enabled("com") {
                 registry.register(Box::new(com_tool::ComTool));

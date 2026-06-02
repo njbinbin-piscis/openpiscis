@@ -1,13 +1,11 @@
 // ─── Platform-specific / host-coupled tools (still live in the desktop crate)
 pub mod app_control;
-pub mod browser;
 pub mod call_fish;
 pub mod call_koi;
 pub mod chat_ui;
 pub mod chat_ui_listen;
 pub mod chat_ui_patch;
 pub mod chat_ui_schema;
-pub mod desktop_automation;
 pub mod im_channel;
 pub mod im_send;
 pub mod lsp;
@@ -33,18 +31,22 @@ pub mod wmi_tool;
 // trait handles all registration internally.
 pub use pisci_kernel::tools::{mcp, user_tool};
 
-// Calibration store for the UIA mouse-precision compensator. Lives in
-// the platform-neutral list so non-Windows builds can still compile
-// the `commands::platform::calibration` stubs; the heavy lifting only
-// happens behind `cfg(target_os = "windows")` inside the module.
-pub mod calibration;
+// Desktop-automation + browser tools now live in the standalone RobotZ
+// toolkit (`robotz-automation` / `robotz-browser`). They are re-exported here
+// so the rest of the desktop crate keeps referring to them via
+// `crate::tools::*`. The `pisci-kernel` feature on those crates makes the
+// structs implement `pisci_kernel::Tool` directly, so registration is
+// unchanged. The UIA mouse-precision calibration store moved with them
+// (`robotz_automation::calibration`).
+pub use robotz_automation::{DesktopAutomationTool, ScreenTool};
+#[cfg(target_os = "windows")]
+pub use robotz_automation::UiaTool;
+pub use robotz_browser::BrowserTool;
+
 #[cfg(target_os = "windows")]
 pub mod com_invoke;
 #[cfg(target_os = "windows")]
 pub mod com_tool;
-pub mod screen;
-#[cfg(target_os = "windows")]
-pub mod uia;
 
 use std::collections::HashMap;
 

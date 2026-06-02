@@ -1,4 +1,4 @@
-use crate::browser::SharedBrowserManager;
+use robotz_browser::SharedBrowserManager;
 use crate::commands::chat::{persist_task_spine_from_plan_state, render_task_state_section};
 use crate::host::DesktopHostTools;
 use crate::store::{db::ScheduledTask, AppState, Database, Settings};

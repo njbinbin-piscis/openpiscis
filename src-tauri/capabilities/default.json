@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for Pisci Desktop",
-  "windows": ["main", "overlay", "uia_calibration_overlay"],
+  "windows": ["main", "overlay"],
   "permissions": [
     "core:default",
     "core:event:allow-listen",

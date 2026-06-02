@@ -331,14 +331,17 @@ fn run_impl() {
             };
             app.manage(managed_state);
 
-            // Warm the UIA-click calibration cache as early as possible
-            // so the very first `uia.click` after launch (e.g. via the
-            // headless agent) already benefits from any saved manual
-            // calibration. The cache is also refreshed on demand by
-            // every `uia_calibration_status` / `uia_calibration_finalize`
-            // command, so monitor-layout changes between launches are
-            // handled correctly.
-            commands::platform::calibration::refresh_cache_from_app(&app_handle);
+            // Warm the UIA-click calibration cache as early as possible so the
+            // very first `uia.click` after launch (e.g. via the headless agent)
+            // already benefits from any saved manual calibration. The fit/apply/
+            // store logic now lives in the standalone `robotz-automation` crate.
+            {
+                let app_data_dir = app_handle
+                    .path()
+                    .app_data_dir()
+                    .unwrap_or_else(|_| std::path::PathBuf::from(".pisci"));
+                robotz_automation::calibration::refresh_cache(&app_data_dir);
+            }
 
             {
                 let db = tauri::async_runtime::block_on(state.db.lock());
@@ -1319,7 +1322,6 @@ fn run_impl() {
             commands::chat::debug::list_debug_scenarios,
             commands::chat::debug::run_debug_scenario,
             commands::chat::debug::run_all_debug_scenarios,
-            commands::chat::debug::run_uia_drag_test,
             commands::chat::debug::get_debug_report,
             commands::chat::debug::get_log_tail,
             commands::chat::fish::get_fish_dir,
@@ -1400,13 +1402,6 @@ fn run_impl() {
             commands::platform::window::save_overlay_position,
             commands::platform::window::set_app_theme,
             commands::platform::window::set_window_theme_border,
-            commands::platform::calibration::uia_calibration_status,
-            commands::platform::calibration::uia_calibration_clear,
-            commands::platform::calibration::uia_calibration_open_overlay,
-            commands::platform::calibration::uia_calibration_close_overlay,
-            commands::platform::calibration::uia_calibration_run_phase2,
-            commands::platform::calibration::uia_calibration_cancel_phase2,
-            commands::platform::calibration::uia_calibration_finalize,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Pisci Desktop");

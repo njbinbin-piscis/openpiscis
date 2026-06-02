@@ -4628,7 +4628,6 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "chacha20poly1305",
- "chromiumoxide",
  "chrono",
  "dirs 5.0.1",
  "ecb",
@@ -4636,7 +4635,6 @@ dependencies = [
  "futures",
  "getrandom 0.2.17",
  "hex",
- "image",
  "lopdf",
  "lsp-types",
  "md5 0.8.0",
@@ -4649,9 +4647,10 @@ dependencies = [
  "qrcode",
  "regex",
  "reqwest 0.12.28",
+ "robotz-automation",
+ "robotz-browser",
  "rusqlite",
  "russh",
- "scraper",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -4674,11 +4673,9 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "tungstenite 0.24.0",
- "uiautomation",
  "urlencoding",
  "uuid",
  "windows 0.58.0",
- "xcap",
  "zip 2.4.2",
 ]
 
@@ -5442,6 +5439,59 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "robotz-automation"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "image",
+ "once_cell",
+ "pisci-kernel",
+ "robotz-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "uiautomation",
+ "windows 0.58.0",
+ "xcap",
+]
+
+[[package]]
+name = "robotz-browser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chromiumoxide",
+ "dirs 5.0.1",
+ "futures",
+ "once_cell",
+ "pisci-kernel",
+ "reqwest 0.12.28",
+ "robotz-core",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "uuid",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "robotz-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

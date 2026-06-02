@@ -1,4 +1,4 @@
-use crate::browser::SharedBrowserManager;
+use robotz_browser::SharedBrowserManager;
 use crate::commands::config::mcp::resolve_settings_placeholders_in_mcp_config;
 use crate::host::DesktopHostTools;
 use crate::skills::loader::SkillLoader;

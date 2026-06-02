@@ -191,7 +191,7 @@ async fn harness_live_smoke() {
         read_timeout,
     );
 
-    let browser = crate::browser::create_browser_manager(Default::default());
+    let browser = robotz_browser::create_browser_manager(Default::default());
     let registry = Arc::new(
         crate::host::DesktopHostTools {
             browser: Some(browser),

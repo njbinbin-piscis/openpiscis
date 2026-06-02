@@ -78,6 +78,12 @@ tauri-build = { version = "2", features = [] }
 pisci-core = { workspace = true }
 pisci-kernel = { workspace = true }
 
+# Desktop-automation + browser capabilities, extracted into the standalone
+# RobotZ toolkit. The `pisci-kernel` feature makes the RobotZ tools implement
+# `pisci_kernel::Tool`, so the desktop host registers them like any other tool.
+robotz-automation = { path = "../../RobotZ/crates/robotz-automation", features = ["pisci-kernel"] }
+robotz-browser = { path = "../../RobotZ/crates/robotz-browser", features = ["pisci-kernel"] }
+
 # Tauri
 tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-shell = "2"
@@ -132,17 +138,8 @@ async-trait = "0.1"
 dirs = "5"
 urlencoding = "2"
 qrcode = "0.14"
-# image encoding (replaces hand-written PNG encoder, supports JPEG for Vision API)
-image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
-# Cross-platform screenshot library (Linux X11/Wayland, macOS, Windows)
-xcap = "0.9"
-
-# Browser automation via Chrome DevTools Protocol (cross-platform)
-chromiumoxide = { version = "0.7", features = ["tokio-runtime"], default-features = false }
-
-# ZIP extraction for Chrome for Testing downloads
+# ZIP extraction for skill / user-tool bundle installs
 zip = { version = "2", default-features = false, features = ["deflate"] }
-scraper = "0.25.0"
 
 # SSH client - use ring backend to avoid NASM dependency on Windows
 russh = { version = "0.57", default-features = false, features = ["ring"] }
@@ -167,9 +164,7 @@ portable-pty = "0.8"
 
 # Windows-specific (conditional)
 [target.'cfg(target_os = "windows")'.dependencies]
-# Windows UIA via COM
-uiautomation = { version = "0.24", features = ["all"] }
-# Win32 API for screenshots, clipboard, shell, window management
+# Win32 API for clipboard, shell, window management
 windows = { version = "0.58", features = [
     "Win32_Foundation",
     "Win32_Graphics_Direct3D11",

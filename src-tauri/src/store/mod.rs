@@ -22,7 +22,7 @@ pub struct AppState {
     pub cancel_flags:
         Arc<Mutex<std::collections::HashMap<String, Arc<std::sync::atomic::AtomicBool>>>>,
     /// Shared browser manager (Chrome for Testing)
-    pub browser: crate::browser::SharedBrowserManager,
+    pub browser: robotz_browser::SharedBrowserManager,
     /// Cron scheduler for recurring tasks
     pub scheduler: Arc<pisci_kernel::scheduler::cron::CronScheduler>,
     /// Active cron job ids keyed by scheduled task id so updates/restarts can replace jobs instead of duplicating them.
@@ -77,7 +77,7 @@ impl AppState {
         let config_path = app_dir.join("config.json");
         let settings = Settings::load(&config_path)?;
 
-        let browser_options = crate::browser::BrowserOptions {
+        let browser_options = robotz_browser::BrowserOptions {
             chrome_dir: app_dir.join("chrome"),
             headless: settings.browser_headless,
             ..Default::default()
@@ -88,7 +88,7 @@ impl AppState {
             settings: Arc::new(Mutex::new(settings)),
             plan_state: Arc::new(Mutex::new(std::collections::HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(std::collections::HashMap::new())),
-            browser: crate::browser::create_browser_manager(browser_options),
+            browser: robotz_browser::create_browser_manager(browser_options),
             scheduler: Arc::new(scheduler),
             scheduled_job_ids: Arc::new(Mutex::new(std::collections::HashMap::new())),
             app_handle: app.clone(),

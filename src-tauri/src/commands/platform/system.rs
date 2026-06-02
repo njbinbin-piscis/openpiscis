@@ -1,4 +1,4 @@
-use crate::browser::download;
+use robotz_browser::download;
 use crate::host::DesktopHostTools;
 use crate::store::{AppState, Settings};
 use pisci_kernel::proc::std_command;
