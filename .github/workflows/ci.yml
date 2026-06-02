@@ -43,7 +43,7 @@ jobs:
   # longer built or tested here.
   #
   # The desktop + package jobs below consume the engine as a Cargo *git*
-  # dependency (https://github.com/njbinbin-pisci/pisci-engine.git), so cargo
+  # dependency (https://github.com/njbinbin-piscis/pisci-engine.git), so cargo
   # fetches it automatically — no sibling checkout step is needed.
   # ──────────────────────────────────────────────────────────────────────────
   # Desktop host (Tauri) — cross-platform compile gate.

@@ -3,7 +3,7 @@
 #   $env:GITHUB_TOKEN = "ghp_xxxx"
 #   .\scripts\upload-release-asset.ps1 -Tag v0.5.16 -File "target\release\bundle\nsis\OpenPisci_0.5.16_x64-setup.exe"
 param(
-    [string]$Repo = "njbinbin-pisci/openpisci",
+    [string]$Repo = "njbinbin-piscis/openpiscis",
     [Parameter(Mandatory = $true)][string]$Tag,
     [Parameter(Mandatory = $true)][string]$File
 )

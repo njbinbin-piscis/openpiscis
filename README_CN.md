@@ -12,7 +12,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 [English](./README.md) | 中文
 
 > 如果你 clone 了这个项目，请花 2 秒点一个 ⭐ — 这是我们了解项目去向的唯一方式。
-> [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-pisci/openpisci?style=social)](https://github.com/njbinbin-pisci/openpisci)
+> [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
 ![会话界面](./resources/pisci2.jpg)
 
@@ -238,7 +238,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 
 官网：[www.dimnuo.com](https://www.dimnuo.com)
 
-前往 [Releases](https://github.com/njbinbin-pisci/openpisci/releases) 下载最新安装包。
+前往 [Releases](https://github.com/njbinbin-piscis/openpiscis/releases) 下载最新安装包。
 
 当前主要发布的是 Windows 安装包。`v0.7.0` 同时在 CI 中接入了 macOS（`.dmg`）与 Linux（`.deb` / `AppImage`）的原生打包，可在各自原生构建机上产出发行物。
 
@@ -276,7 +276,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 ### 克隆与运行
 
 ```bash
-git clone https://github.com/njbinbin-pisci/openpisci.git
+git clone https://github.com/njbinbin-piscis/openpiscis.git
 cd openpisci
 
 # 安装前端依赖
@@ -601,7 +601,7 @@ OpenPisci
 
 如果 OpenPisci 对你有帮助，请给项目点一个 **Star** ——这是我们判断项目影响力、决定是否继续投入的最直接依据。
 
-[![GitHub Stars](https://img.shields.io/github/stars/njbinbin-pisci/openpisci?style=social)](https://github.com/njbinbin-pisci/openpisci)
+[![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
 ---
 

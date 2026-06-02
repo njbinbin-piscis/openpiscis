@@ -12,7 +12,7 @@ OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rus
 [中文](./README_CN.md) | English
 
 > If you cloned this project, please take 2 seconds to give it a ⭐ — it's the only way we know where the code ends up.
-> [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-pisci/openpisci?style=social)](https://github.com/njbinbin-pisci/openpisci)
+> [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
 ![Chat Interface](./resources/pisci2.jpg)
 
@@ -235,7 +235,7 @@ A typical pond project follows this mechanism:
 
 ### Download
 
-Go to [Releases](https://github.com/njbinbin-pisci/openpisci/releases) and download the latest installer.
+Go to [Releases](https://github.com/njbinbin-piscis/openpiscis/releases) and download the latest installer.
 
 At the moment, Windows installers are the primary published artefact. `v0.7.0` also adds native CI packaging support for macOS (`.dmg`) and Linux (`.deb` / `AppImage`) so cross-platform desktop releases can be shipped from native runners.
 
@@ -273,7 +273,7 @@ Running the headless binary without arguments now drops into an **interactive RE
 ### Clone & Run
 
 ```bash
-git clone https://github.com/njbinbin-pisci/openpisci.git
+git clone https://github.com/njbinbin-piscis/openpiscis.git
 cd openpisci
 
 # Install frontend dependencies
@@ -582,7 +582,7 @@ This project is licensed under the **[Business Source License 1.1](./LICENSE)** 
 
 If OpenPisci is useful to you, please give the project a **Star** — it is the most direct signal we have to understand the project's reach and decide where to invest next.
 
-[![GitHub Stars](https://img.shields.io/github/stars/njbinbin-pisci/openpisci?style=social)](https://github.com/njbinbin-pisci/openpisci)
+[![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 
 ---
 

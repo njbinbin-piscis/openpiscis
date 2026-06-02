@@ -4,7 +4,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useTranslation } from "react-i18next";
 import "./About.css";
 
-const GITHUB_URL = "https://github.com/njbinbin-pisci/openpisci";
+const GITHUB_URL = "https://github.com/njbinbin-piscis/openpiscis";
 const WEBSITE_URL = "http://www.dimnuo.com";
 
 export default function About() {
@@ -46,7 +46,7 @@ export default function About() {
           onClick={() => openLink(GITHUB_URL)}
         >
           <span className="about-link-icon">⭐</span>
-          <span>GitHub — njbinbin-pisci/openpisci</span>
+          <span>GitHub — njbinbin-piscis/openpiscis</span>
           <span className="about-link-arrow">↗</span>
         </button>
       </div>
