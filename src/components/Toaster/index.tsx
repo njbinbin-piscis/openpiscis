@@ -81,7 +81,7 @@ export default function Toaster() {
 
       const toast: Toast = {
         id: p.id || `toast_${Date.now()}_${Math.random()}`,
-        title: p.title?.trim() || "Pisci",
+        title: p.title?.trim() || "Piscis",
         message: p.message,
         level,
         poolId: p.pool_id,
@@ -108,7 +108,7 @@ export default function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pisci-toaster" role="region" aria-label="Pisci notifications">
+    <div className="pisci-toaster" role="region" aria-label="Piscis notifications">
       {toasts.map((t) => (
         <div
           key={t.id}

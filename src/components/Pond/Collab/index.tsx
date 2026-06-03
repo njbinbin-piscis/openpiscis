@@ -101,10 +101,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 function MessageBubble({ msg, kois }: { msg: PoolMessage; kois: KoiWithStats[] }) {
   const sender = kois.find((k) => k.id === msg.sender_id);
-  const isPisci = msg.sender_id === "pisci";
-  const icon = isPisci ? "🐋" : sender?.icon ?? "🐟";
-  const color = isPisci ? "#7c3aed" : sender?.color ?? "#6b7280";
-  const name = isPisci ? "Pisci" : sender?.name ?? msg.sender_id;
+  const isPiscis = msg.sender_id === "pisci";
+  const icon = isPiscis ? "🐋" : sender?.icon ?? "🐟";
+  const color = isPiscis ? "#7c3aed" : sender?.color ?? "#6b7280";
+  const name = isPiscis ? "Piscis" : sender?.name ?? msg.sender_id;
   const meta = parseMeta(msg.metadata);
 
   return (
@@ -189,7 +189,7 @@ export default function Collab() {
   const [mentionIndex, setMentionIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Pool chat: @!Koi only — Pisci is reached via IDE CLI (main chat · Pool CLI).
+  // Pool chat: @!Koi only — Piscis is reached via IDE CLI (main chat · Pool CLI).
   const mentionCandidates = useMemo(() => {
     const list: { name: string; icon: string; desc: string }[] = [];
     kois.filter(k => k.status !== "offline").forEach(k => {
@@ -783,7 +783,7 @@ export default function Collab() {
     const text = userInput.trim();
     if (!text || !activeSessionId) return;
     if (containsDelegatedPisciMention(text)) {
-      setMentionError(t("pool.noDelegateSelfPisci"));
+      setMentionError(t("pool.noDelegateSelfPiscis"));
       setTimeout(() => setMentionError(""), 8000);
       return;
     }
@@ -933,7 +933,7 @@ export default function Collab() {
                   <div className="chatpool-orgspec-body chatpool-participants-body">
                     <div className="chatpool-participant">
                       <span className="chatpool-participant-icon">🐋</span>
-                      <span className="chatpool-participant-name">Pisci</span>
+                      <span className="chatpool-participant-name">Piscis</span>
                       <span className="chatpool-participant-badge" title={t("pool.actAsPisciRole")}>{t("pool.mainAgent") || "Main Agent"}</span>
                     </div>
                     {kois.map((koi) => (

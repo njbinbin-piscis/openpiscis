@@ -1,5 +1,5 @@
 /**
- * Pisci CLI-style assistant panel — a lightweight, terminal-shaped chat
+ * Piscis CLI-style assistant panel — a lightweight, terminal-shaped chat
  * that occupies the same bottom slot as TerminalPanel. Targeted at users
  * who would rather describe a task in natural language ("build the
  * project", "git status", "find TODOs in src/") than type shell commands.
@@ -11,7 +11,7 @@
  * - Streaming: listens to `agent_event_*` and renders text deltas live.
  * - Plain-text rendering (monospace) — this is a CLI, not a chat bubble.
  * - Tool calls / errors are surfaced as muted lines so the user can see
- *   what Pisci is actually doing under the hood.
+ *   what Piscis is actually doing under the hood.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -85,8 +85,8 @@ export default function AssistantPanel({
     if (sessionIdRef.current) return sessionIdRef.current;
 
     const title = projectDir
-      ? `Pisci CLI — ${projectDir.split(/[\\/]/).pop() ?? projectDir}`
-      : "Pisci CLI";
+      ? `Piscis CLI — ${projectDir.split(/[\\/]/).pop() ?? projectDir}`
+      : "Piscis CLI";
 
     const matchesProject = (s: { title?: string; workspace_root?: string | null }) => {
       if (s.title === title) return true;
@@ -226,7 +226,7 @@ export default function AssistantPanel({
   return (
     <div className="ide-terminal-panel ide-assistant-panel" style={height ? { height } : undefined}>
       <div className="ide-terminal-header">
-        <span className="term-title">{t("ide.assistantTitle") || "Pisci Assistant"}</span>
+        <span className="term-title">{t("ide.assistantTitle") || "Piscis Assistant"}</span>
         <div style={{ flex: 1 }} />
         <button onClick={clearLog} title={t("ide.assistantClear") || "Clear"}>⌫</button>
         {busy && (
@@ -238,7 +238,7 @@ export default function AssistantPanel({
         {lines.length === 0 && (
           <div className="ide-assistant-empty">
             {t("ide.assistantHint") ||
-              "Ask Pisci in plain language."}
+              "Ask Piscis in plain language."}
           </div>
         )}
         {lines.map((line, i) => (
@@ -263,7 +263,7 @@ export default function AssistantPanel({
               sendCurrent();
             }
           }}
-          placeholder={t("ide.assistantInputPlaceholder") || "Ask Pisci..."}
+          placeholder={t("ide.assistantInputPlaceholder") || "Ask Piscis..."}
           rows={1}
           disabled={busy}
           spellCheck={false}

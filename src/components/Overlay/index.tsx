@@ -85,7 +85,7 @@ function ContextMenu({ onClose, onRestore, onQuit }: ContextMenuProps) {
         🪟 恢复主界面
       </li>
       <li onMouseDown={(e) => { e.stopPropagation(); onQuit(); }}>
-        ✕ 退出 Pisci
+        ✕ 退出 OpenPiscis
       </li>
     </ul>
   );
@@ -215,7 +215,7 @@ export default function OverlayApp() {
           <span className={`hud-dot ${status === "running" ? "hud-dot-running" : ""}`} />
 
           {/* Label */}
-          <span className="hud-title" data-tauri-drag-region>🐟 Pisci</span>
+          <span className="hud-title" data-tauri-drag-region>🐟 OpenPiscis</span>
 
           {/* Current tool name (when running) */}
           {lastTool && (

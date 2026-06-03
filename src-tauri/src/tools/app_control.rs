@@ -117,7 +117,7 @@ impl Tool for AppControlTool {
     }
 
     fn description(&self) -> &str {
-        "Control OpenPisci application: manage scheduled tasks, settings, UI/windows, built-in tools, user tools, runtimes, SSH servers, and skills.\
+        "Control OpenPiscis application: manage scheduled tasks, settings, UI/windows, built-in tools, user tools, runtimes, SSH servers, and skills.\
          \n\nACTIONS — Scheduled Tasks:\
          \n- 'task_list': List all scheduled tasks (name, cron, status, last run, optional notify targets).\
          \n- 'task_create': Create a task. Required: name, cron_expression (5-field), task_prompt. Optional: description, notify_targets (array of 'ui' / 'im_binding:<key>' / 'im_session:<sid>' tokens).\
@@ -145,14 +145,14 @@ impl Tool for AppControlTool {
          \n- 'ui_exit_minimal_mode': Exit minimal mode and restore the main window.\
          \n- 'window_move': Move the main or overlay window. Required: window_target (main|overlay). Use x+y or position_preset=bottom_right.\
          \n- 'notify_user': Surface a notification to the human. Defaults to a desktop toast, but can also fan out to one or more IM conversations.\
-         \n  Required: message. Optional: title (default 'Pisci'), level (info|warning|error|critical, default 'info'),\
+         \n  Required: message. Optional: title (default 'Piscis'), level (info|warning|error|critical, default 'info'),\
          \n  pool_id (to link the toast to a specific pool), duration_ms (0 = persistent until dismissed),\
          \n  targets (array of tokens; defaults to ['ui']). Target tokens: 'ui', 'im_binding:<binding_key>', 'im_session:<session_id>'.\
-         \n  Use sparingly. Typical cases: human escalation after unrecoverable failures, Pisci needs an explicit user decision,\
+         \n  Use sparingly. Typical cases: human escalation after unrecoverable failures, Piscis needs an explicit user decision,\
          \n  or a long-running project reached a milestone the user should know about. Do NOT use for chatty progress updates.\
          \
          \n\nACTIONS — Session Artifacts:\
-         \n- 'artifact_submit': Add a generated result to the current chat session's Artifacts panel. Required: artifact_name. Optional: artifact_type, uri/path/url, content_summary, metadata. The tool result includes the URI so Pisci can mention it in the chat reply.\
+         \n- 'artifact_submit': Add a generated result to the current chat session's Artifacts panel. Required: artifact_name. Optional: artifact_type, uri/path/url, content_summary, metadata. The tool result includes the URI so Piscis can mention it in the chat reply.\
          \n- 'artifact_list': List generated artifacts for the current session. Optional: session_id, limit.\
          \
          \n\nACTIONS — Built-in Tools:\
@@ -252,7 +252,7 @@ impl Tool for AppControlTool {
                 "heartbeat_enabled": { "type": "boolean" },
                 "heartbeat_interval_mins": { "type": "integer" },
                 "heartbeat_prompt": { "type": "string" },
-                "pisci_personal_prompt": { "type": "string", "description": "Personal prompt applied only to Pisci chat, heartbeat, pool coordination, and scheduled task sessions. Does not affect Koi or Fish." },
+                "pisci_personal_prompt": { "type": "string", "description": "Personal prompt applied only to Piscis chat, heartbeat, pool coordination, and scheduled task sessions. Does not affect Koi or Fish." },
                 "feishu_app_id": { "type": "string" },
                 "feishu_app_secret": { "type": "string" },
                 "feishu_domain": { "type": "string" },
@@ -315,7 +315,7 @@ impl Tool for AppControlTool {
                 "x": { "type": "integer", "description": "Absolute screen X for window_move" },
                 "y": { "type": "integer", "description": "Absolute screen Y for window_move" },
                 "position_preset": { "type": "string", "description": "Window position preset, currently supports: bottom_right" },
-                "title": { "type": "string", "description": "Toast title for notify_user (default 'Pisci')" },
+                "title": { "type": "string", "description": "Toast title for notify_user (default 'Piscis')" },
                 "message": { "type": "string", "description": "Toast body text for notify_user" },
                 "level": { "type": "string", "enum": ["info", "warning", "error", "critical"], "description": "Toast severity for notify_user (default 'info')" },
                 "pool_id": { "type": "string", "description": "Optional pool id to associate a notify_user toast with a specific project" },
@@ -323,7 +323,7 @@ impl Tool for AppControlTool {
                 "targets": {
                     "type": "array",
                     "items": { "type": "string" },
-                    "description": "notify_user target list. Each entry is a token: 'ui' (desktop toast), 'im_binding:<binding_key>' (specific IM conversation), or 'im_session:<session_id>' (whichever IM channel/conversation last spoke to this Pisci session). Defaults to ['ui'] if omitted."
+                    "description": "notify_user target list. Each entry is a token: 'ui' (desktop toast), 'im_binding:<binding_key>' (specific IM conversation), or 'im_session:<session_id>' (whichever IM channel/conversation last spoke to this Piscis session). Defaults to ['ui'] if omitted."
                 }
             }
         })
@@ -1438,7 +1438,7 @@ impl AppControlTool {
             .as_str()
             .map(str::trim)
             .filter(|s| !s.is_empty())
-            .unwrap_or("Pisci")
+            .unwrap_or("Piscis")
             .to_string();
         let level_raw = input["level"].as_str().map(str::trim).unwrap_or("info");
         let level = match NotificationLevel::parse_lenient(level_raw) {
@@ -1791,7 +1791,7 @@ impl AppControlTool {
 
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(15))
-            .user_agent("Pisci-Desktop/1.0")
+            .user_agent("Piscis-Desktop/1.0")
             .build()
             .map_err(|e| anyhow::anyhow!(e))?;
 
@@ -1927,7 +1927,7 @@ impl AppControlTool {
             }
             let client = reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(30))
-                .user_agent("Pisci-Desktop/1.0")
+                .user_agent("Piscis-Desktop/1.0")
                 .build()
                 .map_err(|e| anyhow::anyhow!(e))?;
             let resp = client
@@ -1955,7 +1955,7 @@ impl AppControlTool {
             }
             let client = reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(30))
-                .user_agent("Pisci-Desktop/1.0")
+                .user_agent("Piscis-Desktop/1.0")
                 .build()
                 .map_err(|e| anyhow::anyhow!(e))?;
             let file_url = format!(
@@ -2332,7 +2332,7 @@ fn builtin_tool_catalog() -> Vec<BuiltinToolInfo> {
         },
         BuiltinToolInfo {
             name: "app_control".into(),
-            description: "Manage Pisci app settings and system state.".into(),
+            description: "Manage Piscis app settings and system state.".into(),
             icon: "🎛️".into(),
             windows_only: false,
         },

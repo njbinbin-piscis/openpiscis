@@ -1,4 +1,4 @@
-# OpenPisci — Tauri 后端（Rust）
+# OpenPiscis — Tauri 后端（Rust）
 
 本目录为 **Tauri 2** 桌面壳与 **Rust** 业务逻辑（Agent、工具、存储、LLM 客户端等）。产品说明、架构与功能请见仓库根目录中文文档 [**README_CN.md**](../README_CN.md)；英文见 [**README.md**](../README.md)。
 

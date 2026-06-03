@@ -145,15 +145,15 @@ pub async fn send_pool_message(
     if input.sender_id == "user" {
         return Err(
             "Pool chat no longer accepts sender_id \"user\". \
-             Humans act as the Pisci coordinator (sender_id \"pisci\") and delegate to Koi via @!mentions."
+             Humans act as the Piscis coordinator (sender_id \"pisci\") and delegate to Koi via @!mentions."
                 .into(),
         );
     }
     if input.sender_id == "pisci" && crate::pisci::heartbeat::content_targets_pisci(&input.content)
     {
         return Err(
-            "Cannot @!mention Pisci from a Pisci-role message. \
-             Delegate to Koi with @!KoiName, or use the IDE Pisci CLI for a direct Pisci conversation."
+            "Cannot @!mention Piscis from a Piscis-role message. \
+             Delegate to Koi with @!KoiName, or use the IDE Piscis CLI for a direct Piscis conversation."
                 .into(),
         );
     }
@@ -189,8 +189,8 @@ pub async fn send_pool_message(
             }
         });
 
-        // User @!Pisci in pool chat is rejected above. Non-user senders (pisci,
-        // system) may still @!Pisci for automated coordination.
+        // User @!Piscis in pool chat is rejected above. Non-user senders (pisci,
+        // system) may still @!Piscis for automated coordination.
         if input.sender_id != "user"
             && input.sender_id != "pisci"
             && crate::pisci::heartbeat::content_targets_pisci(&input.content)
@@ -478,7 +478,7 @@ pub async fn resume_pool_session(
 
     emit_message(&app, &sys_msg);
 
-    // 3. Trigger @pisci mention so Pisci wakes up and resumes coordination
+    // 3. Trigger @pisci mention so Piscis wakes up and resumes coordination
     let app_clone = app.clone();
     let db_arc = state.db.clone();
     let pool_id = id.clone();

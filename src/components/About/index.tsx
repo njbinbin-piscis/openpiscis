@@ -32,8 +32,8 @@ export default function About() {
   return (
     <div className="about-page">
       <div className="about-hero">
-        <img src="/pisci.png" className="about-logo" alt="Pisci" />
-        <h1 className="about-title">OpenPisci</h1>
+        <img src="/pisci.png" className="about-logo" alt="OpenPiscis" />
+        <h1 className="about-title">OpenPiscis</h1>
         <p className="about-tagline">{t("about.tagline")}</p>
         <span className="about-version">v{version}</span>
       </div>
@@ -86,7 +86,7 @@ export default function About() {
             { name: "React + TypeScript", desc: t("about.techReactTs") },
             { name: "SQLite", desc: t("about.techSQLite") },
             { name: "Anthropic Claude", desc: t("about.techClaude") },
-            { name: "Windows UIA", desc: t("about.techWindowsUIA") },
+            { name: t("about.techDesktopAutomationName"), desc: t("about.techDesktopAutomation") },
           ].map((tech) => (
             <div key={tech.name} className="about-tech-item">
               <span className="about-tech-name">{tech.name}</span>
@@ -114,7 +114,7 @@ export default function About() {
       </div>
 
       <div className="about-footer">
-        <p>Built with ❤️ by the OpenPisci community</p>
+        <p>{t("about.footer")}</p>
       </div>
     </div>
   );

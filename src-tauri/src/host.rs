@@ -390,7 +390,7 @@ impl DesktopHostTools {
     /// `..DesktopHostTools::default()`, which leaves
     /// `subagent_runtime` as `None`. Without this lazy-load, the neutral
     /// kernel tools (`pool_chat`, `pool_org`) would receive `None` and
-    /// silently drop @mention fan-out — Pisci could @-mention Kois in
+    /// silently drop @mention fan-out — Piscis could @-mention Kois in
     /// `pool_chat` and they would stay idle forever because
     /// [`pisci_kernel::pool::services::send_pool_message`] short-circuits
     /// the coordinator call when `subagent` is `None`.

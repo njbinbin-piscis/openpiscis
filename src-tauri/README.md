@@ -1,4 +1,4 @@
-# OpenPisci - Tauri Backend (Rust)
+# OpenPiscis - Tauri Backend (Rust)
 
 This directory contains the **Tauri 2** desktop shell and the **Rust** application logic (Agent runtime, tools, storage, LLM clients, and more). For product overview, architecture, and feature documentation, see the root Chinese doc [**README_CN.md**](../README_CN.md); for the root English doc, see [**README.md**](../README.md).
 

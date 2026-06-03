@@ -109,12 +109,12 @@ pub async fn ensure_heartbeat_session(
     Ok(())
 }
 
-/// Case-insensitive `@!Pisci` / `@!pisci` delegated mention at line start.
+/// Case-insensitive `@!Piscis` / `@!pisci` delegated mention at line start.
 pub fn content_targets_pisci(content: &str) -> bool {
     contains_delegated_pisci_mention(content)
 }
 
-/// Spawn an immediate Pisci heartbeat so that `@!Pisci` mentions and
+/// Spawn an immediate Piscis heartbeat so that `@!Piscis` mentions and
 /// other attention events do not have to wait for the periodic timer.
 ///
 /// Resolves the heartbeat prompt from settings and runs `dispatch_heartbeat`
@@ -122,7 +122,7 @@ pub fn content_targets_pisci(content: &str) -> bool {
 /// or the prompt is empty (matches the periodic loop's behavior).
 ///
 /// NOTE: Currently superseded by [`spawn_mention_dispatch`], which handles
-/// `@!Pisci` mentions with pool-scoped dispatch. Kept as a fallback entry
+/// `@!Piscis` mentions with pool-scoped dispatch. Kept as a fallback entry
 /// point for future callers.
 #[allow(dead_code)]
 pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'static str) {
@@ -157,7 +157,7 @@ pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'stati
             }
         };
         if let Err(e) = dispatch_heartbeat(&cloned, &prompt, channel).await {
-            warn!("immediate Pisci dispatch failed: {}", e);
+            warn!("immediate Piscis dispatch failed: {}", e);
         }
     });
 }
@@ -190,7 +190,7 @@ async fn collect_forced_mention_pool_attention(
     build_forced_mention_attention(&pool, &messages, &pool_todos, &koi_ids)
 }
 
-/// Spawn an immediate Pisci turn in response to a direct `@!Pisci` mention
+/// Spawn an immediate Piscis turn in response to a direct `@!Piscis` mention
 /// in a specific pool. Unlike [`spawn_immediate_dispatch`], this path is NOT
 /// gated behind `heartbeat_enabled` — an explicit mention from a human is
 /// an interactive request and must be honored even if periodic heartbeats
@@ -242,7 +242,7 @@ pub fn spawn_mention_dispatch(
                     dispatch_single_pool_attention(&cloned, &prompt, &attention, channel).await
                 {
                     warn!(
-                        "@!Pisci mention dispatch failed for pool {}: {}",
+                        "@!Piscis mention dispatch failed for pool {}: {}",
                         pool_id, e
                     );
                     let _ = crate::pool::notice::post_pisci_pool_notice(
@@ -258,7 +258,7 @@ pub fn spawn_mention_dispatch(
                 tracing::info!(
                     target: "pool::pisci",
                     pool_id = %pool_id,
-                    "@!Pisci mention: no delegated mention found in pool; skipping dispatch"
+                    "@!Piscis mention: no delegated mention found in pool; skipping dispatch"
                 );
             }
         }
@@ -283,7 +283,7 @@ async fn pisci_pool_activity_since(state: &AppState, pool_id: &str, since_id: i6
         .any(|m| m.id > since_id && m.sender_id == "pisci")
 }
 
-/// Run Pisci in a single pool's attention session. Extracted from
+/// Run Piscis in a single pool's attention session. Extracted from
 /// [`dispatch_heartbeat`] so both the periodic loop and the
 /// mention-triggered path can reuse the same per-pool dispatch logic.
 async fn dispatch_single_pool_attention(
@@ -295,7 +295,7 @@ async fn dispatch_single_pool_attention(
     ensure_heartbeat_session(
         state,
         &attention.session_id,
-        &format!("Pisci · {}", attention.pool_name),
+        &format!("Piscis · {}", attention.pool_name),
         HEARTBEAT_POOL_SOURCE,
     )
     .await?;
@@ -311,7 +311,7 @@ async fn dispatch_single_pool_attention(
     let heartbeat_message = build_pool_heartbeat_message(base_prompt, attention);
     let mention_reply_rules = if channel == "mention" {
         "\n\
-         ## Direct @!Pisci mention (mandatory visible reply)\n\
+         ## Direct @!Piscis mention (mandatory visible reply)\n\
          A human explicitly @!mentioned you in this pool. They are watching the pool chat UI, NOT a hidden heartbeat session.\n\
          - You MUST call pool_org(action=\"post_status\", pool_id, content=...) with a clear reply to the user's request before finishing.\n\
          - Do NOT reply with only HEARTBEAT_OK or stay silent in the pool — that looks like no response.\n\
@@ -334,7 +334,7 @@ async fn dispatch_single_pool_attention(
                  Assessment: {} | Decision: {:?}\n\
                  {}\
                  Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, assign_koi, merge_branches, etc.).\n\
-                 Do not use pool_chat from heartbeat; Pisci heartbeat communicates through pool_org-controlled actions.\n\
+                 Do not use pool_chat from heartbeat; Piscis heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
                  If the pool has a project_dir and branches need merging, prefer incremental pool_org(merge_branches, branch=...) when integration_ready_count > 0.\n\
                  During heartbeat, NEVER archive a pool automatically — only the user can explicitly request archiving.\n\
@@ -346,7 +346,7 @@ async fn dispatch_single_pool_attention(
                 mention_reply_rules,
                 attention.pool_id,
             )),
-            session_title: Some(format!("Pisci · {}", attention.pool_name)),
+            session_title: Some(format!("Piscis · {}", attention.pool_name)),
             session_source: Some(HEARTBEAT_POOL_SOURCE.into()),
             scene_kind: Some(SceneKind::HeartbeatSupervisor),
             ..HeadlessRunOptions::default()
@@ -398,7 +398,7 @@ pub async fn dispatch_heartbeat(
         ensure_heartbeat_session(
             state,
             HEARTBEAT_GLOBAL_SESSION_ID,
-            "Pisci Heartbeat",
+            "Piscis Heartbeat",
             HEARTBEAT_SOURCE,
         )
         .await?;
@@ -421,7 +421,7 @@ pub async fn dispatch_heartbeat(
             None,
             channel,
             Some(HeadlessRunOptions {
-                session_title: Some("Pisci Heartbeat".into()),
+                session_title: Some("Piscis Heartbeat".into()),
                 session_source: Some(HEARTBEAT_SOURCE.into()),
                 scene_kind: Some(SceneKind::HeartbeatSupervisor),
                 ..HeadlessRunOptions::default()

@@ -1080,7 +1080,7 @@ export default function Settings({ theme, setTheme, onOpenTools }: SettingsProps
             <div>
               <div style={{ fontWeight: 500, color: "var(--text-primary)" }}>允许多开</div>
               <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                开启后可同时运行多个 OpenPisci 实例；关闭时再次启动会激活已有窗口（重启后生效）
+                开启后可同时运行多个 OpenPiscis 实例；关闭时再次启动会激活已有窗口（重启后生效）
               </div>
             </div>
             <input type="checkbox" checked={form.allow_multiple_instances ?? false} onChange={(e) => update("allow_multiple_instances", e.target.checked)} />
@@ -1860,7 +1860,7 @@ export default function Settings({ theme, setTheme, onOpenTools }: SettingsProps
 
                 <div className="form-group">
                   <label className="label">{t("settings.smtpFromName")} <span style={{ fontSize: 11, color: "var(--text-muted)" }}>({t("common.optional")})</span></label>
-                  <input className="input" value={form.smtp_from_name} onChange={(e) => update("smtp_from_name", e.target.value)} placeholder="Pisci Agent" />
+                  <input className="input" value={form.smtp_from_name} onChange={(e) => update("smtp_from_name", e.target.value)} placeholder="Piscis Agent" />
                 </div>
 
                 <div style={{ borderTop: "1px solid var(--border)", margin: "12px 0" }} />

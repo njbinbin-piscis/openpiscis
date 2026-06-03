@@ -1,8 +1,8 @@
-# 🐟 OpenPisci
+# 🐟 OpenPiscis
 
-**开源 AI Agent 桌面应用**
+**开源跨平台 AI Agent 桌面应用**
 
-OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust + React 构建。从 `v0.7.0` 起，项目经过了大规模重构，形成清晰的分层架构：`pisci-core`（纯协作与领域逻辑）、`pisci-kernel`（与操作系统 / UI 解耦的运行时内核）、`pisci-desktop`（Tauri 桌面外壳）、`pisci-cli`（无头 CLI 运行器）。**大鱼（Pisci）** 是主 Agent，**锦鲤（Koi）** 是持久化协作 Agent，**小鱼（Fish）** 是无状态临时子 Agent。
+OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Tauri 2 + Rust + React 构建。从 `v0.7.0` 起，项目经过了大规模重构，形成清晰的分层架构：`pisci-core`（纯协作与领域逻辑）、`pisci-kernel`（与操作系统 / UI 解耦的运行时内核）、`pisci-desktop`（Tauri 桌面外壳）、`pisci-cli`（无头 CLI 运行器）。**大鱼（Piscis）** 是主协调 Agent，**锦鲤（Koi）** 是持久化协作 Agent，**小鱼（Fish）** 是无状态临时子 Agent。
 
 **当前平台支持**
 - **Windows**：主要的桌面发行目标
@@ -33,7 +33,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 { "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
 ```
 
-建议在改完文件后调用，作为编译前的快速验证，**不要**每次读文件都触发。与 `lsp` 工具（悬停 / 补全 / 跳转定义 / 引用 / 重命名）配合，构成 Pisci / Koi 循环中的端到端代码理解能力。
+建议在改完文件后调用，作为编译前的快速验证，**不要**每次读文件都触发。与 `lsp` 工具（悬停 / 补全 / 跳转定义 / 引用 / 重命名）配合，构成 Piscis / Koi 循环中的端到端代码理解能力。
 
 ## 🕘 历史版本
 
@@ -57,21 +57,21 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 - **MCP 集成**：按场景装配的工具注册器支持主聊天 / 任务场景按需接入 MCP（Model Context Protocol）外部工具服务器
 - **工作区级硬 Lint**：Rust 工作区统一运行在 `-D warnings` 下，防止死代码、未使用导入、调试残留重新渗入
 
-### 🐟 Pisci / Koi / Fish：三层 Agent 架构
+### 🐟 Piscis / Koi / Fish：三层 Agent 架构
 
 | 角色 | 定位 | 生命周期 | 典型职责 | 与其他角色的关系 |
 |------|------|----------|----------|------------------|
-| `Pisci` | 主 Agent / 项目经理 / 用户入口 | 常驻 | 与用户对话、调用工具、创建鱼池、协调多 Agent、判断项目是否可收尾 | 负责组织 Koi，也可调用 Fish 处理临时子任务 |
+| `Piscis` | 主 Agent / 项目经理 / 用户入口 | 常驻 | 与用户对话、调用工具、创建鱼池、协调多 Agent、判断项目是否可收尾 | 负责组织 Koi，也可调用 Fish 处理临时子任务 |
 | `Koi` | 持久化协作 Agent | 持久化存在，可多项目复用 | 在鱼池中承担角色分工，如架构、编码、测试、审查、研究 | 通过 `pool_chat` 在鱼池中协作，必要时 @mention 彼此或 @pisci |
-| `Fish` | 无状态临时子 Agent | 一次性 / 按需创建 | 处理批量扫描、资料整理、单次分析、上下文隔离的多步骤工作 | 由 Pisci 或 Koi 通过 `call_fish` 委派，不直接参与鱼池协作 |
+| `Fish` | 无状态临时子 Agent | 一次性 / 按需创建 | 处理批量扫描、资料整理、单次分析、上下文隔离的多步骤工作 | 由 Piscis 或 Koi 通过 `call_fish` 委派，不直接参与鱼池协作 |
 
 **理解方式：**
-- `Pisci` 是总控入口，负责对用户负责。
+- `Piscis` 是总控入口，负责对用户负责。
 - `Koi` 是长期团队成员，适合持续项目协作。
 - `Fish` 是临时工，适合“做完即走”的子任务。
 
 **关键区别：**
-- `Pisci` 决定是否建池、如何分工、何时继续推进、何时请求用户确认收尾。
+- `Piscis` 决定是否建池、如何分工、何时继续推进、何时请求用户确认收尾。
 - `Koi` 有独立身份、独立记忆归属、独立待办，能在多个项目中被反复唤醒。
 - `Fish` 不维护长期项目状态，不占用主会话上下文，只返回最终结果。
 
@@ -82,10 +82,10 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 鱼池不是一个单独 Agent，而是一套围绕项目协作构建的可视化工作区：
 
 - **项目池（Pool Session）**：一个项目对应一个池，包含项目名、状态、组织规范（`org_spec`）和可选 `project_dir`
-- **Pool Chat**：Pisci、Koi 在这里自然对话、交接、提问、@mention 协作
+- **Pool Chat**：Piscis、Koi 在这里自然对话、交接、提问、@mention 协作
 - **看板（Board / Kanban）**：展示 Koi todo 的 `todo / in_progress / blocked / done / cancelled`
 - **Koi 面板**：展示每个 Koi 的身份、角色、在线状态、当前工作负载
-- **Pisci Inbox / Heartbeat**：Pisci 的项目级收件箱，用于接收 `@pisci`、状态信号、心跳巡检结果
+- **Piscis Inbox / Heartbeat**：Piscis 的项目级收件箱，用于接收 `@pisci`、状态信号、心跳巡检结果
 - **知识库（`kb/`）**：项目共享知识区，用于沉淀架构、API、缺陷、决策等文档
 - **项目目录 / Git worktree**：若设置 `project_dir`，每个 Koi 可在自己的分支和 worktree 中工作，减少文件冲突
 
@@ -96,32 +96,32 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 一个标准的鱼池项目通常按下面的机制运行：
 
 1. **用户发起项目**
-   - 用户可以在应用内聊天，也可以通过飞书等 IM 直接告诉 Pisci“创建一个鱼池项目”
-   - Pisci 通过 `pool_org(action="create")` 创建项目池，并写入 `org_spec`
+   - 用户可以在应用内聊天，也可以通过飞书等 IM 直接告诉 Piscis“创建一个鱼池项目”
+   - Piscis 通过 `pool_org(action="create")` 创建项目池，并写入 `org_spec`
 
-2. **Pisci 组织团队**
-   - Pisci 根据项目目标选择合适的 Koi 角色
-   - Pisci 优先通过 `pool_chat` 发送带 `@KoiName` 的消息来发起工作，而不是死板串行分配
-   - 任务委派是异步的：Pisci 通过 `assign_koi` 派发任务后，通过 `get_todos` / `get_messages` 监控进度，不再同步阻塞 `wait_for_koi`
+2. **Piscis 组织团队**
+   - Piscis 根据项目目标选择合适的 Koi 角色
+   - Piscis 优先通过 `pool_chat` 发送带 `@KoiName` 的消息来发起工作，而不是死板串行分配
+   - 任务委派是异步的：Piscis 通过 `assign_koi` 派发任务后，通过 `get_todos` / `get_messages` 监控进度，不再同步阻塞 `wait_for_koi`
 
 3. **Koi 自主协作**
    - Koi 在 `pool_chat` 中汇报进展、交接工作、提出问题、请求复审
-   - `@mention` 是消息，不是硬命令：被提及的 Koi 会自主判断是立即响应、继续当前工作，还是请求 Pisci 协调
+   - `@mention` 是消息，不是硬命令：被提及的 Koi 会自主判断是立即响应、继续当前工作，还是请求 Piscis 协调
    - `@all` 可向整个项目团队广播
 
 4. **待办与状态同步**
    - 任务通过 `koi_todos` 追踪，状态流转为 `todo -> in_progress -> done / blocked / cancelled`
-   - Pisci 和任务所有者可以更新任务状态；其他 Koi 需要通过 `@pisci` 请求变更
-   - `pool_chat` 中的 `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` 信号会辅助 Pisci判断项目是否继续推进
+   - Piscis 和任务所有者可以更新任务状态；其他 Koi 需要通过 `@pisci` 请求变更
+   - `pool_chat` 中的 `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` 信号会辅助 Piscis判断项目是否继续推进
 
-5. **Pisci 心跳与继续推进**
+5. **Piscis 心跳与继续推进**
    - 心跳会扫描池内新消息、待办和状态信号
-   - 只要仍有 active todo，或有人发出 `follow_up_needed / waiting`，Pisci 就应继续协调，而不是把项目误判为结束
-   - 只有当工作真正收敛，并且有人明确用 `ready_for_pisci_review @pisci` 把判断权交回时，Pisci 才进入收尾审查
+   - 只要仍有 active todo，或有人发出 `follow_up_needed / waiting`，Piscis 就应继续协调，而不是把项目误判为结束
+   - 只有当工作真正收敛，并且有人明确用 `ready_for_pisci_review @pisci` 把判断权交回时，Piscis 才进入收尾审查
 
 6. **项目收尾**
-   - Koi 只能建议“可由 Pisci 审查是否结束”，不能单方面宣布项目结束
-   - 最终是否归档，由 Pisci 汇总后向用户确认，再执行 `pool_org(action="archive")`
+   - Koi 只能建议“可由 Piscis 审查是否结束”，不能单方面宣布项目结束
+   - 最终是否归档，由 Piscis 汇总后向用户确认，再执行 `pool_org(action="archive")`
 
 ### 🛠️ 丰富的桌面工具集
 
@@ -168,7 +168,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 - 技能持久化：安装的技能写入磁盘并同步到数据库，重启后自动恢复
 - 内置技能：Office 自动化、文件管理、Web 自动化、系统管理、桌面控制
 
-> **注意**：SKILL.md 是 OpenPisci 自定义的技能格式，与 Anthropic MCP（Model Context Protocol）是两套不同的规范。
+> **注意**：SKILL.md 是 OpenPiscis 自定义的技能格式，与 Anthropic MCP（Model Context Protocol）是两套不同的规范。
 
 ### 💻 编程能力（v0.3.0 新增）
 - **`code_run` 工具**：专为编程任务设计，返回结构化 `exit_code` / `stdout` / `stderr` / `duration_ms`，并对 Rust/Python/Node 常见错误自动诊断
@@ -251,7 +251,7 @@ OpenPisci 是一款本地优先的 AI Agent 桌面应用，基于 Tauri 2 + Rust
 
 直接双击或无参数运行 headless 版本会自动进入**交互式 REPL**（多轮对话、流式输出到 stdout，输入 `:help` 查看命令）；它与桌面版共享同一份 `pisci.db` / `config.json`。脚本场景可使用 `openpisci-headless run --prompt "..."` 做单轮执行，使用 `openpisci-headless capabilities` 查看当前构建启用了哪些工具。完整用法参见 `openpisci-headless --help`。
 
-> **⚠️ 安全警告**：OpenPisci 是一款具备文件读写、命令执行、UI 自动化等高权限操作能力的 AI Agent。建议在虚拟机（如 VMware、VirtualBox、Hyper-V）中运行，以防止 AI 误操作导致宿主机数据损失。开发者不对因直接在宿主机运行而造成的任何数据丢失或系统损坏承担责任。
+> **⚠️ 安全警告**：OpenPiscis 是一款具备文件读写、命令执行、UI 自动化等高权限操作能力的 AI Agent 桌面应用。建议在虚拟机（如 VMware、VirtualBox、Hyper-V）中运行，以防止 AI 误操作导致宿主机数据损失。开发者不对因直接在宿主机运行而造成的任何数据丢失或系统损坏承担责任。
 
 ### 首次配置
 
@@ -373,7 +373,7 @@ tools:
 ## 🏗️ 技术架构
 
 ```
-OpenPisci
+OpenPiscis
 ├── src-tauri/
 │   ├── pisci-core/      # 纯领域逻辑：场景、鱼池 / 项目状态、提示词、共享类型
 │   ├── pisci-kernel/    # 与 OS / UI 解耦的运行时内核：Agent Loop、LLM、记忆、存储、中立工具
@@ -411,8 +411,8 @@ OpenPisci
 - **IM 发送自动解析**：`im_send_message` 在未显式传入 `binding_key` 或 `channel`+`recipient` 时，自动从当前会话解析 IM 绑定，IM 驱动的回复不再需要显式寻址。
 
 ### v0.7.8
-- **Koi 独立 `memory_owner_id`**：Koi 驱动的无头轮次现在使用 Koi 自身 ID 作为工具上下文记忆归属，而非硬编码 `"pisci"`。这意味着 `pool_chat` 发帖、记忆写入和权限检查都会正确归属到 Koi 而不是 Pisci，且范围记忆检索也使用 Koi 自己的作用域。
-- **协作试验提示词收紧**：试验启动消息现在只包含内容（设计什么），所有流程指令由执行包装器（`koi_execute_todo.txt`）负责。此前冗长的启动消息把四个职责塞进一个迭代预算，导致 Architect 经常停在前端没有向 `pool_chat` 发帖——从而触发 Pisci 的 `replace_todo` 重试。包装器现在明确声明纯助手回复对鱼池不可见，将 >500 字"写入文件、只发路径"规则提升为优先于任务文本指令，并新增显式的三步回合结束检查清单。
+- **Koi 独立 `memory_owner_id`**：Koi 驱动的无头轮次现在使用 Koi 自身 ID 作为工具上下文记忆归属，而非硬编码 `"pisci"`。这意味着 `pool_chat` 发帖、记忆写入和权限检查都会正确归属到 Koi 而不是 Piscis，且范围记忆检索也使用 Koi 自己的作用域。
+- **协作试验提示词收紧**：试验启动消息现在只包含内容（设计什么），所有流程指令由执行包装器（`koi_execute_todo.txt`）负责。此前冗长的启动消息把四个职责塞进一个迭代预算，导致 Architect 经常停在前端没有向 `pool_chat` 发帖——从而触发 Piscis 的 `replace_todo` 重试。包装器现在明确声明纯助手回复对鱼池不可见，将 >500 字"写入文件、只发路径"规则提升为优先于任务文本指令，并新增显式的三步回合结束检查清单。
 
 ### v0.7.7
 - **IM 语音消息保留**：来自 IM 渠道的语音消息现会保留并转发给 Agent 处理，不再直接丢弃
@@ -449,8 +449,8 @@ OpenPisci
 - **新增 `pisci-core` 基础库**：将项目状态评估、鱼池关注收集、心跳消息生成、Koi 提示词章节抽离到纯 Rust 库 `src-tauri/pisci-core/`，配套 36 个单测 / 集成测试，与 Tauri 运行时解耦。
 - **运行时协调软栅栏（Soft Fence）**：Koi 本轮结束但仍有未收尾的 `in_progress` 待办时，运行时会在鱼池发布 `[SoftFence]` 通知并立刻再唤起 Koi 一轮，专门用于调用 `complete_todo` / `block_todo` / `fail_todo`；若仍未收尾再交由原有 `protocol_reminder` 硬栅栏兜底，避免项目在"已完成但未标记完成"处静默卡死。
 - **max_iterations 分层配置**：按 "Koi 个体 → 系统设置 → 内置默认" 顺序继承。Collab trial 与 `call_koi` 委派不再使用硬编码的 8 次上限，直接走用户可见的全局迭代预算。
-- **Pisci 全局监督状态机**：`ProjectDecision` 新增 `SupervisorDecisionRequired`（worker 局部完成但无全局结论）与 `EscalateToHuman`（不可恢复失败 / 超时）。心跳扫描即便没有新消息也会为这两种状态抛出 attention，心跳提示词要求 Pisci 做出明确的全局决策或显式上抛人工，而不是"静默继续"。
-- **主界面 Toast 通知（新 `app_control.notify_user`）**：Pisci 可调用 `app_control(action="notify_user", level=info|warning|error|critical, pool_id, message, ...)` 向主界面推送 toast。前端新增 `Toaster` 组件，按严重度区分样式（`critical` 级持久显示并带脉冲），直到用户关闭。兜底机制：心跳在识别到 `EscalateToHuman` 时会自动 emit 一条 `critical` 级 toast，即便 Pisci 自身延迟也能第一时间通知用户。
+- **Piscis 全局监督状态机**：`ProjectDecision` 新增 `SupervisorDecisionRequired`（worker 局部完成但无全局结论）与 `EscalateToHuman`（不可恢复失败 / 超时）。心跳扫描即便没有新消息也会为这两种状态抛出 attention，心跳提示词要求 Piscis 做出明确的全局决策或显式上抛人工，而不是"静默继续"。
+- **主界面 Toast 通知（新 `app_control.notify_user`）**：Piscis 可调用 `app_control(action="notify_user", level=info|warning|error|critical, pool_id, message, ...)` 向主界面推送 toast。前端新增 `Toaster` 组件，按严重度区分样式（`critical` 级持久显示并带脉冲），直到用户关闭。兜底机制：心跳在识别到 `EscalateToHuman` 时会自动 emit 一条 `critical` 级 toast，即便 Piscis 自身延迟也能第一时间通知用户。
 - **协作 Trial 报告优化**：开发用的 `collab_trial` 现会显式报告 `supervisor_decision_required` 与 `escalate_to_human` 停止原因（不再笼统为 `idle_quiet_snapshot`），并在多轮调试之间清理历史 trial 鱼池。
 
 ### v0.5.23
@@ -505,10 +505,10 @@ OpenPisci
 - **聊天滚动修复**：修复消息刷新时整个主界面向上跳动的问题
 
 ### v0.5.8
-- **项目暂停 / 恢复 / 归档**：用户可直接在鱼池 UI 中暂停、恢复、归档项目，无需通过 Pisci 对话操作；暂停时自动取消正在运行的 Koi 任务并重置进行中的待办
+- **项目暂停 / 恢复 / 归档**：用户可直接在鱼池 UI 中暂停、恢复、归档项目，无需通过 Piscis 对话操作；暂停时自动取消正在运行的 Koi 任务并重置进行中的待办
 - **`complete_todo` 强制摘要**：`complete_todo` 工具现在必须传入 `summary` 参数，确保 Koi 完成任务后聊天界面始终显示简洁的完成摘要，不再出现空白 Result 消息
 - **Koi 上限提升至 10**：最大 Koi 数量从 5 提升至 10
-- **Pisci 可管理 Koi**：`app_control` 工具新增 `koi_list` / `koi_create` / `koi_delete` 动作，Pisci 可在用户明确要求时帮助创建或删除 Koi（提示词要求不主动创建）
+- **Piscis 可管理 Koi**：`app_control` 工具新增 `koi_list` / `koi_create` / `koi_delete` 动作，Piscis 可在用户明确要求时帮助创建或删除 Koi（提示词要求不主动创建）
 - **Koi worktree 严格隔离**：Koi 在 Git worktree 中工作时，`allow_outside_workspace` 始终为 `false`，防止意外写入主项目目录
 
 ### v0.5.7
@@ -530,12 +530,12 @@ OpenPisci
 
 ### v0.5.4
 - **文件工具相对路径感知**：`file_read` / `file_write` 等工具在 Koi worktree 场景下正确处理相对路径，防止 Koi 绕过 worktree 隔离
-- **Git 协作流程修复**：修复 Koi 与 Pisci 通过 Git 分支协作的流程，确保 Koi 在独立分支工作、Pisci 负责合并
-- **心跳与协作提示词重写**：重写心跳和 Koi 协作提示词，修复 Pisci 误判项目结束的问题
+- **Git 协作流程修复**：修复 Koi 与 Piscis 通过 Git 分支协作的流程，确保 Koi 在独立分支工作、Piscis 负责合并
+- **心跳与协作提示词重写**：重写心跳和 Koi 协作提示词，修复 Piscis 误判项目结束的问题
 
 ### v0.5.3
-- **补充多 Agent 文档**：新增 Pisci / Koi / Fish 分层说明，以及鱼池组件与协同机制说明
-- **修复 Pisci 心跳误判**：有 `follow_up_needed / waiting` 但无 active todo 时，不再误报 `HEARTBEAT_OK`，而是要求继续协调
+- **补充多 Agent 文档**：新增 Piscis / Koi / Fish 分层说明，以及鱼池组件与协同机制说明
+- **修复 Piscis 心跳误判**：有 `follow_up_needed / waiting` 但无 active todo 时，不再误报 `HEARTBEAT_OK`，而是要求继续协调
 - **协同测试覆盖增强**：多 Agent 集成测试新增心跳保护、短 `pool_id` 解析与陈旧状态恢复覆盖
 
 ### v0.5.2
@@ -599,7 +599,7 @@ OpenPisci
 
 ## ⭐ 支持项目
 
-如果 OpenPisci 对你有帮助，请给项目点一个 **Star** ——这是我们判断项目影响力、决定是否继续投入的最直接依据。
+如果 OpenPiscis 对你有帮助，请给项目点一个 **Star** ——这是我们判断项目影响力、决定是否继续投入的最直接依据。
 
 [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 

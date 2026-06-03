@@ -50,14 +50,14 @@ fn render_pisci_personal_prompt(prompt: &str) -> String {
     if trimmed.is_empty() {
         String::new()
     } else {
-        format!("\n\n## Personal Pisci Prompt\n{}\n", trimmed)
+        format!("\n\n## Personal Piscis Prompt\n{}\n", trimmed)
     }
 }
 
 fn build_memory_consolidation_template() -> String {
     format!(
         "{marker}\n\
-         You are running OpenPisci's background memory consolidation pass.\n\
+         You are running Piscis's background memory consolidation pass.\n\
          Review the supplied snapshot of recent sessions, task spines, and stored memories.\n\
          Your job is to preserve only high-signal, durable information.\n\n\
          Rules:\n\
@@ -826,7 +826,7 @@ pub async fn execute_task(
     };
 
     let system_prompt = format!(
-        "You are Pisci, a Windows AI Agent running a scheduled task.\n\
+        "You are Piscis, a Windows AI Agent running a scheduled task.\n\
          Task ID: {}\n\
          Today's date: {}\n\
          IM routing rule: if this task needs to notify a user through WeChat / WeCom / Feishu / other IM, do NOT guess a binding_key. First use `im_channel_list` to see which channel names are configured and connected. If the desired channel is configured but disconnected, use `im_channel_connect`. Then prefer `im_channel_binding_list(channel=..., task_id=...)` to list candidate tokens for that named channel; use `im_channel_binding_lookup(task_id=...)` or `im_channel_binding_lookup(session_id=...)` only when you already know the exact runtime context you want.\n\

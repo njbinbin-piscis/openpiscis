@@ -1,4 +1,4 @@
-/// Fish (小鱼) — Stateless sub-Agent system for OpenPisci.
+/// Fish (小鱼) — Stateless sub-Agent system for Piscis.
 ///
 /// Each Fish is a specialized Agent with its own persona, tool permissions,
 /// and system prompt. Fish are defined via FISH.toml files and invoked
@@ -114,7 +114,7 @@ pub fn builtin_fish() -> Vec<FishDefinition> {
             "memory_store".to_string(),
         ],
         agent: FishAgentConfig {
-            system_prompt: "你是一条专注于文件管理的小鱼（OpenPisci 子 Agent）。\n\
+            system_prompt: "你是一条专注于文件管理的小鱼（Piscis 子 Agent）。\n\
                     你的专长是：\n\
                     - 文件和目录的整理、重命名、移动\n\
                     - 批量文件操作（批量重命名、格式转换等）\n\
@@ -211,7 +211,7 @@ pub fn fish_from_skill(skill: &crate::skills::loader::SkillDefinition) -> FishDe
         tools: skill.tools.clone(),
         agent: FishAgentConfig {
             system_prompt: format!(
-                "你是一条专注于「{}」任务的小鱼（OpenPisci 子 Agent）。\n\n{}\n\n\
+                "你是一条专注于「{}」任务的小鱼（Piscis 子 Agent）。\n\n{}\n\n\
                 请专注于你的专长领域，高效完成用户交给你的任务。\
                 遇到超出你工具权限范围的任务时，请明确告知用户。",
                 skill.name, skill.instructions

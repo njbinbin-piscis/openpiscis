@@ -194,7 +194,7 @@ function AppContent() {
       <>
         <div className="loading-screen">
           <div className="loading-spinner" />
-          <p>Loading Pisci...</p>
+          <p>Loading OpenPiscis...</p>
         </div>
         <Toaster />
       </>
@@ -204,7 +204,7 @@ function AppContent() {
   if (showOnboarding) {
     return (
       <>
-        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading Pisci...</p></div>}>
+        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
           <Onboarding onComplete={() => dispatch(settingsActions.setShowOnboarding(false))} />
         </Suspense>
         <Toaster />
@@ -229,8 +229,8 @@ function AppContent() {
     <div className="app">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img src="/pisci.png" className="logo" alt="Pisci" />
-          <span className="app-name">OpenPisci</span>
+          <img src="/pisci.png" className="logo" alt="OpenPiscis" />
+          <span className="app-name">OpenPiscis</span>
         </div>
         <nav className="sidebar-nav">
           {tabs.map((tab) => (
@@ -265,7 +265,7 @@ function AppContent() {
         </div>
       </aside>
       <main className="main-content">
-        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading Pisci...</p></div>}>
+        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
           {mountedTabs.has("chat") && (
             <div className="tab-panel" hidden={activeTab !== "chat"}>
               <Chat />
@@ -313,7 +313,7 @@ function AppContent() {
 export default function App() {
   if (IS_OVERLAY) {
     return (
-      <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading Pisci...</p></div>}>
+      <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
         <OverlayApp />
       </Suspense>
     );

@@ -79,7 +79,7 @@ fn default_trial_scenario() -> TrialScenario {
         goal: "Test multi-agent collaboration by designing and reviewing a simple utility module."
             .into(),
         kickoff_phase: "lead".into(),
-        kickoff_detail: "Pisci starts the collaboration by assigning the first specialist."
+        kickoff_detail: "Piscis starts the collaboration by assigning the first specialist."
             .into(),
         kickoff_message: "@!Architect Design a small \"string utility\" module with 3 functions: \
              1) reverse_words(s) - reverses word order in a sentence \
@@ -89,10 +89,10 @@ fn default_trial_scenario() -> TrialScenario {
              Follow your coordination protocol to hand off to Coder when the spec is ready."
             .into(),
         workflow: vec![
-            "Pisci assigns the initial design task to Architect.".into(),
+            "Piscis assigns the initial design task to Architect.".into(),
             "Architect produces a specification, then hands off implementation to Coder.".into(),
             "Coder implements based on the specification, then hands off to @!Reviewer.".into(),
-            "Reviewer requests follow-up work or signals `[ProjectStatus] ready_for_pisci_review` for Pisci to assess."
+            "Reviewer requests follow-up work or signals `[ProjectStatus] ready_for_pisci_review` for Piscis to assess."
                 .into(),
         ],
         success_criteria: vec![
@@ -100,7 +100,7 @@ fn default_trial_scenario() -> TrialScenario {
             "Communication flows through the pool chat.".into(),
             "If more work is needed, agents clearly signal `[ProjectStatus] follow_up_needed`."
                 .into(),
-            "When the project may be ready for Pisci review, an agent signals `[ProjectStatus] ready_for_pisci_review` and the trial records that snapshot."
+            "When the project may be ready for Piscis review, an agent signals `[ProjectStatus] ready_for_pisci_review` and the trial records that snapshot."
                 .into(),
         ],
         lead: TrialKoiSpec {
@@ -491,16 +491,16 @@ pub async fn run_collaboration_trial_with_state(
         third.id
     );
 
-    // ─── Phase 2: Pisci posts the initial @!mention in pool chat (natural communication) ──
+    // ─── Phase 2: Piscis posts the initial @!mention in pool chat (natural communication) ──
     // The entire workflow is driven by delegated @!mention cascading:
-    //   Pisci @!lead → lead hands off to @!second → second hands off to @!third
+    //   Piscis @!lead → lead hands off to @!second → second hands off to @!third
     // No direct assign_koi calls — everything flows through pool_chat @mentions.
     status.phase = scenario.kickoff_phase.clone();
     emit(&scenario.kickoff_phase, &scenario.kickoff_detail);
 
     let task_message = scenario.kickoff_message.clone();
 
-    // Post the message to pool chat (just like Pisci would via pool_chat tool)
+    // Post the message to pool chat (just like Piscis would via pool_chat tool)
     {
         let db = state.db.lock().await;
         let msg = db
@@ -528,7 +528,7 @@ pub async fn run_collaboration_trial_with_state(
     push_trial_observation(
         &mut status,
         "kickoff_dispatch",
-        "Pisci",
+        "Piscis",
         format!("Kick off collaboration with @!{}", lead.name),
         lead_results.is_ok(),
         kickoff_preview.clone(),
@@ -546,13 +546,13 @@ pub async fn run_collaboration_trial_with_state(
         return Ok(status);
     }
 
-    // ─── Phase 3 & 4: Wait for the collaboration chain to settle, then let Pisci judge readiness ───
+    // ─── Phase 3 & 4: Wait for the collaboration chain to settle, then let Piscis judge readiness ───
     // The trial no longer ends just because a fixed role completed. Instead, it watches the pool until
-    // work is either clearly still in progress or looks ready for Pisci review.
+    // work is either clearly still in progress or looks ready for Piscis review.
     status.phase = "chain".into();
     emit(
         "chain",
-        "Waiting for collaboration to settle so Pisci can assess project state...",
+        "Waiting for collaboration to settle so Piscis can assess project state...",
     );
 
     let chain_timeout = std::time::Duration::from_secs(scenario.chain_timeout_secs);
@@ -570,6 +570,8 @@ pub async fn run_collaboration_trial_with_state(
         follow_up_signal_count: 0,
         ready_signal_count: 0,
         explicit_pisci_handoff_count: 0,
+        integration_ready_count: 0,
+        dependency_blocked_count: 0,
         attention_reasons: vec![],
         summary: "No assessment yet.".into(),
     };
@@ -796,7 +798,7 @@ pub async fn run_collaboration_trial_with_state(
             break (
                 "supervisor_decision_required".to_string(),
                 format!(
-                    "Worker-visible work reached a locally terminal snapshot, but the next global decision belongs to Pisci. {}",
+                    "Worker-visible work reached a locally terminal snapshot, but the next global decision belongs to Piscis. {}",
                     final_assessment.summary
                 ),
             );
@@ -822,7 +824,7 @@ pub async fn run_collaboration_trial_with_state(
             break (
                 "idle_quiet_snapshot".to_string(),
                 format!(
-                    "All trial agents became idle without reaching a final Pisci-review handoff. {}",
+                    "All trial agents became idle without reaching a final Piscis-review handoff. {}",
                     final_assessment.summary
                 ),
             );
@@ -832,7 +834,7 @@ pub async fn run_collaboration_trial_with_state(
     push_trial_observation(
         &mut status,
         "pisci_assess",
-        "Pisci",
+        "Piscis",
         "Observe whether the project reached a ready-for-review snapshot",
         final_assessment.decision == TrialDecision::ReadyForPisciReview,
         final_assessment.summary.clone(),
@@ -983,7 +985,7 @@ mod tests {
         );
         assert!(
             scenario.third.system_prompt.contains("@pisci"),
-            "Reviewer should return readiness to Pisci without waking a peer Koi"
+            "Reviewer should return readiness to Piscis without waking a peer Koi"
         );
         assert!(
             scenario

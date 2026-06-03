@@ -2249,7 +2249,7 @@ export default function Chat() {
         ) : (
           <div className="empty-state">
             <div className="empty-state-icon">
-              <img src="/pisci.png" alt="Pisci" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 14, opacity: 0.7 }} />
+              <img src="/pisci.png" alt="OpenPiscis" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 14, opacity: 0.7 }} />
             </div>
             <div className="empty-state-title">{t("chat.welcome")}</div>
             <div className="empty-state-desc">{t("chat.welcomeDesc")}</div>

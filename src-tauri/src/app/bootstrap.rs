@@ -1079,7 +1079,7 @@ fn run_impl() {
                         MenuItem::with_id(
                             &app_handle,
                             "tray_quit",
-                            "退出 OpenPisci",
+                            "退出 OpenPiscis",
                             true,
                             None::<&str>,
                         ),
@@ -1090,11 +1090,11 @@ fn run_impl() {
                             }
                         }
                     }
-                    let _ = tray.set_tooltip(Some("OpenPisci"));
+                    let _ = tray.set_tooltip(Some("OpenPiscis"));
                 }
             }
 
-            info!("OpenPisci started");
+            info!("OpenPiscis started");
 
             #[cfg(debug_assertions)]
             {
@@ -1404,7 +1404,7 @@ fn run_impl() {
             commands::platform::window::set_window_theme_border,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Pisci Desktop");
+        .expect("error while running OpenPiscis Desktop");
 }
 
 #[cfg(test)]

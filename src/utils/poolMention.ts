@@ -1,4 +1,4 @@
-/** Line-start `@!Pisci` / `@!pisci` delegated mention (matches backend rules). */
+/** Line-start `@!Piscis` / `@!pisci` delegated mention (matches backend rules). */
 export function containsDelegatedPisciMention(text: string): boolean {
   const needle = "@!pisci";
   return text.split("\n").some((line) => {

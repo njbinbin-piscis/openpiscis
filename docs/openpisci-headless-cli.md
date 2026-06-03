@@ -1,6 +1,6 @@
-# OpenPisci Headless CLI
+# OpenPiscis Headless CLI
 
-OpenPisci 面向自动化与 benchmark 只发布一个 headless 入口：
+OpenPiscis 面向自动化与 benchmark 只发布一个 headless 入口：
 
 | 二进制               | 所属 crate  | 用途                                      |
 |----------------------|-------------|-------------------------------------------|
@@ -32,7 +32,7 @@ cargo build -p pisci-cli --bin openpisci-headless
 
 ### `pool`
 
-协作模式，Pisci 作为项目协调者：
+协作模式，Piscis 作为项目协调者：
 
 - 保留 `pool_org`
 - 保留 `pool_chat`

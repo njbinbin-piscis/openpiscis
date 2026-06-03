@@ -83,10 +83,10 @@ function MessageBubble({
   kois: KoiWithStats[];
 }) {
   const sender = kois.find((k) => k.id === msg.sender_id);
-  const isPisci = msg.sender_id === "pisci";
-  const icon = isPisci ? "🐋" : sender?.icon ?? "🐟";
-  const color = isPisci ? "#7c3aed" : sender?.color ?? "#6b7280";
-  const name = isPisci ? "Pisci" : sender?.name ?? msg.sender_id;
+  const isPiscis = msg.sender_id === "pisci";
+  const icon = isPiscis ? "🐋" : sender?.icon ?? "🐟";
+  const color = isPiscis ? "#7c3aed" : sender?.color ?? "#6b7280";
+  const name = isPiscis ? "Piscis" : sender?.name ?? msg.sender_id;
   const meta = parseMeta(msg.metadata);
 
   return (
@@ -565,7 +565,7 @@ export default function ChatPool() {
           <div className="chatpool-participants-title">{t("pool.participants")}</div>
           <div className="chatpool-participant">
             <span className="chatpool-participant-icon">🐋</span>
-            <span className="chatpool-participant-name">Pisci</span>
+            <span className="chatpool-participant-name">Piscis</span>
             <span className="chatpool-participant-badge">{t("pool.mainAgent")}</span>
           </div>
           {kois.map((koi) => (

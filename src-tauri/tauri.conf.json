@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenPisci",
+  "productName": "OpenPiscis",
   "mainBinaryName": "pisci-desktop",
-  "version": "0.8.33",
+  "version": "0.8.34",
   "identifier": "com.pisci.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "OpenPisci",
+        "title": "OpenPiscis",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -26,7 +26,7 @@
       },
       {
         "label": "overlay",
-        "title": "Pisci Overlay",
+        "title": "OpenPiscis Overlay",
         "url": "index.html?overlay=1",
         "width": 280,
         "height": 56,
@@ -66,10 +66,10 @@
     ],
     "resources": [],
     "externalBin": [],
-    "copyright": "Copyright 2025 Pisci Team",
+    "copyright": "Copyright 2025 OpenPiscis Team",
     "category": "Productivity",
-    "shortDescription": "OpenPisci - Open-source AI Agent Desktop",
-    "longDescription": "OpenPisci is an open-source cross-platform AI agent desktop: chat, memory, skills, MCP tools, browser automation and pool-based multi-agent orchestration, all running locally against the LLM provider of your choice.",
+    "shortDescription": "OpenPiscis - Open-source cross-platform AI Agent Desktop",
+    "longDescription": "OpenPiscis is an open-source cross-platform AI agent desktop for Windows, macOS, and Linux. Piscis is the main coordinator agent inside the app — with chat, memory, skills, MCP tools, browser automation, and pool-based multi-agent orchestration, all running locally against the LLM provider of your choice.",
     "windows": {
       "digestAlgorithm": "sha256",
       "webviewInstallMode": {

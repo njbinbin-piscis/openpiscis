@@ -1,7 +1,7 @@
 use crate::commands::platform::system::{collect_system_dependencies, SystemDependencyItem};
 use crate::host::DesktopHostTools;
 use crate::store::AppState;
-/// Debug & E2E testing module for OpenPisci.
+/// Debug & E2E testing module for Piscis.
 ///
 /// Provides:
 /// - `run_debug_scenario`: Run a named test scenario through the real agent loop
@@ -340,9 +340,9 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             description_en: "Create a file then use file_edit to replace a specific string, verifying patch tool works".into(),
             prompt: "请完成以下步骤:\
                      1) 用 file_write 工具在工作区（见 Debug context）写文件 edit_test.txt，内容为 'Hello World';\
-                     2) 用 file_edit 工具把文件中的 'World' 替换为 'Pisci';\
-                     3) 用 file_read 读取文件，在回复中原文引用文件内容（例如：文件内容为：Hello Pisci）。".into(),
-            expected_keywords: vec!["Hello Pisci".into()],
+                     2) 用 file_edit 工具把文件中的 'World' 替换为 'Piscis';\
+                     3) 用 file_read 读取文件，在回复中原文引用文件内容（例如：文件内容为：Hello Piscis）。".into(),
+            expected_keywords: vec!["Hello Piscis".into()],
             expected_tools: vec!["file_write".into(), "file_edit".into(), "file_read".into()],
             requires_config: None,
             platforms: None,
@@ -692,7 +692,7 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
                      如果未安装 Outlook，请直接回复：SKIP - Outlook 未安装.\
                      如果已安装，请用 office 工具执行 action=send_email, app=outlook,\
                      收件人填写 test@example.com（仅测试，实际不会发送）,\
-                     主题为「调试测试邮件」，正文为「这是一封来自 OpenPisci 调试面板的测试邮件」.\
+                     主题为「调试测试邮件」，正文为「这是一封来自 Piscis 调试面板的测试邮件」.\
                      告诉我操作结果。".into(),
             expected_keywords: vec!["SKIP".into(), "成功".into(), "邮件".into()],
             expected_tools: vec![],
@@ -742,7 +742,7 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             description: "搜索 Clawhub 技能市场，验证网络访问和技能列表获取".into(),
             description_en: "Search Clawhub skill market to verify network access and skill listing".into(),
             prompt: "请用 app_control 工具，执行 action=skill_search，query 留空获取热门技能列表，\
-                     或者 query 填入「OpenPisci」搜索相关技能。\
+                     或者 query 填入「Piscis」搜索相关技能。\
                      从 ClawHub 技能市场（https://clawhub.ai）获取技能列表。\
                      告诉我找到了哪些技能，以及它们的名称和描述。".into(),
             expected_keywords: vec!["ClawHub".into(), "skill".into(), "slug".into()],
@@ -868,14 +868,14 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
                      3. 用 uia 工具执行 action=list_windows，找到记事本窗口（标题含「记事本」或「Notepad」）.\
                      4. 用 uia 工具执行 action=find，参数 window_title 设为记事本窗口标题，control_type=Edit，找到编辑区域.\
                      5. 用 uia 工具执行 action=click，点击编辑区域使其获得焦点.\
-                     6. 用 uia 工具执行 action=type_text，参数 text=\"UIA定位测试-OpenPisci\"，向编辑区域输入文字.\
+                     6. 用 uia 工具执行 action=type_text，参数 text=\"UIA定位测试-Piscis\"，向编辑区域输入文字.\
                      7. 用 uia 工具执行 action=get_text，读取编辑区域内容（如果返回空，尝试 get_value）.\
                      8. 用 shell 工具执行 'taskkill /f /im notepad.exe' 关闭记事本.\
                      9. 在最终回复中必须包含以下内容:\
-                        - 你输入的文字原文：「UIA定位测试-OpenPisci」\
+                        - 你输入的文字原文：「UIA定位测试-Piscis」\
                         - 读取结果（成功读取到的内容，或说明读取为空但输入步骤已执行)\
                         - 鼠标点击是否成功".into(),
-            expected_keywords: vec!["UIA定位测试".into(), "OpenPisci".into()],
+            expected_keywords: vec!["UIA定位测试".into(), "Piscis".into()],
             expected_tools: vec!["shell".into(), "uia".into()],
             requires_config: None,
             platforms: Some(vec!["windows".into()]),
@@ -928,7 +928,7 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             description_en: "Use headless browser to access a search engine, verify browser tool headless mode".into(),
             prompt: "请用 browser 工具（headless 模式）完成以下操作:\
                      1. 访问 https://www.bing.com.\
-                     2. 在搜索框中输入「OpenPisci AI Agent」并提交搜索.\
+                     2. 在搜索框中输入「Piscis AI Agent」并提交搜索.\
                      3. 获取搜索结果页面的标题和前 3 条结果的标题.\
                      4. 告诉我搜索结果.\
                      注意：使用 headless=true 模式，不要打开可见浏览器窗口。".into(),
@@ -1022,7 +1022,7 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
                      2. 如果未配置，回复：SKIP - 飞书未配置.\
                      3. 如果已配置，用 powershell_query 检查环境变量 FEISHU_TEST_USER 是否存在（测试收件人）.\
                      4. 如果测试收件人未配置，回复：SKIP - 未配置测试收件人 FEISHU_TEST_USER.\
-                     5. 如果两者都已配置，用 shell 工具调用飞书 API 发送一条测试消息（内容：「OpenPisci 调试测试消息 - 请忽略」）给 FEISHU_TEST_USER.\
+                     5. 如果两者都已配置，用 shell 工具调用飞书 API 发送一条测试消息（内容：「Piscis 调试测试消息 - 请忽略」）给 FEISHU_TEST_USER.\
                      告诉我操作结果。".into(),
             expected_keywords: vec!["SKIP".into(), "飞书".into(), "消息".into(), "Feishu".into(), "feishu".into(), "未配置".into(), "发送".into(), "配置".into()],
             expected_tools: vec!["powershell_query".into()],
@@ -1097,12 +1097,12 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
                      1. 用 PowerShell 创建一个测试定时任务:\
                         $action = New-ScheduledTaskAction -Execute 'notepad.exe'; \
                         $trigger = New-ScheduledTaskTrigger -Once -At '2099-01-01 00:00:00'; \
-                        Register-ScheduledTask -TaskName 'OpenPisciDebugTest' -Action $action -Trigger $trigger -Force.\
-                     2. 用 PowerShell 查询该任务是否创建成功：Get-ScheduledTask -TaskName 'OpenPisciDebugTest'.\
-                     3. 用 PowerShell 删除该任务：Unregister-ScheduledTask -TaskName 'OpenPisciDebugTest' -Confirm:$false.\
+                        Register-ScheduledTask -TaskName 'PisciDebugTest' -Action $action -Trigger $trigger -Force.\
+                     2. 用 PowerShell 查询该任务是否创建成功：Get-ScheduledTask -TaskName 'PisciDebugTest'.\
+                     3. 用 PowerShell 删除该任务：Unregister-ScheduledTask -TaskName 'PisciDebugTest' -Confirm:$false.\
                      4. 确认任务已被删除.\
                      5. 告诉我任务创建和删除是否都成功。".into(),
-            expected_keywords: vec!["OpenPisciDebugTest".into(), "成功".into(), "删除".into()],
+            expected_keywords: vec!["PisciDebugTest".into(), "成功".into(), "删除".into()],
             expected_tools: vec!["shell".into()],
             requires_config: None,
             platforms: Some(vec!["windows".into()]),
@@ -1158,7 +1158,7 @@ pub fn builtin_scenarios() -> Vec<DebugScenario> {
             description: "最简单的 LLM 响应测试，验证 API 连通性和响应延迟，不调用任何工具".into(),
             description_en: "Simplest LLM response test to verify API connectivity and response latency without any tool calls".into(),
             prompt: "请直接回复以下内容（不要调用任何工具）:\
-                     「心跳正常 - OpenPisci 运行中。当前时间：[你知道的当前时间]。状态：OK」\
+                     「心跳正常 - Piscis 运行中。当前时间：[你知道的当前时间]。状态：OK」\
                      这是一个心跳检测，只需要文字回复，不需要执行任何操作。".into(),
             expected_keywords: vec!["心跳正常".into(), "OK".into()],
             expected_tools: vec![],
@@ -1382,7 +1382,7 @@ pub async fn run_debug_scenario(
     };
 
     let system_prompt = format!(
-        "You are Pisci, a {} AI Agent running a debug/test scenario.\n\
+        "You are Piscis, a {} AI Agent running a debug/test scenario.\n\
          Scenario: {}\n\
          Today's date: {}\n\
          Workspace directory: {}\n\

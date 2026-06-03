@@ -5,7 +5,7 @@ export function isPondCliSession(
   if (!session) return false;
   if (session.source === "cli") return true;
   const title = session.title ?? "";
-  return title.startsWith("Pisci CLI") || title === "Pisci CLI";
+  return title.startsWith("Piscis CLI") || title === "Piscis CLI";
 }
 
 /** Returns true for sessions that are internal/system and should not appear in the

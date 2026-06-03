@@ -1,8 +1,8 @@
-# 🐟 OpenPisci
+# 🐟 OpenPiscis
 
-**Open-source AI Agent Desktop**
+**Open-source cross-platform AI Agent Desktop**
 
-OpenPisci is a local-first AI Agent desktop application built with Tauri 2 + Rust + React. As of `v0.7.0`, the project has been substantially refactored into a layered architecture: `pisci-core` (pure collaboration/domain logic), `pisci-kernel` (OS/UI-neutral runtime kernel), `pisci-desktop` (Tauri desktop shell), and `pisci-cli` (headless runner). **Pisci** is the main agent, **Koi** are persistent collaboration agents, and **Fish** are stateless temporary sub-agents.
+OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Rust + React. As of `v0.7.0`, the project has been substantially refactored into a layered architecture: `pisci-core` (pure collaboration/domain logic), `pisci-kernel` (OS/UI-neutral runtime kernel), `pisci-desktop` (Tauri desktop shell), and `pisci-cli` (headless runner). **Piscis** is the main coordinator agent, **Koi** are persistent collaboration agents, and **Fish** are stateless temporary sub-agents.
 
 **Current platform status**
 - **Windows**: primary supported desktop release target
@@ -33,7 +33,7 @@ Mirroring Cursor's ReadLints, the agent can now ask the running LSP servers for 
 { "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
 ```
 
-Use it AFTER edits to verify code without running a full build. Pairs with the `lsp` tool (hover / completion / definition / references / rename) for end-to-end code understanding inside Pisci/Koi loops.
+Use it AFTER edits to verify code without running a full build. Pairs with the `lsp` tool (hover / completion / definition / references / rename) for end-to-end code understanding inside Piscis/Koi loops.
 
 ## 🕘 Previous releases
 
@@ -57,21 +57,21 @@ Use it AFTER edits to verify code without running a full build. Pairs with the `
 - **MCP integration**: scene-aware MCP tool registration lets the main chat and task scenes connect to external tool servers through the Model Context Protocol
 - **Workspace-wide hard lints**: Rust workspace lints run under `-D warnings` to keep dead code / unused imports / debugging leftovers from creeping back in
 
-### 🐟 Pisci / Koi / Fish: Three Layers of Agents
+### 🐟 Piscis / Koi / Fish: Three Layers of Agents
 
 | Role | Positioning | Lifecycle | Typical Responsibility | Relationship |
 |------|-------------|-----------|------------------------|--------------|
-| `Pisci` | Main agent / project manager / user-facing entry point | Persistent | Talks to the user, uses tools, creates project pools, coordinates multi-agent work, decides whether a project can wrap up | Organizes Koi and can delegate one-off work to Fish |
+| `Piscis` | Main agent / project manager / user-facing entry point | Persistent | Talks to the user, uses tools, creates project pools, coordinates multi-agent work, decides whether a project can wrap up | Organizes Koi and can delegate one-off work to Fish |
 | `Koi` | Persistent collaboration agent | Persistent and reusable across projects | Owns long-running project roles such as architect, coder, tester, reviewer, researcher | Collaborates inside a pool through `pool_chat`, @mentions peers, and escalates to @pisci when needed |
 | `Fish` | Stateless temporary sub-agent | Ephemeral / on-demand | Handles focused work such as batch scanning, research, summarization, and context-isolated sub-tasks | Invoked through `call_fish`; does not directly participate in pool collaboration |
 
 **A simple mental model:**
-- `Pisci` is the accountable coordinator.
+- `Piscis` is the accountable coordinator.
 - `Koi` are long-lived team members for sustained collaboration.
 - `Fish` are temporary workers that do a job and return only the final result.
 
 **Key differences:**
-- `Pisci` decides whether to create a pool, how to organize work, when to keep pushing, and when to ask the user to confirm project wrap-up.
+- `Piscis` decides whether to create a pool, how to organize work, when to keep pushing, and when to ask the user to confirm project wrap-up.
 - `Koi` have stable identities, their own todo ownership, and project-aware persistent collaboration behavior.
 - `Fish` do not maintain long-term project state and are designed to protect the main context window from intermediate noise.
 
@@ -82,10 +82,10 @@ Use it AFTER edits to verify code without running a full build. Pairs with the `
 The Pond is not a single agent. It is the collaboration workspace around a project:
 
 - **Project Pool (`Pool Session`)**: a project container with name, status, organization spec (`org_spec`), and optional `project_dir`
-- **Pool Chat**: the shared conversation space where Pisci and Koi discuss, hand off work, ask questions, and @mention each other
+- **Pool Chat**: the shared conversation space where Piscis and Koi discuss, hand off work, ask questions, and @mention each other
 - **Board / Kanban**: visualizes Koi todos as `todo / in_progress / blocked / done / cancelled`
 - **Koi Panel**: shows each Koi's identity, role, availability, and workload
-- **Pisci Inbox / Heartbeat**: Pisci's project-level inbox for `@pisci`, heartbeat scans, and state signals
+- **Piscis Inbox / Heartbeat**: Piscis's project-level inbox for `@pisci`, heartbeat scans, and state signals
 - **Knowledge Base (`kb/`)**: shared project documentation space for architecture, API notes, bugs, decisions, and research
 - **Project Directory / Git Worktrees**: when `project_dir` is configured, Koi can work in isolated branches/worktrees to reduce file conflicts
 
@@ -96,32 +96,32 @@ The Pond is not a single agent. It is the collaboration workspace around a proje
 A typical pond project follows this mechanism:
 
 1. **The user starts a project**
-   - The user can start it from the app or from IM channels such as Feishu by asking Pisci to create a project pool
-   - Pisci uses `pool_org(action="create")` to create the pool and write its `org_spec`
+   - The user can start it from the app or from IM channels such as Feishu by asking Piscis to create a project pool
+   - Piscis uses `pool_org(action="create")` to create the pool and write its `org_spec`
 
-2. **Pisci organizes the team**
-   - Pisci chooses suitable Koi roles based on the project
-   - Pisci should primarily kick off work by sending `@KoiName` messages in `pool_chat`, instead of rigid sequential assignment
-   - Task delegation is asynchronous: Pisci assigns a task via `assign_koi` and then monitors progress through `get_todos` / `get_messages` instead of blocking with `wait_for_koi`
+2. **Piscis organizes the team**
+   - Piscis chooses suitable Koi roles based on the project
+   - Piscis should primarily kick off work by sending `@KoiName` messages in `pool_chat`, instead of rigid sequential assignment
+   - Task delegation is asynchronous: Piscis assigns a task via `assign_koi` and then monitors progress through `get_todos` / `get_messages` instead of blocking with `wait_for_koi`
 
 3. **Koi collaborate autonomously**
    - Koi report progress, ask for reviews, hand off work, and raise blockers inside `pool_chat`
-   - An `@mention` is a message, not a hard command: the mentioned Koi decides whether to react immediately, keep current focus, or ask Pisci to coordinate
+   - An `@mention` is a message, not a hard command: the mentioned Koi decides whether to react immediately, keep current focus, or ask Piscis to coordinate
    - `@all` can broadcast to the whole project team
 
 4. **Todos and state stay in sync**
    - Work is tracked through `koi_todos` with the lifecycle `todo -> in_progress -> done / blocked / cancelled`
-   - Pisci and the task owner can update task state; other Koi must ask via `@pisci`
-   - Structured pool chat signals such as `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` help Pisci reason about the next step
+   - Piscis and the task owner can update task state; other Koi must ask via `@pisci`
+   - Structured pool chat signals such as `[ProjectStatus] follow_up_needed / waiting / ready_for_pisci_review` help Piscis reason about the next step
 
-5. **Pisci heartbeat keeps the project moving**
+5. **Piscis heartbeat keeps the project moving**
    - Heartbeat scans new pool messages, todos, and project-state signals
-   - If there are active todos, or someone signals `follow_up_needed / waiting`, Pisci should continue coordinating instead of treating the project as finished
-   - Only when work truly converges and someone explicitly hands control back with `ready_for_pisci_review @pisci` should Pisci move into wrap-up review
+   - If there are active todos, or someone signals `follow_up_needed / waiting`, Piscis should continue coordinating instead of treating the project as finished
+   - Only when work truly converges and someone explicitly hands control back with `ready_for_pisci_review @pisci` should Piscis move into wrap-up review
 
 6. **Project wrap-up**
    - Koi may suggest that a project looks ready, but they do not get to unilaterally declare it finished
-   - Pisci reviews the overall state, confirms with the user, and only then archives the pool through `pool_org(action="archive")`
+   - Piscis reviews the overall state, confirms with the user, and only then archives the pool through `pool_org(action="archive")`
 
 ### 🛠️ Rich Desktop Toolset
 
@@ -167,7 +167,7 @@ A typical pond project follows this mechanism:
 - **Skill persistence**: installed skills are written to disk and synced to the database; they survive restarts
 - Built-in skills: Office Automation, File Management, Web Automation, System Administration, Desktop Control
 
-> **Note**: SKILL.md is OpenPisci's own skill format. It is **not** the same as Anthropic's MCP (Model Context Protocol) — they are two separate specifications.
+> **Note**: SKILL.md is OpenPiscis's own skill format. It is **not** the same as Anthropic's MCP (Model Context Protocol) — they are two separate specifications.
 
 ### 💻 Coding Capabilities (new in v0.3.0)
 - **`code_run` tool**: Designed for coding tasks — returns structured `exit_code` / `stdout` / `stderr` / `duration_ms` and automatically diagnoses common Rust/Python/Node errors
@@ -248,7 +248,7 @@ The desktop installer is centered on a single GUI application. The headless cons
 
 Running the headless binary without arguments now drops into an **interactive REPL** (multi-turn conversation, streamed to stdout, `:help` for commands) that shares the same `pisci.db` / `config.json` as the desktop app. Use `openpisci-headless run --prompt "..."` for scripted one-shot invocations, or `openpisci-headless capabilities` to inspect which tools are available in the current build. See `openpisci-headless --help` for the full surface.
 
-> **⚠️ Security Warning**: OpenPisci is an AI Agent with high-privilege capabilities including file read/write, command execution, and UI automation. It is strongly recommended to run it inside a virtual machine (VMware, VirtualBox, Hyper-V) to prevent accidental damage to your host system. The developers are not responsible for any data loss or system damage caused by running it directly on a host machine.
+> **⚠️ Security Warning**: OpenPiscis is an AI Agent desktop with high-privilege capabilities including file read/write, command execution, and UI automation. It is strongly recommended to run it inside a virtual machine (VMware, VirtualBox, Hyper-V) to prevent accidental damage to your host system. The developers are not responsible for any data loss or system damage caused by running it directly on a host machine.
 
 ### First-time Setup
 
@@ -370,7 +370,7 @@ User tools are stored in: `%APPDATA%\com.pisci.desktop\user-tools\`
 ## 🏗️ Architecture
 
 ```
-OpenPisci
+OpenPiscis
 ├── src-tauri/
 │   ├── pisci-core/      # Pure domain logic: scenes, pool/project state, prompts, shared types
 │   ├── pisci-kernel/    # OS/UI-neutral runtime kernel: agent loop, LLM, memory, storage, neutral tools
@@ -408,8 +408,8 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **IM send auto-resolve**: `im_send_message` now automatically resolves the IM binding from the current session when no explicit `binding_key` or `channel`+`recipient` is provided, so IM-driven replies don't need explicit addressing.
 
 ### v0.7.8
-- **Per-Koi `memory_owner_id`**: Koi-driven headless turns now use the Koi's own ID as the tool-context memory owner instead of the hardcoded `"pisci"`. This means `pool_chat` posts, memory writes, and privilege checks correctly attribute to the Koi rather than to Pisci, and scoped-memory retrieval uses the Koi's scope instead of Pisci's.
-- **Collaboration trial prompt tightening**: The trial kickoff message is now content-only (what to design) while the execution wrapper (`koi_execute_todo.txt`) owns all procedural instructions. The previous verbose kickoff crammed four responsibilities into one iteration budget, causing Architect to frequently stop without posting to `pool_chat` — which triggered Pisci's `replace_todo` retry. The wrapper now also states plainly that plain assistant text is invisible to the pool, promotes the >500-word "write to file, post path" rule to take precedence over task-text instructions, and ends with an explicit three-step end-of-turn checklist.
+- **Per-Koi `memory_owner_id`**: Koi-driven headless turns now use the Koi's own ID as the tool-context memory owner instead of the hardcoded `"pisci"`. This means `pool_chat` posts, memory writes, and privilege checks correctly attribute to the Koi rather than to Piscis, and scoped-memory retrieval uses the Koi's scope instead of Piscis's.
+- **Collaboration trial prompt tightening**: The trial kickoff message is now content-only (what to design) while the execution wrapper (`koi_execute_todo.txt`) owns all procedural instructions. The previous verbose kickoff crammed four responsibilities into one iteration budget, causing Architect to frequently stop without posting to `pool_chat` — which triggered Piscis's `replace_todo` retry. The wrapper now also states plainly that plain assistant text is invisible to the pool, promotes the >500-word "write to file, post path" rule to take precedence over task-text instructions, and ends with an explicit three-step end-of-turn checklist.
 
 ### v0.7.7
 - **IM voice message preservation**: voice messages from IM channels are now preserved and forwarded to the Agent for handling instead of being dropped
@@ -445,8 +445,8 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **New `pisci-core` crate**: extracted project-state assessment, pool-attention collection, heartbeat message composition, and Koi prompt sections into a pure-Rust library (`src-tauri/pisci-core/`) with 36 unit/integration tests, decoupling collaboration logic from the Tauri runtime.
 - **Runtime reconciliation soft fence**: if a Koi finishes its turn with `in_progress` todos still unreconciled, the runtime posts a `[SoftFence]` notice and re-engages the Koi for exactly one extra turn to call `complete_todo` / `block_todo` / `fail_todo`, before falling back to the existing `protocol_reminder` hard fence. Prevents projects from silently stalling on "done but not marked done".
 - **Configurable `max_iterations` hierarchy**: per-Koi → system settings → built-in default. Collaboration trials and `call_koi` delegations now inherit the user-visible global iteration budget instead of a hardcoded 8-iteration cap.
-- **Pisci global-supervision state machine**: `ProjectDecision` gains `SupervisorDecisionRequired` (workers locally finished but no global sign-off) and `EscalateToHuman` (unrecoverable failures / timeouts). Heartbeat now raises attention for both states even without new messages, and the heartbeat prompt tells Pisci to make the explicit global decision or surface human escalation instead of silently continuing.
-- **User-facing toast notifications (new `app_control.notify_user`)**: Pisci can now call `app_control(action="notify_user", level=info|warning|error|critical, pool_id, message, ...)` to push a toast into the main UI. A new `Toaster` component stacks toasts with severity-based styling (`critical` toasts persist and pulse until dismissed). As a safety net, heartbeat automatically emits a `critical` toast when `EscalateToHuman` is detected, so the user is alerted even if Pisci itself is delayed.
+- **Piscis global-supervision state machine**: `ProjectDecision` gains `SupervisorDecisionRequired` (workers locally finished but no global sign-off) and `EscalateToHuman` (unrecoverable failures / timeouts). Heartbeat now raises attention for both states even without new messages, and the heartbeat prompt tells Piscis to make the explicit global decision or surface human escalation instead of silently continuing.
+- **User-facing toast notifications (new `app_control.notify_user`)**: Piscis can now call `app_control(action="notify_user", level=info|warning|error|critical, pool_id, message, ...)` to push a toast into the main UI. A new `Toaster` component stacks toasts with severity-based styling (`critical` toasts persist and pulse until dismissed). As a safety net, heartbeat automatically emits a `critical` toast when `EscalateToHuman` is detected, so the user is alerted even if Piscis itself is delayed.
 - **Collaboration trial reporting**: the dev `collab_trial` runner now reports `supervisor_decision_required` and `escalate_to_human` as explicit stop reasons (instead of a generic `idle_quiet_snapshot`) and cleans up historical trial pools between runs.
 
 ### v0.5.23
@@ -471,7 +471,7 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **Excel chart fix**: fixed a logic inversion in sheet_check that caused named-sheet selection to always fall through to ActiveSheet; dd_chart now re-applies ChartType after SetSourceData to prevent Excel from silently resetting it to the default type; strengthened tool description to require explicit chart_type (line/column/bar/pie/scatter/area) so the AI no longer defaults to pie charts
 
 ### v0.5.18
-- **Koi timeout fix**: when a Koi times out, its in_progress todos are automatically blocked and a @pisci notice is posted to the pool; the heartbeat scanner now wakes Pisci whenever blocked todos exist, preventing projects from stalling permanently after a Koi failure
+- **Koi timeout fix**: when a Koi times out, its in_progress todos are automatically blocked and a @pisci notice is posted to the pool; the heartbeat scanner now wakes Piscis whenever blocked todos exist, preventing projects from stalling permanently after a Koi failure
 - **File encoding improvements**: ile_read transparently handles UTF-8 BOM, UTF-16 LE/BE, and GBK/GB18030; ile_write/ile_edit preserve the original BOM on write-back; tool descriptions and the system prompt now include a Windows file encoding guide
 
 ### v0.5.17
@@ -501,10 +501,10 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 - **Chat scroll fix**: Fixed the entire main window jumping upward when messages refresh
 
 ### v0.5.8
-- **Project pause / resume / archive**: users can now pause, resume, or archive projects directly from the Pond UI without going through Pisci; pausing automatically cancels running Koi tasks and resets in-progress todos
+- **Project pause / resume / archive**: users can now pause, resume, or archive projects directly from the Pond UI without going through Piscis; pausing automatically cancels running Koi tasks and resets in-progress todos
 - **`complete_todo` required summary**: the `complete_todo` tool now requires a `summary` parameter, ensuring a concise completion summary is always shown in the chat after a Koi finishes a task — no more empty Result messages
 - **Koi limit raised to 10**: the maximum number of Koi agents is increased from 5 to 10
-- **Pisci can manage Koi**: `app_control` gains `koi_list` / `koi_create` / `koi_delete` actions so Pisci can create or delete Koi when explicitly asked (the prompt instructs Pisci never to do this proactively)
+- **Piscis can manage Koi**: `app_control` gains `koi_list` / `koi_create` / `koi_delete` actions so Piscis can create or delete Koi when explicitly asked (the prompt instructs Piscis never to do this proactively)
 - **Strict Koi worktree isolation**: when a Koi is working inside a Git worktree, `allow_outside_workspace` is always forced to `false`, preventing accidental writes to the main project directory
 
 ### v0.5.7
@@ -526,12 +526,12 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 
 ### v0.5.4
 - **Relative-path-aware file tools**: `file_read` / `file_write` and related tools now correctly resolve relative paths inside Koi worktrees, preventing Koi from bypassing worktree isolation
-- **Git collaboration flow fix**: fixed the workflow for Koi working on isolated branches and Pisci merging their work
-- **Heartbeat and collaboration prompt rewrite**: rewrote heartbeat and Koi collaboration prompts to fix Pisci incorrectly treating active projects as finished
+- **Git collaboration flow fix**: fixed the workflow for Koi working on isolated branches and Piscis merging their work
+- **Heartbeat and collaboration prompt rewrite**: rewrote heartbeat and Koi collaboration prompts to fix Piscis incorrectly treating active projects as finished
 
 ### v0.5.3
-- **Expanded multi-agent docs**: added clear explanations of Pisci / Koi / Fish, Pond components, and the collaboration lifecycle
-- **Fixed Pisci heartbeat false-finish behavior**: follow-up or waiting signals without active todos no longer allow `HEARTBEAT_OK`
+- **Expanded multi-agent docs**: added clear explanations of Piscis / Koi / Fish, Pond components, and the collaboration lifecycle
+- **Fixed Piscis heartbeat false-finish behavior**: follow-up or waiting signals without active todos no longer allow `HEARTBEAT_OK`
 - **Expanded collaboration coverage**: the multi-agent integration suite now covers heartbeat guardrails, short `pool_id` resolution, and stale-state recovery
 
 ### v0.4.1
@@ -580,7 +580,7 @@ This project is licensed under the **[Business Source License 1.1](./LICENSE)** 
 
 ## ⭐ Support the Project
 
-If OpenPisci is useful to you, please give the project a **Star** — it is the most direct signal we have to understand the project's reach and decide where to invest next.
+If OpenPiscis is useful to you, please give the project a **Star** — it is the most direct signal we have to understand the project's reach and decide where to invest next.
 
 [![GitHub Stars](https://img.shields.io/github/stars/njbinbin-piscis/openpiscis?style=social)](https://github.com/njbinbin-piscis/openpiscis)
 

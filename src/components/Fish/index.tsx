@@ -100,7 +100,7 @@ export default function FishPage() {
           {builtinFish.length > 0 && (
             <section className="fish-section">
               <h3 className="fish-section-title">内置小鱼</h3>
-              <p className="fish-section-desc">OpenPisci 内置的专属 Agent，主 Agent 可自动调用</p>
+              <p className="fish-section-desc">OpenPiscis 内置的专属 Agent，主 Agent 可自动调用</p>
               {renderFishGrid(builtinFish)}
             </section>
           )}

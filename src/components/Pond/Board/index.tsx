@@ -26,7 +26,7 @@ const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 /** Resolve assigned_by (UUID, "pisci", "user", "system") to a display label */
 function resolveAssignedBy(assignedBy: string, kois: KoiWithStats[]): string {
   if (!assignedBy) return "—";
-  if (assignedBy === "pisci") return "🐋 Pisci";
+  if (assignedBy === "pisci") return "🐋 Piscis";
   if (assignedBy === "user") return "👤 User";
   if (assignedBy === "system") return "⚙️ System";
   const koi = kois.find((k) => k.id === assignedBy);

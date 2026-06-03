@@ -1,6 +1,6 @@
-# OpenPisci Cross-Platform Agent Architecture
+# OpenPiscis Cross-Platform Agent Architecture
 
-OpenPisci is a long-running agent runtime that must work in three very
+OpenPiscis is a long-running agent runtime that must work in three very
 different environments:
 
 1. **Desktop** — Tauri app on Windows, rich UI, platform tools (UIA, screen
@@ -45,7 +45,7 @@ src-tauri/
 
 ### `pisci-kernel` — the agent runtime
 
-Owns every piece of OpenPisci that should behave identically on every host:
+Owns every piece of OpenPiscis that should behave identically on every host:
 
 * `agent/` — the `AgentLoop`, `HarnessConfig` harnesses (main-chat, Koi,
   Fish, debug, scheduler), plan state, compaction v2 kernel, context

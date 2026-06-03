@@ -1,6 +1,6 @@
-# OpenPisci SWE-lite
+# OpenPiscis SWE-lite
 
-`bench_swe_lite` 是 OpenPisci 面向复杂任务 / 真实仓库修复流程的本地评测器。
+`bench_swe_lite` 是 OpenPiscis 面向复杂任务 / 真实仓库修复流程的本地评测器。
 
 它的目标不是替代 `scripts/bench_compression/`，而是补上另一条评测线：
 
@@ -43,7 +43,7 @@
 - `experimental_pool`
   - `openpisci-headless run --mode pool`
 
-这三档不是官方 SWE-bench 的标准分组，而是为了先验证 OpenPisci 自身 harness 的收益来源。
+这三档不是官方 SWE-bench 的标准分组，而是为了先验证 OpenPiscis 自身 harness 的收益来源。
 
 ## 运行
 
@@ -63,7 +63,7 @@ py -3 scripts/bench_swe_lite/run_swe_lite.py
 ```
 
 `bench_swe_lite` 会把一份 `config.json` 复制到每个隔离 `config_dir` 中。
-默认会尝试读取当前用户的 OpenPisci 配置；如果找不到，可显式传入：
+默认会尝试读取当前用户的 OpenPiscis 配置；如果找不到，可显式传入：
 
 ```powershell
 py -3 scripts/bench_swe_lite/run_swe_lite.py --config-template C:\path\to\config.json
@@ -117,5 +117,5 @@ Runner 会从隔离 `config_dir` 中的 `pisci.db` 回收：
 ## 重要说明
 
 - 这是一套 **本地 lite** 任务，不是官方 SWE-bench Full。
-- 它更适合先验证 OpenPisci 自己的 harness、上下文注入与恢复机制。
+- 它更适合先验证 OpenPiscis 自己的 harness、上下文注入与恢复机制。
 - `HARNESS` breakdown 来自运行后 transcript 的后验分析，不保证与运行时每一轮请求逐字完全一致，因此它是诊断信号，不是唯一真值。
