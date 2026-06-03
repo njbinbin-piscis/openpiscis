@@ -4621,7 +4621,7 @@ dependencies = [
 
 [[package]]
 name = "pisci-desktop"
-version = "0.8.31"
+version = "0.8.32"
 dependencies = [
  "aes",
  "anyhow",
@@ -5444,6 +5444,7 @@ dependencies = [
 [[package]]
 name = "robotz-automation"
 version = "0.1.0"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#818fa259f4a84e58e135072769ec6fda1d4f3ad4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5465,6 +5466,7 @@ dependencies = [
 [[package]]
 name = "robotz-browser"
 version = "0.1.0"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#818fa259f4a84e58e135072769ec6fda1d4f3ad4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5487,6 +5489,7 @@ dependencies = [
 [[package]]
 name = "robotz-core"
 version = "0.1.0"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#818fa259f4a84e58e135072769ec6fda1d4f3ad4"
 dependencies = [
  "anyhow",
  "async-trait",
