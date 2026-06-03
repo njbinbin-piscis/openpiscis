@@ -1398,7 +1398,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab8ecd87370524b461f8557c119c405552c396ed91fc0a8eec68679eab26f94a"
 dependencies = [
- "libloading 0.8.9",
+ "libloading 0.7.4",
 ]
 
 [[package]]
@@ -2709,7 +2709,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -3892,7 +3892,7 @@ version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8"
 dependencies = [
- "proc-macro-crate 3.5.0",
+ "proc-macro-crate 1.3.1",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -4292,7 +4292,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
@@ -4609,8 +4609,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-core"
-version = "0.7.8"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git#a20ee8f817952ef4bc955515b85d500ac19eabde"
+version = "0.7.38"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.7.38#2c657dcb106fa61afbe306709058684ab4b26677"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4621,7 +4621,7 @@ dependencies = [
 
 [[package]]
 name = "piscis-desktop"
-version = "0.8.36"
+version = "0.8.37"
 dependencies = [
  "aes",
  "anyhow",
@@ -4681,8 +4681,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-kernel"
-version = "0.7.8"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git#a20ee8f817952ef4bc955515b85d500ac19eabde"
+version = "0.7.38"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.7.38#2c657dcb106fa61afbe306709058684ab4b26677"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5443,8 +5443,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-automation"
-version = "0.1.0"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#d122d2981243f61b9be68dd599f4dff68ff49dd3"
+version = "0.1.1"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#8fde87ae69d8c399c7d58ca8e9da807c059a4e43"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5465,8 +5465,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-browser"
-version = "0.1.0"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#d122d2981243f61b9be68dd599f4dff68ff49dd3"
+version = "0.1.1"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#8fde87ae69d8c399c7d58ca8e9da807c059a4e43"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5488,8 +5488,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-core"
-version = "0.1.0"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#d122d2981243f61b9be68dd599f4dff68ff49dd3"
+version = "0.1.1"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#8fde87ae69d8c399c7d58ca8e9da807c059a4e43"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -7018,7 +7018,7 @@ dependencies = [
  "serde_with",
  "swift-rs",
  "thiserror 2.0.18",
- "toml 1.1.2+spec-1.1.0",
+ "toml 0.9.12+spec-1.1.0",
  "url",
  "urlpattern",
  "uuid",
