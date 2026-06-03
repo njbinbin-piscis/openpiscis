@@ -1,4 +1,3 @@
-use robotz_browser::SharedBrowserManager;
 use crate::commands::chat::{persist_task_spine_from_plan_state, render_task_state_section};
 use crate::host::DesktopHostTools;
 use crate::store::{db::ScheduledTask, AppState, Database, Settings};
@@ -8,6 +7,7 @@ use pisci_kernel::agent::tool::ToolContext;
 use pisci_kernel::llm::{build_client, LlmMessage, MessageContent};
 use pisci_kernel::policy::PolicyGate;
 use pisci_kernel::project_context::render_project_instruction_context;
+use robotz_browser::SharedBrowserManager;
 use serde::Serialize;
 use std::sync::{atomic::AtomicBool, Arc};
 use tauri::{AppHandle, Emitter, Manager, State};

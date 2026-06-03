@@ -38,9 +38,9 @@ pub use pisci_kernel::tools::{mcp, user_tool};
 // structs implement `pisci_kernel::Tool` directly, so registration is
 // unchanged. The UIA mouse-precision calibration store moved with them
 // (`robotz_automation::calibration`).
-pub use robotz_automation::{DesktopAutomationTool, ScreenTool};
 #[cfg(target_os = "windows")]
 pub use robotz_automation::UiaTool;
+pub use robotz_automation::{DesktopAutomationTool, ScreenTool};
 pub use robotz_browser::BrowserTool;
 
 #[cfg(target_os = "windows")]

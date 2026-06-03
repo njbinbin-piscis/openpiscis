@@ -1,4 +1,3 @@
-use robotz_browser::SharedBrowserManager;
 use crate::commands::config::mcp::resolve_settings_placeholders_in_mcp_config;
 use crate::host::DesktopHostTools;
 use crate::skills::loader::SkillLoader;
@@ -9,6 +8,7 @@ pub use pisci_core::scene::{
 };
 use pisci_kernel::agent::tool::ToolRegistry;
 use pisci_kernel::tools::register_mcp_tools;
+use robotz_browser::SharedBrowserManager;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex as StdMutex, OnceLock};

@@ -1,7 +1,7 @@
-use robotz_browser::download;
 use crate::host::DesktopHostTools;
 use crate::store::{AppState, Settings};
 use pisci_kernel::proc::std_command;
+use robotz_browser::download;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tauri::State;
