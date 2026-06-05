@@ -6,10 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.38] - 2026-06-05
+
+### Changed
+- **Engine pin**: `piscis-core` / `piscis-kernel` pinned to **`v0.8.38`** on the correct 0.8.x release line (pluggable loop/contrib, context/memory hooks).
+- App version aligned with engine **0.8.38** (`Cargo.toml` / `package.json` / `tauri.conf.json`).
+
+---
+
 ## [0.8.37] - 2026-06-04
 
 ### Changed
-- **Engine pin**: `piscis-core` / `piscis-kernel` git dependencies pinned to tag **`v0.8.38`** (pluggable loop/contrib compaction extensions), aligned with CodeZ and agent-workbench.
+- **Engine pin**: initial pin to pluggable loop/contrib extensions (superseded by 0.8.38 engine tag alignment).
 
 ---
 
