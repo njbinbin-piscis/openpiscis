@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.40] - 2026-06-06
+
+### Fixed
+- **Chat lazy-load history**: “Load more history” no longer stalls after an agent turn. Pagination now tracks the real DB row offset separately from the collapsed store length (`setMessagesWithFrozen`), so older messages load correctly on scroll or button click.
+
+### Changed
+- **Pond IDE / Git activity icon**: Replaced the plain `⑂` character with a VS Code–style source-control SVG and theme-colored nodes (accent / success / warning) to match other activity-bar icons.
+
+---
+
 ## [0.8.39] - 2026-06-06
 
 ### Fixed
