@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.43] - 2026-06-06
+
+### Changed
+- **Main Chat session picker**: removed the left sidebar; **主会话 / IM / 鱼池CLI** are now top-bar dropdown buttons with search, **Today / Last 7 Days / Earlier** grouping, and lazy-loaded older sessions. Todo / Tools / Artifacts tabs sit on the same row, giving the full width to the conversation.
+
+### Fixed
+- **New chat from any tab**: creating a session from **+** or the welcome screen now switches to the main-chat filter first, so the new session is not immediately cleared by the IM/CLI visibility guard.
+
+---
+
 ## [0.8.42] - 2026-06-06
 
 ### Changed

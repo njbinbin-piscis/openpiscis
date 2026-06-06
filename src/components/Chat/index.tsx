@@ -7,13 +7,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { RootState, chatActions, sessionsActions, ToolStep, StreamingState, PlanTodoItem, ContextUsageSnapshot } from "../../store";
-import { artifactsApi, chatApi, journalApi, sessionsApi, gatewayApi, AgentEventType, ChannelInfo, ChatAttachment, type Session, type ChatMessage, type SessionArtifact, type JournalChange } from "../../services/tauri";
+import { artifactsApi, chatApi, journalApi, sessionsApi, gatewayApi, AgentEventType, ChannelInfo, ChatAttachment, type ChatMessage, type SessionArtifact, type JournalChange } from "../../services/tauri";
 import { settingsApi } from "../../services/tauri";
 import type { Settings } from "../../services/tauri";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { openPath } from "../../services/tauri";
 import InteractiveCard from "./InteractiveCard";
+import SessionPicker from "./SessionPicker";
 import { applyUiPatch, type UiPatch } from "./interactiveUi/patch";
 import ConfirmDialog from "../ConfirmDialog";
 import {
@@ -216,22 +217,6 @@ function classifySession(session: SessionLike | undefined | null): SessionKind {
   return classifyMainChatSession(session);
 }
 
-/** Map a session.source value to a compact display emoji/label. */
-function sourceIcon(source: string): string {
-  if (source === "chat" || !source) return "👤";
-  if (source === "cli") return "🐟";
-  if (source.includes("telegram")) return "✈";
-  if (source.includes("feishu") || source.includes("lark")) return "📘";
-  if (source.includes("wechat")) return "🟢";
-  if (source.includes("wecom")) return "💬";
-  if (source.includes("dingtalk")) return "📎";
-  if (source.includes("slack")) return "⚡";
-  if (source.includes("discord")) return "🎮";
-  if (source.includes("teams")) return "🟦";
-  if (source.includes("matrix")) return "⬛";
-  if (source.includes("webhook")) return "🔗";
-  return "📩";
-}
 
 function formatTokenCount(value: number | null | undefined): string {
   const safe = Math.max(0, value ?? 0);
@@ -356,20 +341,6 @@ function ContextUsageRing({
   );
 }
 
-function buildSessionContextBadges(session: Session, t: (key: string, options?: Record<string, unknown>) => string): string[] {
-  const badges: string[] = [];
-  if ((session.rolling_summary_version ?? 0) > 0) {
-    badges.push(t("chat.contextSummaryBadge", { version: session.rolling_summary_version }));
-  }
-  if ((session.total_input_tokens ?? 0) > 0) {
-    badges.push(t("chat.contextTokensBadge", { value: formatTokenCount(session.total_input_tokens) }));
-  }
-  if (session.last_compacted_at) {
-    badges.push(t("chat.contextCompactedBadge"));
-  }
-  return badges;
-}
-
 export default function Chat() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -386,6 +357,8 @@ export default function Chat() {
   const [undoingReview, setUndoingReview] = useState(false);
     const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [sessionFilter, setSessionFilter] = useState<SessionKind>("chat");
+  // Which session-kind dropdown picker is currently open in the top bar.
+  const [openPicker, setOpenPicker] = useState<SessionKind | null>(null);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const displaySessionId =
@@ -715,6 +688,21 @@ export default function Chat() {
   const hasTaskPanel = activePlan.length > 0 || steps.length > 0 || activeArtifacts.length > 0;
   const [taskPanelOpen, setTaskPanelOpen] = useState(true);
   const [taskPanelTab, setTaskPanelTab] = useState<"todo" | "tools" | "artifacts">("todo");
+  // Top-bar task tab click: toggle the panel when re-selecting the active tab,
+  // otherwise switch to the tab and make sure the panel is open.
+  const selectTaskTab = useCallback(
+    (tab: "todo" | "tools" | "artifacts") => {
+      setTaskPanelTab((prev) => {
+        if (prev === tab) {
+          setTaskPanelOpen((open) => !open);
+        } else {
+          setTaskPanelOpen(true);
+        }
+        return tab;
+      });
+    },
+    [],
+  );
 
   // Plan resume dialog: shown when user sends a message while unfinished todos exist
   const [planResumeDialog, setPlanResumeDialog] = useState<{
@@ -1251,6 +1239,10 @@ export default function Chat() {
   }, [steps]);
 
   const handleNewSession = useCallback(async () => {
+    // Switch to main-chat filter *before* the async create so the post-create
+    // visibility effect does not reset activeSessionId while filter is still im/cli.
+    setSessionFilter("chat");
+    setOpenPicker(null);
     try {
       const session = await sessionsApi.create(t("chat.newChat"));
       dispatch(sessionsActions.addSession(session));
@@ -1762,143 +1754,156 @@ export default function Chat() {
   };
 
   // ── Filtered session list (single source of truth) ───────────────────────
-  const filteredSessions = sessions.filter((s) => isMainChatVisibleSession(s, sessionFilter));
+  const sessionKinds: SessionKind[] = ["chat", "im", "cli"];
+  const sessionsForKind = (kind: SessionKind) =>
+    sessions.filter((s) => isMainChatVisibleSession(s, kind));
+  const kindLabel = (kind: SessionKind) =>
+    kind === "chat" ? t("chat.filterChat") : kind === "im" ? t("chat.filterIM") : t("chat.filterCli");
+
+  // IM channel quick-connect controls, surfaced in the IM dropdown footer.
+  const imConnectFooter = (
+    <div className="session-picker-im-connect">
+      {gatewayChannels.length > 0 && (
+        <div className="session-picker-im-channels">
+          {gatewayChannels.map((ch) => (
+            <div key={ch.name} className="session-picker-im-channel">
+              <span className="session-picker-im-channel-name">{ch.name}</span>
+              <span
+                className="session-picker-im-channel-dot"
+                style={{
+                  color:
+                    ch.status === "Connected"
+                      ? "#28a745"
+                      : ch.status === "Connecting"
+                        ? "#ffc107"
+                        : "var(--text-muted)",
+                }}
+              >
+                {ch.status === "Connected" ? "●" : ch.status === "Connecting" ? "◌" : "○"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {(() => {
+        const hasConnected = gatewayChannels.some(
+          (ch) => ch.status === "Connected" || ch.status === "Connecting",
+        );
+        return (
+          <div className="session-picker-im-actions">
+            <button
+              className="btn btn-primary"
+              onClick={handleGatewayConnect}
+              disabled={gatewayConnecting || gatewayDisconnecting}
+            >
+              {gatewayConnecting
+                ? t("common.connecting")
+                : hasConnected
+                  ? t("settings.reconnectChannels")
+                  : t("settings.connectChannels")}
+            </button>
+            <button
+              className="btn"
+              onClick={handleGatewayDisconnect}
+              disabled={gatewayDisconnecting || gatewayConnecting || !hasConnected}
+            >
+              {gatewayDisconnecting ? t("common.disconnecting") : t("settings.disconnectAll")}
+            </button>
+          </div>
+        );
+      })()}
+    </div>
+  );
 
   return (
     <div className="chat-layout">
-      {/* Session sidebar */}
-      <div className="session-list">
-        <div className="session-list-header">
-          <span>{t("chat.chats")}</span>
-          <button className="btn-icon" onClick={handleNewSession} title={t("chat.newChat")}>+</button>
-        </div>
-
-        {/* Filter tabs */}
-        <div style={{ display: "flex", gap: 4, padding: "4px 8px 0", fontSize: 12 }}>
-          {(["chat", "im", "cli"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setSessionFilter(f)}
-              style={{
-                flex: 1,
-                padding: "3px 0",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                background: sessionFilter === f ? "var(--accent)" : "transparent",
-                color: sessionFilter === f ? "#fff" : "var(--text-secondary)",
-                cursor: "pointer",
-                fontSize: 11,
-              }}
-            >
-              {f === "chat" ? t("chat.filterChat") : f === "im" ? t("chat.filterIM") : t("chat.filterCli")}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {filteredSessions.map((s) => {
-              const icon = sourceIcon(s.source);
-              const sessionTitle = (s.title ?? t("chat.defaultTitle")).replace(/^🐠\s*/, "");
-              const contextBadges = buildSessionContextBadges(s, t);
-              const compactedAtLabel = formatContextTime(s.last_compacted_at);
-              const sessionMetaTitle = compactedAtLabel
-                ? t("chat.contextLastCompacted", { time: compactedAtLabel })
-                : undefined;
+      {/* Main chat area */}
+      <div className="chat-main">
+        {/* Top bar: session-kind dropdown buttons (left) + task tabs (right) */}
+        <div className="chat-topbar">
+          <div className="chat-topbar-sessions">
+            {sessionKinds.map((kind) => {
+              const count = sessionsForKind(kind).length;
               return (
-                <div
-                  key={s.id}
-                  className={`session-item ${s.id === activeSessionId ? "active" : ""}`}
-                  onClick={() => dispatch(sessionsActions.setActiveSession(s.id))}
-                >
-                  <div className="session-main">
-                    <span className="session-title">
-                      {icon && <span style={{ marginRight: 4, fontSize: 12 }}>{icon}</span>}
-                      {sessionTitle}
-                    </span>
-                    {contextBadges.length > 0 && (
-                      <span className="session-meta" title={sessionMetaTitle}>
-                        {contextBadges.join(" · ")}
-                      </span>
-                    )}
-                  </div>
-                  <span className="session-item-right">
-                    <span className="session-count">{s.message_count}</span>
-                    <button
-                      className="session-delete-btn"
-                      title={t("chat.deleteChat")}
-                      onClick={(e) => requestDeleteSession(e, s.id, sessionTitle)}
-                    >✕</button>
-                  </span>
+                <div key={kind} className="chat-session-trigger-wrap">
+                  <button
+                    className={`chat-session-trigger ${sessionFilter === kind ? "active" : ""}`}
+                    onClick={() => {
+                      setSessionFilter(kind);
+                      setOpenPicker((p) => (p === kind ? null : kind));
+                    }}
+                    aria-expanded={openPicker === kind}
+                  >
+                    <span className="chat-session-trigger-label">{kindLabel(kind)}</span>
+                    <span className="chat-session-trigger-count">{count}</span>
+                    <span className="chat-session-trigger-caret">{openPicker === kind ? "▴" : "▾"}</span>
+                  </button>
+                  {openPicker === kind && (
+                    <SessionPicker
+                      sessions={sessionsForKind(kind)}
+                      activeSessionId={displaySessionId}
+                      onSelect={(id) => {
+                        dispatch(sessionsActions.setActiveSession(id));
+                        setOpenPicker(null);
+                      }}
+                      onDelete={requestDeleteSession}
+                      onNew={() => {
+                        handleNewSession();
+                        setOpenPicker(null);
+                      }}
+                      onClose={() => setOpenPicker(null)}
+                      t={t}
+                      footer={kind === "im" ? imConnectFooter : undefined}
+                    />
+                  )}
                 </div>
               );
             })}
-          {filteredSessions.length === 0 && (
-            <div className="session-empty">{t("chat.noChats")}</div>
+            <button
+              className="btn-icon chat-topbar-new"
+              onClick={handleNewSession}
+              title={t("chat.newChat")}
+            >
+              +
+            </button>
+          </div>
+
+          {hasTaskPanel && (
+            <div className="chat-topbar-tasks" role="tablist" aria-label="Task panel tabs">
+              <button
+                className={`chat-topbar-task-tab ${taskPanelTab === "todo" && taskPanelOpen ? "active" : ""}`}
+                onClick={() => selectTaskTab("todo")}
+                disabled={activePlan.length === 0}
+                role="tab"
+                aria-selected={taskPanelTab === "todo"}
+              >
+                Todo
+                {activePlan.length > 0 && <span className="chat-topbar-task-count">{activePlan.length}</span>}
+              </button>
+              <button
+                className={`chat-topbar-task-tab ${taskPanelTab === "tools" && taskPanelOpen ? "active" : ""}`}
+                onClick={() => selectTaskTab("tools")}
+                disabled={steps.length === 0}
+                role="tab"
+                aria-selected={taskPanelTab === "tools"}
+              >
+                Tools
+                {steps.length > 0 && <span className="chat-topbar-task-count">{steps.length}</span>}
+              </button>
+              <button
+                className={`chat-topbar-task-tab ${taskPanelTab === "artifacts" && taskPanelOpen ? "active" : ""}`}
+                onClick={() => selectTaskTab("artifacts")}
+                disabled={activeArtifacts.length === 0}
+                role="tab"
+                aria-selected={taskPanelTab === "artifacts"}
+              >
+                Artifacts
+                {activeArtifacts.length > 0 && <span className="chat-topbar-task-count">{activeArtifacts.length}</span>}
+              </button>
+            </div>
           )}
         </div>
 
-        {/* IM channel quick-connect panel — shown when IM filter is active */}
-        {sessionFilter === "im" && (
-          <div style={{
-            marginTop: "auto",
-            borderTop: "1px solid var(--border)",
-            padding: "10px 8px",
-            fontSize: 12,
-          }}>
-            {/* Connected channels list */}
-            {gatewayChannels.length > 0 && (
-              <div style={{ marginBottom: 8 }}>
-                {gatewayChannels.map((ch) => (
-                  <div key={ch.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "2px 0", color: "var(--text-secondary)" }}>
-                    <span style={{ fontSize: 11 }}>{ch.name}</span>
-                    <span style={{
-                      fontSize: 10,
-                      color: ch.status === "Connected" ? "#28a745" : ch.status === "Connecting" ? "#ffc107" : "var(--text-muted)",
-                      fontWeight: 600,
-                    }}>
-                      {ch.status === "Connected" ? "●" : ch.status === "Connecting" ? "◌" : "○"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 4 }}>
-              {(() => {
-                const hasConnected = gatewayChannels.some((ch) => ch.status === "Connected" || ch.status === "Connecting");
-                return (
-                  <>
-                    <button
-                      className="btn btn-primary"
-                      style={{ flex: 1, fontSize: 11, padding: "4px 0", justifyContent: "center" }}
-                      onClick={handleGatewayConnect}
-                      disabled={gatewayConnecting || gatewayDisconnecting}
-                    >
-                      {gatewayConnecting
-                        ? t("common.connecting")
-                        : hasConnected
-                          ? t("settings.reconnectChannels")
-                          : t("settings.connectChannels")}
-                    </button>
-                    <button
-                      className="btn"
-                      style={{ flex: 1, fontSize: 11, padding: "4px 0", justifyContent: "center", border: "1px solid var(--border)" }}
-                      onClick={handleGatewayDisconnect}
-                      disabled={gatewayDisconnecting || gatewayConnecting || !hasConnected}
-                    >
-                      {gatewayDisconnecting ? t("common.disconnecting") : t("settings.disconnectAll")}
-                    </button>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main chat area */}
-      <div
-        className="chat-main"
-      >
         {isDragging && !isImSession && (
           <div className="drag-overlay">
             <div className="drag-overlay-text">📎 {t("chat.dropFiles")}</div>
@@ -1919,70 +1924,9 @@ export default function Chat() {
               </div>
             )}
 
-            {hasTaskPanel && (
+            {hasTaskPanel && taskPanelOpen && (
               <div className="session-task-panel">
-                <button
-                  className="session-task-panel-header"
-                  onClick={() => setTaskPanelOpen((open) => !open)}
-                  aria-expanded={taskPanelOpen}
-                >
-                  <div className="session-task-panel-title">
-                    <span className="session-task-panel-label">Task Panel</span>
-                    {activePlan.length > 0 && (
-                      <span className="session-task-panel-badge">
-                        Todo {running ? t("chat.planWorking", { count: activePlan.length }) : t("chat.planSummary", { count: activePlan.length })}
-                      </span>
-                    )}
-                    {steps.length > 0 && (
-                      <span className="session-task-panel-badge">
-                        Tools {running ? t("chat.agentWorking") : t("chat.agentSteps", { count: steps.length })}
-                      </span>
-                    )}
-                    {activeArtifacts.length > 0 && (
-                      <span className="session-task-panel-badge">
-                        Artifacts {activeArtifacts.length}
-                      </span>
-                    )}
-                  </div>
-                  <span className="session-task-panel-chevron">{taskPanelOpen ? "▲" : "▼"}</span>
-                </button>
-
-                {taskPanelOpen && (
-                  <div className="session-task-panel-body">
-                    <div className="session-task-tabs" role="tablist" aria-label="Task panel tabs">
-                      <button
-                        className={`session-task-tab ${taskPanelTab === "todo" ? "active" : ""}`}
-                        onClick={() => setTaskPanelTab("todo")}
-                        disabled={activePlan.length === 0}
-                        role="tab"
-                        aria-selected={taskPanelTab === "todo"}
-                      >
-                        Todo
-                        {activePlan.length > 0 && <span className="session-task-tab-count">{activePlan.length}</span>}
-                      </button>
-                      <button
-                        className={`session-task-tab ${taskPanelTab === "tools" ? "active" : ""}`}
-                        onClick={() => setTaskPanelTab("tools")}
-                        disabled={steps.length === 0}
-                        role="tab"
-                        aria-selected={taskPanelTab === "tools"}
-                      >
-                        Tools
-                        {steps.length > 0 && <span className="session-task-tab-count">{steps.length}</span>}
-                      </button>
-                      <button
-                        className={`session-task-tab ${taskPanelTab === "artifacts" ? "active" : ""}`}
-                        onClick={() => setTaskPanelTab("artifacts")}
-                        disabled={activeArtifacts.length === 0}
-                        role="tab"
-                        aria-selected={taskPanelTab === "artifacts"}
-                      >
-                        Artifacts
-                        {activeArtifacts.length > 0 && <span className="session-task-tab-count">{activeArtifacts.length}</span>}
-                      </button>
-                    </div>
-
-                    <div className="session-task-panel-content">
+                <div className="session-task-panel-content">
                       {taskPanelTab === "todo" && activePlan.length > 0 && (
                         <div className="tool-steps-scroll">
                           <PlanPanel items={activePlan} />
@@ -2018,9 +1962,7 @@ export default function Chat() {
                           <ArtifactsPanel artifacts={activeArtifacts} />
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             )}
 
@@ -2289,6 +2231,12 @@ export default function Chat() {
           </>
         ) : (
           <div className="empty-state">
+            {sendError && (
+              <div className="error-banner" role="alert" style={{ marginBottom: 16, maxWidth: 480, width: "100%" }}>
+                <span>{sendError}</span>
+                <button className="error-dismiss" onClick={() => setSendError(null)}>✕</button>
+              </div>
+            )}
             <div className="empty-state-icon">
               <img src="/piscis.png" alt="OpenPiscis" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 14, opacity: 0.7 }} />
             </div>
