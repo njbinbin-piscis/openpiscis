@@ -62,20 +62,14 @@ pub async fn create_koi_todo(
     let db = state.db.lock().await;
     // A Koi can only receive todos in projects it has joined. System /
     // user-owned todos (no real Koi owner) are unaffected.
-    if let Some(pool_id) = input
-        .pool_session_id
-        .as_deref()
-        .filter(|s| !s.is_empty())
-    {
+    if let Some(pool_id) = input.pool_session_id.as_deref().filter(|s| !s.is_empty()) {
         let owner_is_koi = !matches!(input.owner_id.as_str(), "piscis" | "user" | "system");
         if owner_is_koi
             && !db
                 .is_pool_member(pool_id, &input.owner_id)
                 .map_err(|e| e.to_string())?
         {
-            return Err(
-                "该 Koi 还不是本项目成员，请先在参与者面板将其加入项目。".to_string(),
-            );
+            return Err("该 Koi 还不是本项目成员，请先在参与者面板将其加入项目。".to_string());
         }
     }
     let todo = db
