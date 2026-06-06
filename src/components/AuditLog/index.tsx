@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { auditApi, AuditEntry } from "../../services/tauri";
 import ConfirmDialog from "../ConfirmDialog";
+import AppDropdown, { type AppMenuItem } from "../ui/AppDropdown";
 
 const TOOL_COLORS: Record<string, string> = {
   shell: "#e67e22",
@@ -31,6 +32,7 @@ export default function AuditLog() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [clearing, setClearing] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [toolFilterOpen, setToolFilterOpen] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 50;
 
@@ -84,6 +86,18 @@ export default function AuditLog() {
   const displayed = showErrors ? entries.filter((e) => e.is_error) : entries;
   const allTools = Array.from(new Set(entries.map((e) => e.tool_name))).sort();
 
+  const toolFilterItems = useMemo((): AppMenuItem[] => {
+    const rows: AppMenuItem[] = [
+      { id: "", label: t("audit.allTools"), selected: !filterTool },
+    ];
+    for (const tool of allTools) {
+      rows.push({ id: tool, label: tool, selected: filterTool === tool });
+    }
+    return rows;
+  }, [allTools, filterTool, t]);
+
+  const toolFilterLabel = filterTool || t("audit.allTools");
+
   return (
     <div className="page">
       <div className="page-header">
@@ -106,15 +120,17 @@ export default function AuditLog() {
       )}
 
       <div className="page-toolbar">
-        <select
-          className="select-control"
-          value={filterTool}
-          onChange={(e) => setFilterTool(e.target.value)}
-          style={{ width: "auto", minWidth: 140 }}
-        >
-          <option value="">{t("audit.allTools")}</option>
-          {allTools.map((tool) => <option key={tool} value={tool}>{tool}</option>)}
-        </select>
+        <AppDropdown
+          menuId="audit-tool-filter"
+          triggerLabel={toolFilterLabel}
+          items={toolFilterItems}
+          open={toolFilterOpen}
+          onOpenChange={setToolFilterOpen}
+          onSelect={setFilterTool}
+          variant="toolbar"
+          searchPlaceholder={t("common.search")}
+          emptyLabel={t("ide.noResults")}
+        />
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-secondary)", cursor: "pointer" }}>
           <input type="checkbox" checked={showErrors} onChange={(e) => setShowErrors(e.target.checked)} />
           {t("audit.errorsOnly")}

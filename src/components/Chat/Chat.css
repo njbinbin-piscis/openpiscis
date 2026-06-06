@@ -1056,6 +1056,8 @@
   color: var(--text-secondary);
 }
 
+/* Composer dropdowns — styles in components/ui/AppDropdown.css */
+
 /* Workspace selector — sits on the left of the input-actions row */
 .workspace-selector {
   display: flex;

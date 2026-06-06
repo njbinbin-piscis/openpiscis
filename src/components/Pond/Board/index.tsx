@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { listen } from "@tauri-apps/api/event";
 import { boardApi, koiApi, poolApi, KoiTodo, KoiWithStats } from "../../../services/tauri";
 import { RootState, boardActions, koiActions, poolActions } from "../../../store";
+import AppDropdown, { type AppMenuItem } from "../../ui/AppDropdown";
 import "./Board.css";
 
 const COLUMNS = [
@@ -470,6 +471,7 @@ export default function Board() {
   }, [kois, sessions, filterSessionId]);
 
   const [showCreate, setShowCreate] = useState(false);
+  const [boardFilterMenuOpen, setBoardFilterMenuOpen] = useState<null | "koi" | "priority">(null);
   const [saving, setSaving] = useState(false);
   const [detailTodo, setDetailTodo] = useState<KoiTodo | null>(null);
   const loadTodos = useCallback(async () => {
@@ -543,6 +545,55 @@ export default function Board() {
     }
   }, [loadTodos]);
 
+  const koiFilterItems = useMemo((): AppMenuItem[] => {
+    const rows: AppMenuItem[] = [
+      {
+        id: "",
+        label: `${t("board.filterByKoi")}: ${t("board.filterAll")}`,
+        selected: !filterOwnerId,
+      },
+    ];
+    for (const k of kois) {
+      rows.push({
+        id: k.id,
+        label: `${k.icon} ${k.name}`,
+        selected: filterOwnerId === k.id,
+      });
+    }
+    return rows;
+  }, [kois, filterOwnerId, t]);
+
+  const koiFilterLabel = useMemo(() => {
+    if (!filterOwnerId) return `${t("board.filterByKoi")}: ${t("board.filterAll")}`;
+    const k = kois.find((x) => x.id === filterOwnerId);
+    return k ? `${k.icon} ${k.name}` : filterOwnerId;
+  }, [filterOwnerId, kois, t]);
+
+  const priorityFilterItems = useMemo((): AppMenuItem[] => {
+    const rows: AppMenuItem[] = [
+      {
+        id: "",
+        label: `${t("board.filterByPriority")}: ${t("board.filterAll")}`,
+        selected: !filterPriority,
+      },
+    ];
+    for (const p of PRIORITIES) {
+      const labelKey = `board.priority${p.charAt(0).toUpperCase() + p.slice(1)}`;
+      rows.push({
+        id: p,
+        label: t(labelKey),
+        selected: filterPriority === p,
+      });
+    }
+    return rows;
+  }, [filterPriority, t]);
+
+  const priorityFilterLabel = useMemo(() => {
+    if (!filterPriority) return `${t("board.filterByPriority")}: ${t("board.filterAll")}`;
+    const labelKey = `board.priority${filterPriority.charAt(0).toUpperCase() + filterPriority.slice(1)}`;
+    return t(labelKey);
+  }, [filterPriority, t]);
+
   const handleCreate = async (data: CreateFormData) => {
     try {
       setSaving(true);
@@ -567,37 +618,26 @@ export default function Board() {
     <div className="board">
       <div className="board-toolbar">
         <div className="board-filters">
-          <select
-            className="select-control"
-            value={filterOwnerId ?? ""}
-            onChange={(e) =>
-              dispatch(boardActions.setFilterOwnerId(e.target.value || null))
-            }
-          >
-            <option value="">{t("board.filterByKoi")}: {t("board.filterAll")}</option>
-            {kois.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.icon} {k.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="select-control"
-            value={filterPriority ?? ""}
-            onChange={(e) =>
-              dispatch(boardActions.setFilterPriority(e.target.value || null))
-            }
-          >
-            <option value="">{t("board.filterByPriority")}: {t("board.filterAll")}</option>
-            {PRIORITIES.map((p) => {
-              const labelKey = `board.priority${p.charAt(0).toUpperCase() + p.slice(1)}`;
-              return (
-                <option key={p} value={p}>{t(labelKey)}</option>
-              );
-            })}
-          </select>
-
+          <AppDropdown
+            menuId="board-koi-filter"
+            triggerLabel={koiFilterLabel}
+            items={koiFilterItems}
+            open={boardFilterMenuOpen === "koi"}
+            onOpenChange={(open) => setBoardFilterMenuOpen(open ? "koi" : null)}
+            onSelect={(id) => dispatch(boardActions.setFilterOwnerId(id || null))}
+            variant="toolbar"
+            searchPlaceholder={t("common.search")}
+            emptyLabel={t("ide.noResults")}
+          />
+          <AppDropdown
+            menuId="board-priority-filter"
+            triggerLabel={priorityFilterLabel}
+            items={priorityFilterItems}
+            open={boardFilterMenuOpen === "priority"}
+            onOpenChange={(open) => setBoardFilterMenuOpen(open ? "priority" : null)}
+            onSelect={(id) => dispatch(boardActions.setFilterPriority(id || null))}
+            variant="toolbar"
+          />
         </div>
 
         <button

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { poolApi } from "../../../services/tauri";
@@ -44,11 +45,17 @@ export default function PoolMemberPicker({
     }
   };
 
-  return (
-    <div className="koi-modal-overlay" onClick={onClose}>
-      <div className="member-picker" onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div className="koi-modal-overlay" onClick={onClose} role="presentation">
+      <div
+        className="member-picker"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-picker-title"
+      >
         <div className="member-picker-header">
-          <span className="member-picker-title">{t("pool.memberPickerTitle")}</span>
+          <span id="member-picker-title" className="member-picker-title">{t("pool.memberPickerTitle")}</span>
           <button className="member-picker-close" onClick={onClose} aria-label={t("common.close") || "Close"}>
             ×
           </button>
@@ -97,6 +104,7 @@ export default function PoolMemberPicker({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

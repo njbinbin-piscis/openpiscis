@@ -15,6 +15,7 @@ import remarkGfm from "remark-gfm";
 import { openPath } from "../../services/tauri";
 import InteractiveCard from "./InteractiveCard";
 import SessionPicker from "./SessionPicker";
+import ComposerDropdown, { type ComposerMenuItem } from "./ComposerDropdown";
 import { applyUiPatch, type UiPatch } from "./interactiveUi/patch";
 import ConfirmDialog from "../ConfirmDialog";
 import {
@@ -404,10 +405,11 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
   const [historyIndex, setHistoryIndex] = useState(-1); // -1 = not navigating, 0 = oldest, N-1 = newest
   const historyDraftRef = useRef<string>(""); // preserved draft before navigating history
 
-  // Pending composer: attachments, skills, optional Koi persona
+  // Composer: one-shot attachments/skills per send; Koi persona stays until user clears
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachmentItem[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
   const [selectedKoi, setSelectedKoi] = useState<KoiWithStats | null>(null);
+  const [composerMenuOpen, setComposerMenuOpen] = useState<null | "workspace" | "koi" | "skill">(null);
   const [installedSkills, setInstalledSkills] = useState<Skill[]>([]);
   const [koiList, setKoiList] = useState<KoiWithStats[]>([]);
   const [gatewayChannels, setGatewayChannels] = useState<ChannelInfo[]>([]);
@@ -1411,7 +1413,6 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
   const clearPendingComposer = useCallback(() => {
     setPendingAttachments([]);
     setSelectedSkills([]);
-    setSelectedKoi(null);
   }, []);
 
   const addSkill = useCallback((skillId: string) => {
@@ -1432,6 +1433,7 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
 
   const selectKoi = useCallback((koiId: string) => {
     if (koiId === "__manage__") {
+      setComposerMenuOpen(null);
       onNavigateTab?.("school", { schoolSubTab: "koi" });
       return;
     }
@@ -1442,6 +1444,52 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
     const koi = koiList.find((k) => k.id === koiId) ?? null;
     setSelectedKoi(koi);
   }, [koiList, onNavigateTab]);
+
+  const koiMenuItems = useMemo((): ComposerMenuItem[] => {
+    const rows: ComposerMenuItem[] = [
+      {
+        id: "",
+        label: t("chat.koiDefaultOption"),
+        icon: "🐟",
+        selected: !selectedKoi,
+      },
+      { id: "__manage__", label: t("chat.manageKois"), action: true },
+    ];
+    for (const k of koiList) {
+      rows.push({
+        id: k.id,
+        label: `${k.name} (${k.role})`,
+        icon: k.icon,
+        selected: selectedKoi?.id === k.id,
+      });
+    }
+    return rows;
+  }, [koiList, selectedKoi, t]);
+
+  const skillMenuItems = useMemo((): ComposerMenuItem[] => {
+    const selectedIds = new Set(selectedSkills.map((s) => s.id));
+    const rows: ComposerMenuItem[] = [
+      { id: "__install__", label: t("chat.installSkill"), icon: "➕", action: true },
+    ];
+    for (const s of installedSkills) {
+      rows.push({
+        id: s.id,
+        label: s.name,
+        icon: s.icon || "⚡",
+        selected: selectedIds.has(s.id),
+      });
+    }
+    return rows;
+  }, [installedSkills, selectedSkills, t]);
+
+  const handleSkillMenuSelect = useCallback((skillId: string) => {
+    if (skillId === "__install__") {
+      setComposerMenuOpen(null);
+      onNavigateTab?.("skills");
+      return;
+    }
+    addSkill(skillId);
+  }, [addSkill, onNavigateTab]);
 
   const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -1525,6 +1573,37 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
       console.error("workspace reset error:", e);
     }
   }, [displaySessionId, dispatch]);
+
+  const workspaceTriggerLabel = useMemo(() => {
+    const path = displayedWorkspace || t("chat.workspaceLabel");
+    if (path.length <= 40) return path;
+    const parts = path.split(/[/\\]/).filter(Boolean);
+    if (parts.length >= 2) return `…/${parts.slice(-2).join("/")}`;
+    return `…${path.slice(-38)}`;
+  }, [displayedWorkspace, t]);
+
+  const workspaceMenuItems = useMemo((): ComposerMenuItem[] => {
+    const rows: ComposerMenuItem[] = [
+      {
+        id: "__current__",
+        label: displayedWorkspace || t("chat.workspaceNotSet"),
+        icon: "📁",
+        selected: Boolean(displayedWorkspace),
+        disabled: true,
+      },
+      { id: "__browse__", label: t("chat.workspaceBrowse"), icon: "📂", action: true },
+    ];
+    if (hasSessionWorkspace) {
+      rows.push({ id: "__reset__", label: t("chat.workspaceReset"), icon: "↩", action: true });
+    }
+    return rows;
+  }, [displayedWorkspace, hasSessionWorkspace, t]);
+
+  const handleWorkspaceMenuSelect = useCallback(async (id: string) => {
+    setComposerMenuOpen(null);
+    if (id === "__browse__") await handleWorkspaceBrowse();
+    else if (id === "__reset__") await handleWorkspaceReset();
+  }, [handleWorkspaceBrowse, handleWorkspaceReset]);
 
   // ── File drag-and-drop (Tauri v2 events) ─────────────────────────────────
   // Tauri v2 intercepts native drag-and-drop and emits its own events.
@@ -2289,67 +2368,54 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
               <div className="input-actions">
                 <div className="composer-selectors">
                   <div className="composer-selector workspace-selector">
-                    <span className="workspace-label">📁</span>
-                    <select
-                      className="select-control"
-                      value={hasSessionWorkspace ? "__current__" : "__default__"}
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        if (val === "__browse__") {
-                          await handleWorkspaceBrowse();
-                        } else if (val === "__reset__") {
-                          await handleWorkspaceReset();
-                        }
-                      }}
-                    >
-                      {hasSessionWorkspace && (
-                        <option value="__current__" title={displayedWorkspace}>
-                          {displayedWorkspace}
-                        </option>
-                      )}
-                      <option value="__default__" title={displayedWorkspace}>
-                        {displayedWorkspace || t("chat.workspaceLabel")}
-                      </option>
-                      {hasSessionWorkspace && (
-                        <option value="__reset__">{t("chat.workspaceReset")}</option>
-                      )}
-                      <option value="__browse__">{t("chat.workspaceBrowse")}</option>
-                    </select>
+                    <ComposerDropdown
+                      menuId="workspace"
+                      icon="📁"
+                      triggerLabel={workspaceTriggerLabel}
+                      triggerTitle={displayedWorkspace || t("chat.workspaceLabel")}
+                      items={workspaceMenuItems}
+                      open={composerMenuOpen === "workspace"}
+                      onOpenChange={(open) => setComposerMenuOpen(open ? "workspace" : null)}
+                      onSelect={(id) => { void handleWorkspaceMenuSelect(id); }}
+                      disabled={running}
+                      variant="wide"
+                      placement="above"
+                    />
                   </div>
                   <div className="composer-selector koi-selector">
-                    <span className="workspace-label">🐟</span>
-                    <select
-                      className="select-control"
-                      value={selectedKoi?.id ?? ""}
-                      onChange={(e) => selectKoi(e.target.value)}
-                    >
-                      <option value="">{t("chat.koiSelectPlaceholder")}</option>
-                      <option value="__manage__">{t("chat.manageKois")}</option>
-                      {koiList.map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.icon} {k.name} ({k.role})
-                        </option>
-                      ))}
-                    </select>
+                    <ComposerDropdown
+                      menuId="koi"
+                      icon="🐟"
+                      triggerLabel={
+                        selectedKoi
+                          ? `${selectedKoi.icon} ${selectedKoi.name}`
+                          : t("chat.koiSelectPlaceholder")
+                      }
+                      items={koiMenuItems}
+                      open={composerMenuOpen === "koi"}
+                      onOpenChange={(open) => setComposerMenuOpen(open ? "koi" : null)}
+                      onSelect={selectKoi}
+                      disabled={running}
+                      searchPlaceholder={t("chat.composerSearchKoi")}
+                      emptyLabel={t("ide.noResults")}
+                      placement="above"
+                    />
                   </div>
                   <div className="composer-selector skill-selector">
-                    <span className="workspace-label">⚡</span>
-                    <select
-                      className="select-control"
-                      value=""
-                      onChange={(e) => {
-                        addSkill(e.target.value);
-                        e.target.value = "";
-                      }}
-                    >
-                      <option value="">{t("chat.skillSelectPlaceholder")}</option>
-                      <option value="__install__">{t("chat.installSkill")}</option>
-                      {installedSkills.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.icon || "⚡"} {s.name}
-                        </option>
-                      ))}
-                    </select>
+                    <ComposerDropdown
+                      menuId="skill"
+                      icon="⚡"
+                      triggerLabel={t("chat.skillSelectPlaceholder")}
+                      items={skillMenuItems}
+                      open={composerMenuOpen === "skill"}
+                      onOpenChange={(open) => setComposerMenuOpen(open ? "skill" : null)}
+                      onSelect={handleSkillMenuSelect}
+                      disabled={running}
+                      searchPlaceholder={t("chat.composerSearchSkill")}
+                      emptyLabel={t("ide.noResults")}
+                      closeOnSelect={false}
+                      placement="above"
+                    />
                   </div>
                 </div>
                 <ContextUsageRing

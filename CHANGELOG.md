@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.48] - 2026-06-07
+
+### Added
+- **`AppDropdown`**: shared popover list component (`components/ui/AppDropdown`) for composer and toolbar filters — click to open, scrollable, optional search.
+
+### Fixed
+- **Koi persona persistence**: composer Koi selection stays active across sends until manually cleared.
+- **Composer pickers**: workspace / Koi / skill use themed popover menus instead of native `<select>` (fixes GTK white-on-white and hold-to-scroll issues).
+- **Pool member picker**: participants ⚙ opens a centered modal via `createPortal` + overlay CSS — no longer renders inline and squeezes the chat pane.
+
+### Changed
+- **Board / AuditLog**: Koi and priority / tool filters migrated to `AppDropdown`.
+
+---
+
 ## [0.8.47] - 2026-06-07
 
 ### Added

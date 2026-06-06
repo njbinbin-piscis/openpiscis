@@ -21,9 +21,7 @@
   flex-wrap: wrap;
 }
 
-.board-filters .select-control {
-  min-width: 140px;
-}
+/* Board filters use shared AppDropdown (variant toolbar) */
 
 /* Board toolbar filters use global .select-control */
 
