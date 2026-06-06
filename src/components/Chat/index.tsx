@@ -16,7 +16,12 @@ import { openPath } from "../../services/tauri";
 import InteractiveCard from "./InteractiveCard";
 import { applyUiPatch, type UiPatch } from "./interactiveUi/patch";
 import ConfirmDialog from "../ConfirmDialog";
-import { isInternalSession, isPondCliSession } from "../../utils/session";
+import {
+  classifyMainChatSession,
+  isInternalSession,
+  isMainChatVisibleSession,
+  pickMainChatActiveSession,
+} from "../../utils/session";
 import "./Chat.css";
 
 // ─── Mermaid diagram block ────────────────────────────────────────────────────
@@ -208,10 +213,7 @@ type SessionLike = { source?: string | null; id?: string | null };
 
 
 function classifySession(session: SessionLike | undefined | null): SessionKind {
-  if (isInternalSession(session)) return "chat";
-  if (isPondCliSession(session)) return "cli";
-  if (!session?.source || session.source === "chat") return "chat";
-  return "im";
+  return classifyMainChatSession(session);
 }
 
 /** Map a session.source value to a compact display emoji/label. */
@@ -385,6 +387,15 @@ export default function Chat() {
     const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [sessionFilter, setSessionFilter] = useState<SessionKind>("chat");
 
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const displaySessionId =
+    activeSession && isMainChatVisibleSession(activeSession, sessionFilter)
+      ? activeSessionId
+      : null;
+  const displaySession = displaySessionId
+    ? sessions.find((s) => s.id === displaySessionId)
+    : undefined;
+
   // ── Input history navigation (up/down arrows) ──────────────────────────
   const [historyIndex, setHistoryIndex] = useState(-1); // -1 = not navigating, 0 = oldest, N-1 = newest
   const historyDraftRef = useRef<string>(""); // preserved draft before navigating history
@@ -463,10 +474,10 @@ export default function Chat() {
   };
 
   const handleShowContextPreview = async () => {
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
     setContextPreviewLoading(true);
     try {
-      const preview = await invoke<NonNullable<typeof contextPreview>>("get_context_preview", { sessionId: activeSessionId });
+      const preview = await invoke<NonNullable<typeof contextPreview>>("get_context_preview", { sessionId: displaySessionId });
       setContextPreview(preview);
       setExpandedBlocks(new Set());
     } catch (e) {
@@ -527,11 +538,11 @@ export default function Chat() {
   /** Restore scrollTop after older messages are prepended and painted. */
   const scrollRestoreRef = useRef<number | null>(null);
   const prevScrollTopRef = useRef(0);
-  // Keep a ref to the current sessionId so event callbacks always see the latest value
-  const activeSessionIdRef = useRef<string | null>(activeSessionId);
+  // Keep a ref to the visible main-chat session so event callbacks always see the latest value
+  const activeSessionIdRef = useRef<string | null>(displaySessionId);
   useEffect(() => {
-    activeSessionIdRef.current = activeSessionId;
-  }, [activeSessionId]);
+    activeSessionIdRef.current = displaySessionId;
+  }, [displaySessionId]);
   // Keep a ref to isImSession so the event callback closure always sees the latest value
   const isImSessionRef = useRef(false);
 
@@ -563,10 +574,10 @@ export default function Chat() {
     };
   }, [dispatch]);
 
-  const rawMessages = activeSessionId ? messagesBySession[activeSessionId] ?? [] : [];
+  const rawMessages = displaySessionId ? messagesBySession[displaySessionId] ?? [] : [];
 
-  const interactiveCards = activeSessionId
-    ? interactiveCardsBySession[activeSessionId] ?? {}
+  const interactiveCards = displaySessionId
+    ? interactiveCardsBySession[displaySessionId] ?? {}
     : {};
 
   // Extract historical interactive cards from chat_ui tool calls in persisted messages
@@ -688,12 +699,11 @@ export default function Chat() {
       }
       return acc;
     }, []);
-  const streamingState: StreamingState | null = activeSessionId ? streaming[activeSessionId] ?? null : null;
+  const streamingState: StreamingState | null = displaySessionId ? streaming[displaySessionId] ?? null : null;
   const streamingCurrent = streamingState?.current ?? "";
-  const running = activeSessionId ? isRunning[activeSessionId] ?? false : false;
-  const steps = activeSessionId ? toolSteps[activeSessionId] ?? [] : [];
-  const activePlan = activeSessionId ? planBySession[activeSessionId] ?? [] : [];
-  const activeSession = sessions.find((s) => s.id === activeSessionId);
+  const running = displaySessionId ? isRunning[displaySessionId] ?? false : false;
+  const steps = displaySessionId ? toolSteps[displaySessionId] ?? [] : [];
+  const activePlan = displaySessionId ? planBySession[displaySessionId] ?? [] : [];
   const [activeArtifacts, setActiveArtifacts] = useState<SessionArtifact[]>([]);
 
   const hasTaskPanel = activePlan.length > 0 || steps.length > 0 || activeArtifacts.length > 0;
@@ -742,18 +752,18 @@ export default function Chat() {
       setTaskPanelTab("tools");
     }
   }, [taskPanelTab, activePlan.length, steps.length, activeArtifacts.length, hasTaskPanel]);
-  const activeSessionKind = classifySession(activeSession);
+  const activeSessionKind = classifySession(displaySession);
   const isImSession = activeSessionKind === "im";
   isImSessionRef.current = isImSession;
 
   useEffect(() => {
     setWorkspaceDisplayOverride(null);
-  }, [activeSessionId, activeSession?.workspace_root, settings?.workspace_root]);
+  }, [displaySessionId, displaySession?.workspace_root, settings?.workspace_root]);
 
   // Load messages when the active session ID changes.
   // Also sync running state from DB to fix stale state if im_session_done was missed.
   useEffect(() => {
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
     setCapacity(CHAT_INITIAL_SIZE);
     setUnreadCount(0);
     scrollRestoreRef.current = null;
@@ -769,21 +779,21 @@ export default function Chat() {
     const load = async () => {
       try {
         const [messages, { sessions: fresh }, artifacts] = await Promise.all([
-          sessionsApi.getMessages(activeSessionId, CHAT_INITIAL_SIZE, 0),
+          sessionsApi.getMessages(displaySessionId, CHAT_INITIAL_SIZE, 0),
           sessionsApi.list(),
-          artifactsApi.list(activeSessionId),
+          artifactsApi.list(displaySessionId),
         ]);
         setActiveArtifacts(artifacts);
-        seedContextUsage(activeSessionId);
+        seedContextUsage(displaySessionId);
         // Use setMessagesWithFrozen: if a frozenBubble exists for this session (set during
         // a recent agent run), it is preserved as a single collapsed bubble. For sessions
         // with no frozenBubble (old history, other sessions), it falls back to plain setMessages.
         // Do NOT auto-reconstruct frozenBubble from DB here — that would collapse all history.
-        dispatch(chatActions.setMessagesWithFrozen({ sessionId: activeSessionId, messages }));
-        const s = fresh.find((x) => x.id === activeSessionId);
+        dispatch(chatActions.setMessagesWithFrozen({ sessionId: displaySessionId, messages }));
+        const s = fresh.find((x) => x.id === displaySessionId);
         const restored = reconstructPersistedTaskPanels(messages);
         dispatch(chatActions.restoreTaskPanels({
-          sessionId: activeSessionId,
+          sessionId: displaySessionId,
           toolSteps: restored.toolSteps,
           planItems: restored.planItems,
           turnDone: s?.status !== "running",
@@ -791,8 +801,8 @@ export default function Chat() {
         setHasMoreHistory(messages.length >= CHAT_INITIAL_SIZE);
         // Correct stale running state from DB
         if (s && s.status !== "running") {
-          dispatch(chatActions.setRunning({ sessionId: activeSessionId, running: false }));
-          dispatch(chatActions.clearStreaming(activeSessionId));
+          dispatch(chatActions.setRunning({ sessionId: displaySessionId, running: false }));
+          dispatch(chatActions.clearStreaming(displaySessionId));
         }
       } catch (e) {
         console.error('[Chat] failed to load messages on session switch:', e);
@@ -800,17 +810,17 @@ export default function Chat() {
     };
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId, dispatch]);
+  }, [displaySessionId, dispatch]);
 
   useEffect(() => {
     if (artifactsUnlistenRef.current) {
       artifactsUnlistenRef.current();
       artifactsUnlistenRef.current = null;
     }
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
 
     let cancelled = false;
-    const sessionId = activeSessionId;
+    const sessionId = displaySessionId;
     artifactsApi.onUpdated(sessionId, () => {
       artifactsApi.list(sessionId)
         .then((artifacts) => {
@@ -834,23 +844,23 @@ export default function Chat() {
         artifactsUnlistenRef.current = null;
       }
     };
-  }, [activeSessionId]);
+  }, [displaySessionId]);
 
   // Load CHAT_LAZY_STEP older messages (incremental prepend), triggered by scrolling to top
   const loadMoreHistory = useCallback(() => {
-    if (!activeSessionId || loadingMoreRef.current) return;
+    if (!displaySessionId || loadingMoreRef.current) return;
     const el = messagesAreaRef.current;
     const prevScrollHeight = el ? el.scrollHeight : 0;
-    const currentCount = messagesBySession[activeSessionId]?.length ?? 0;
+    const currentCount = messagesBySession[displaySessionId]?.length ?? 0;
     loadingMoreRef.current = true;
     setLoadingMoreHistory(true);
     scrollRestoreRef.current = prevScrollHeight;
-    sessionsApi.getMessages(activeSessionId, CHAT_LAZY_STEP, currentCount).then((older) => {
+    sessionsApi.getMessages(displaySessionId, CHAT_LAZY_STEP, currentCount).then((older) => {
       if (older.length > 0) {
-        const existingIds = new Set((messagesBySession[activeSessionId] ?? []).map((m) => m.id));
+        const existingIds = new Set((messagesBySession[displaySessionId] ?? []).map((m) => m.id));
         const newOnes = older.filter((m) => !existingIds.has(m.id));
         if (newOnes.length > 0) {
-          dispatch(chatActions.prependChatMessages({ sessionId: activeSessionId, messages: older }));
+          dispatch(chatActions.prependChatMessages({ sessionId: displaySessionId, messages: older }));
           setCapacity((c) => c + CHAT_LAZY_STEP);
           setHasMoreHistory(older.length === CHAT_LAZY_STEP);
         } else if (newOnes.length === 0) {
@@ -870,7 +880,7 @@ export default function Chat() {
       loadingMoreRef.current = false;
       setLoadingMoreHistory(false);
     });
-  }, [activeSessionId, messagesBySession, dispatch]);
+  }, [displaySessionId, messagesBySession, dispatch]);
 
   // Restore scroll after prepend is committed to the DOM (avoids locking scrollTop at 0)
   useLayoutEffect(() => {
@@ -886,12 +896,12 @@ export default function Chat() {
 
   // When the list is shorter than the viewport, wheel scroll cannot hit the top — keep loading until scrollable or exhausted
   useEffect(() => {
-    if (!activeSessionId || !hasMoreHistory || loadingMoreRef.current || loadingMoreHistory) return;
+    if (!displaySessionId || !hasMoreHistory || loadingMoreRef.current || loadingMoreHistory) return;
     const el = messagesAreaRef.current;
     if (!el) return;
     if (el.scrollHeight - el.clientHeight > 8) return;
     loadMoreHistory();
-  }, [activeSessionId, hasMoreHistory, rawMessages.length, loadingMoreHistory, loadMoreHistory]);
+  }, [displaySessionId, hasMoreHistory, rawMessages.length, loadingMoreHistory, loadMoreHistory]);
 
   // When the filter changes, switch to the first visible session if the current
   // active session is not visible under the new filter.
@@ -904,19 +914,26 @@ export default function Chat() {
   useEffect(() => {
     const currentSessions = sessionsRef.current;
     const currentActiveId = activeSessionIdForFilterRef.current;
-    const visibleSessions = currentSessions.filter((x) => !isInternalSession(x) && (
-      classifySession(x) === sessionFilter
-    ));
-    if (visibleSessions.length === 0) return;
+    const visibleSessions = currentSessions.filter((x) =>
+      isMainChatVisibleSession(x, sessionFilter),
+    );
     const s = currentActiveId ? currentSessions.find((x) => x.id === currentActiveId) : null;
     if (s && visibleSessions.some((x) => x.id === s.id)) return;
-    const first = visibleSessions[0];
-    dispatch(sessionsActions.setActiveSession(first ? first.id : null));
+    dispatch(sessionsActions.setActiveSession(pickMainChatActiveSession(currentSessions, sessionFilter)));
   }, [sessionFilter, dispatch]);
 
-  // Subscribe to agent events — use ref to avoid stale closure over activeSessionId
+  // Heartbeat / pool coordination sessions are internal — never keep them as the
+  // main Chat active session (sidebar hides them but messages would still load).
   useEffect(() => {
     if (!activeSessionId) return;
+    const current = sessions.find((s) => s.id === activeSessionId);
+    if (!current || isMainChatVisibleSession(current, sessionFilter)) return;
+    dispatch(sessionsActions.setActiveSession(pickMainChatActiveSession(sessions, sessionFilter)));
+  }, [sessions, activeSessionId, sessionFilter, dispatch]);
+
+  // Subscribe to agent events for the visible main-chat session only (not heartbeat / pool internal).
+  useEffect(() => {
+    if (!displaySessionId) return;
 
     // Cleanup previous listener synchronously before registering the new one
     if (unlistenRef.current) {
@@ -929,9 +946,9 @@ export default function Chat() {
     // The session id this listener is bound to — used for session-scoped operations
     // like freezeStreaming and getMessages on done, which must target THIS session,
     // not whatever session happens to be active when the event fires.
-    const boundSessionId = activeSessionId;
+    const boundSessionId = displaySessionId;
     console.log('[Chat] registering event listener for session:', boundSessionId);
-    chatApi.onEvent(activeSessionId, (event: AgentEventType) => {
+    chatApi.onEvent(displaySessionId, (event: AgentEventType) => {
       console.log('[Chat] received event:', event.type, 'for session:', boundSessionId);
       // For streaming deltas: write to the currently visible session (ref) so the user
       // sees live output even if they switched sessions mid-stream.
@@ -1131,7 +1148,7 @@ export default function Chat() {
         unlistenRef.current = null;
       }
     };
-  }, [activeSessionId, dispatch, flushBufferedDelta]);
+  }, [displaySessionId, dispatch, flushBufferedDelta]);
 
   // Track whether user is near the bottom (bottom 10%) and trigger lazy-load on scroll to top
   useEffect(() => {
@@ -1156,7 +1173,7 @@ export default function Chat() {
     prevScrollTopRef.current = el.scrollTop;
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [hasMoreHistory, loadMoreHistory, activeSessionId]);
+  }, [hasMoreHistory, loadMoreHistory, displaySessionId]);
 
   // Scroll the messages area to the bottom without affecting parent containers.
   // scrollIntoView() bubbles up and can cause the whole window to jump in Tauri WebView;
@@ -1186,8 +1203,8 @@ export default function Chat() {
       return;
     }
     // FIFO trim: evict oldest messages beyond current capacity
-    if (activeSessionId && rawMessages.length > capacity) {
-      dispatch(chatActions.trimChatMessages({ sessionId: activeSessionId, capacity }));
+    if (displaySessionId && rawMessages.length > capacity) {
+      dispatch(chatActions.trimChatMessages({ sessionId: displaySessionId, capacity }));
       setHasMoreHistory(true);
     }
     if (isNearBottomRef.current) {
@@ -1196,7 +1213,7 @@ export default function Chat() {
     } else {
       setUnreadCount((n) => n + 1);
     }
-  }, [rawMessages, streamingCurrent, capacity, activeSessionId, dispatch, scrollToBottom]);
+  }, [rawMessages, streamingCurrent, capacity, displaySessionId, dispatch, scrollToBottom]);
 
   // Scroll the tool-steps area to the bottom when a new step is added or toggled open
   useEffect(() => {
@@ -1353,13 +1370,13 @@ export default function Chat() {
   // ── Workspace selector ──────────────────────────────────────────────────
   // The effective workspace for the active session:
   //   session.workspace_root > settings.workspace_root > ""
-  const effectiveWorkspace = activeSession?.workspace_root || settings?.workspace_root || "";
+  const effectiveWorkspace = displaySession?.workspace_root || settings?.workspace_root || "";
   const displayedWorkspace = workspaceDisplayOverride ?? effectiveWorkspace;
-  const hasSessionWorkspace = workspaceDisplayOverride !== null || Boolean(activeSession?.workspace_root);
+  const hasSessionWorkspace = workspaceDisplayOverride !== null || Boolean(displaySession?.workspace_root);
   const globalWorkspace = settings?.workspace_root || "";
 
   const handleWorkspaceBrowse = useCallback(async () => {
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
     try {
     const selected = await openFileDialog({ directory: true, title: t("chat.workspaceBrowseTitle") });
       if (!selected) return;
@@ -1370,7 +1387,7 @@ export default function Chat() {
       const isOutside = globalWorkspace && !dirPath.startsWith(globalWorkspace);
 
       // Set the session workspace override
-      await sessionsApi.setWorkspace(activeSessionId, dirPath);
+      await sessionsApi.setWorkspace(displaySessionId, dirPath);
 
       // Auto-enable allow_outside_workspace if needed
       if (isOutside && settings && !settings.allow_outside_workspace) {
@@ -1386,28 +1403,28 @@ export default function Chat() {
 
       // Refresh the session in local state so the dropdown updates
       dispatch(sessionsActions.updateSessionWorkspace({
-        id: activeSessionId,
+        id: displaySessionId,
         workspace_root: dirPath,
       }));
     } catch (e) {
       setWorkspaceDisplayOverride(null);
       console.error("workspace browse error:", e);
     }
-  }, [activeSessionId, globalWorkspace, settings, dispatch, t]);
+  }, [displaySessionId, globalWorkspace, settings, dispatch, t]);
 
   const handleWorkspaceReset = useCallback(async () => {
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
     try {
       setWorkspaceDisplayOverride(null);
-      await sessionsApi.setWorkspace(activeSessionId, null);
+      await sessionsApi.setWorkspace(displaySessionId, null);
       dispatch(sessionsActions.updateSessionWorkspace({
-        id: activeSessionId,
+        id: displaySessionId,
         workspace_root: null,
       }));
     } catch (e) {
       console.error("workspace reset error:", e);
     }
-  }, [activeSessionId, dispatch]);
+  }, [displaySessionId, dispatch]);
 
   // ── File drag-and-drop (Tauri v2 events) ─────────────────────────────────
   // Tauri v2 intercepts native drag-and-drop and emits its own events.
@@ -1453,8 +1470,8 @@ export default function Chat() {
   }, []);
 
   // Refs to access latest state inside Tauri event listeners without re-registering
-  const activeSessionIdRef2 = useRef(activeSessionId);
-  useEffect(() => { activeSessionIdRef2.current = activeSessionId; }, [activeSessionId]);
+  const activeSessionIdRef2 = useRef(displaySessionId);
+  useEffect(() => { activeSessionIdRef2.current = displaySessionId; }, [displaySessionId]);
   const isImSessionRef2 = useRef(isImSession);
   useEffect(() => { isImSessionRef2.current = isImSession; }, [isImSession]);
   const runningRef2 = useRef(running);
@@ -1506,29 +1523,29 @@ export default function Chat() {
     pendingAttachment: import("../../services/tauri").ChatAttachment | null,
     clearPlan: boolean,
   ) => {
-    if (!activeSessionId) return;
+    if (!displaySessionId) return;
 
-    dispatch(chatActions.clearToolSteps(activeSessionId));
-    if (clearPlan) dispatch(chatActions.clearPlan(activeSessionId));
-    dispatch(chatActions.clearStreaming(activeSessionId));
+    dispatch(chatActions.clearToolSteps(displaySessionId));
+    if (clearPlan) dispatch(chatActions.clearPlan(displaySessionId));
+    dispatch(chatActions.clearStreaming(displaySessionId));
     // A new turn supersedes the previous turn's review bar.
     setReviewBySession((all) => {
-      if (!all[activeSessionId]) return all;
+      if (!all[displaySessionId]) return all;
       const next = { ...all };
-      delete next[activeSessionId];
+      delete next[displaySessionId];
       return next;
     });
     // Clear frozen bubble so the next turn starts fresh from DB messages
-    dispatch(chatActions.clearFrozenBubble(activeSessionId));
+    dispatch(chatActions.clearFrozenBubble(displaySessionId));
 
     // Auto-title: if this is the first message in the session, derive a title from it
-    const currentMessages = messagesBySession[activeSessionId] ?? [];
+    const currentMessages = messagesBySession[displaySessionId] ?? [];
     if (currentMessages.length === 0) {
       const raw = (content || pendingAttachment?.filename || "").replace(/\s+/g, " ").trim();
       const title = raw.length > 30 ? raw.slice(0, 30) + "…" : raw;
       if (title) {
-        sessionsApi.rename(activeSessionId, title).catch(() => {});
-        dispatch(sessionsActions.updateSessionTitle({ id: activeSessionId, title }));
+        sessionsApi.rename(displaySessionId, title).catch(() => {});
+        dispatch(sessionsActions.updateSessionTitle({ id: displaySessionId, title }));
       }
     }
 
@@ -1540,30 +1557,30 @@ export default function Chat() {
       : content;
 
     dispatch(chatActions.appendMessage({
-      sessionId: activeSessionId,
+      sessionId: displaySessionId,
       message: {
         id: `optimistic_${Date.now()}`,
-        session_id: activeSessionId,
+        session_id: displaySessionId,
         role: "user",
         content: displayContent,
         created_at: new Date().toISOString(),
       },
     }));
 
-    dispatch(chatActions.setRunning({ sessionId: activeSessionId, running: true }));
+    dispatch(chatActions.setRunning({ sessionId: displaySessionId, running: true }));
 
     try {
-      await chatApi.send(activeSessionId, content, pendingAttachment ?? undefined, clearPlan);
+      await chatApi.send(displaySessionId, content, pendingAttachment ?? undefined, clearPlan);
     } catch (e) {
       console.error('[Chat] send error:', e);
-      dispatch(chatActions.setRunning({ sessionId: activeSessionId, running: false }));
-      dispatch(chatActions.clearStreaming(activeSessionId));
+      dispatch(chatActions.setRunning({ sessionId: displaySessionId, running: false }));
+      dispatch(chatActions.clearStreaming(displaySessionId));
       setSendError(`${e}`);
     }
-  }, [activeSessionId, messagesBySession, dispatch, t]);
+  }, [displaySessionId, messagesBySession, dispatch, t]);
 
   const handleSend = useCallback(async () => {
-    if ((!input.trim() && !attachment) || !activeSessionId || running) return;
+    if ((!input.trim() && !attachment) || !displaySessionId || running) return;
 
     const content = input.trim();
     setInput("");
@@ -1581,15 +1598,15 @@ export default function Chat() {
     }
 
     await doSend(content, pendingAttachment, true);
-  }, [input, attachment, activeSessionId, running, activePlan, doSend, clearAttachment]);
+  }, [input, attachment, displaySessionId, running, activePlan, doSend, clearAttachment]);
 
   const handleCancel = useCallback(() => {
-    if (activeSessionId) {
-      chatApi.cancel(activeSessionId);
+    if (displaySessionId) {
+      chatApi.cancel(displaySessionId);
     }
-  }, [activeSessionId]);
+  }, [displaySessionId]);
 
-  const reviewChanges = activeSessionId ? reviewBySession[activeSessionId] ?? [] : [];
+  const reviewChanges = displaySessionId ? reviewBySession[displaySessionId] ?? [] : [];
 
   const dismissReview = useCallback((sessionId: string) => {
     setReviewBySession((all) => {
@@ -1601,21 +1618,21 @@ export default function Chat() {
   }, []);
 
   const handleUndoReview = useCallback(async () => {
-    if (!activeSessionId || undoingReview) return;
+    if (!displaySessionId || undoingReview) return;
     setUndoingReview(true);
     try {
-      await journalApi.undoLast(activeSessionId);
-      dismissReview(activeSessionId);
+      await journalApi.undoLast(displaySessionId);
+      dismissReview(displaySessionId);
     } catch (e) {
       setSendError(`${t("chat.reviewUndoFailed")}: ${e}`);
     } finally {
       setUndoingReview(false);
     }
-  }, [activeSessionId, undoingReview, dismissReview, t]);
+  }, [displaySessionId, undoingReview, dismissReview, t]);
 
   const handleKeepReview = useCallback(() => {
-    if (activeSessionId) dismissReview(activeSessionId);
-  }, [activeSessionId, dismissReview]);
+    if (displaySessionId) dismissReview(displaySessionId);
+  }, [displaySessionId, dismissReview]);
 
   const handlePermissionResponse = useCallback(async (approved: boolean) => {
     if (!permissionRequest) return;
@@ -1718,10 +1735,7 @@ export default function Chat() {
   };
 
   // ── Filtered session list (single source of truth) ───────────────────────
-  const filteredSessions = sessions.filter((s) => {
-    if (isInternalSession(s)) return false;
-    return classifySession(s) === sessionFilter;
-  });
+  const filteredSessions = sessions.filter((s) => isMainChatVisibleSession(s, sessionFilter));
 
   return (
     <div className="chat-layout">
@@ -1863,7 +1877,7 @@ export default function Chat() {
             <div className="drag-overlay-text">📎 {t("chat.dropFiles")}</div>
           </div>
         )}
-        {activeSessionId ? (
+        {displaySessionId ? (
           <>
             {sendError && (
               <div className="error-banner" role="alert">
@@ -1954,7 +1968,7 @@ export default function Chat() {
                               key={step.id}
                               step={step}
                               onToggle={() => {
-                                dispatch(chatActions.toggleToolStep({ sessionId: activeSessionId!, id: step.id }));
+                                dispatch(chatActions.toggleToolStep({ sessionId: displaySessionId!, id: step.id }));
                                 if (!step.expanded) {
                                   requestAnimationFrame(() => {
                                     const el = toolStepsScrollRef.current;
@@ -2009,8 +2023,8 @@ export default function Chat() {
                             uiDefinition={card.uiDefinition}
                             submittedValues={card.submittedValues}
                             onSubmitted={
-                              activeSessionId
-                                ? () => markInteractiveSubmitted(activeSessionId, card.requestId)
+                              displaySessionId
+                                ? () => markInteractiveSubmitted(displaySessionId, card.requestId)
                                 : undefined
                             }
                           />
@@ -2067,20 +2081,20 @@ export default function Chat() {
                       listenOpen={card.listenOpen}
                       wizardStepHint={card.wizardStepHint}
                       onSubmitted={
-                        activeSessionId
-                          ? () => markInteractiveSubmitted(activeSessionId, card.requestId)
+                        displaySessionId
+                          ? () => markInteractiveSubmitted(displaySessionId, card.requestId)
                           : undefined
                       }
                       onActionSent={
-                        activeSessionId
+                        displaySessionId
                           ? () => {
                               setInteractiveCardsBySession((all) => {
-                                const sessionCards = all[activeSessionId];
+                                const sessionCards = all[displaySessionId];
                                 const c = sessionCards?.[card.requestId];
                                 if (!c) return all;
                                 return {
                                   ...all,
-                                  [activeSessionId]: {
+                                  [displaySessionId]: {
                                     ...sessionCards,
                                     [card.requestId]: { ...c, listenOpen: false },
                                   },
@@ -2208,7 +2222,7 @@ export default function Chat() {
                   </select>
                 </div>
                 <ContextUsageRing
-                  usage={activeSessionId ? contextUsage[activeSessionId] : undefined}
+                  usage={displaySessionId ? contextUsage[displaySessionId] : undefined}
                   t={t}
                 />
                 <button
@@ -2224,7 +2238,7 @@ export default function Chat() {
                 <button
                   className="btn btn-attach"
                   onClick={handleShowContextPreview}
-                  disabled={contextPreviewLoading || !activeSessionId}
+                  disabled={contextPreviewLoading || !displaySessionId}
                   title={t("chat.debugContextTitle")}
                   style={{ opacity: 0.6, fontSize: 14 }}
                 >

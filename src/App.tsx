@@ -97,11 +97,7 @@ function AppContent() {
         const { sessions } = await sessionsApi.list(100);
         dispatch(sessionsActions.setSessions(sessions));
         const firstVisible = sessions.find((s) => !isInternalSession(s));
-        if (firstVisible) {
-          dispatch(sessionsActions.setActiveSession(firstVisible.id));
-        } else if (sessions.length > 0) {
-          dispatch(sessionsActions.setActiveSession(sessions[0].id));
-        }
+        dispatch(sessionsActions.setActiveSession(firstVisible?.id ?? null));
       } catch (e) {
         console.error("Init error:", e);
       } finally {

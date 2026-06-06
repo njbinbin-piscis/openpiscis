@@ -14,6 +14,7 @@
  */
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { Session, ChatMessage, ScheduledTask } from "../../services/tauri";
+import { isInternalSession } from "../../utils/session";
 
 // ---------------------------------------------------------------------------
 // Sessions slice
@@ -39,7 +40,8 @@ export const sessionsSlice = createSlice({
     removeSession: (state, action: PayloadAction<string>) => {
       state.sessions = state.sessions.filter((s) => s.id !== action.payload);
       if (state.activeSessionId === action.payload) {
-        state.activeSessionId = state.sessions[0]?.id ?? null;
+        const next = state.sessions.find((s) => !isInternalSession(s));
+        state.activeSessionId = next?.id ?? null;
       }
     },
     updateSessionTitle: (state, action: PayloadAction<{ id: string; title: string }>) => {
