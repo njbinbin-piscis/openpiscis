@@ -9,6 +9,7 @@ import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/ta
 import { RootState, poolActions, koiActions, POOL_DEFAULT_CAPACITY } from "../../../store";
 import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
 import ConfirmDialog from "../../ConfirmDialog";
+import PoolMemberPicker from "../PoolMemberPicker";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import "./ChatPool.css";
 
@@ -178,6 +179,8 @@ export default function ChatPool() {
   const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
   const [actionTarget, setActionTarget] = useState<{ id: string; name: string; action: "pause" | "resume" | "archive" } | null>(null);
   const [actioning, setActioning] = useState(false);
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [memberError, setMemberError] = useState("");
   const sessionListRef = useRef<HTMLDivElement>(null);
 
   const loadSessions = useCallback(async () => {
@@ -350,6 +353,19 @@ export default function ChatPool() {
   };
 
   const activeSession = useMemo(() => sessions.find((s) => s.id === activeSessionId), [sessions, activeSessionId]);
+  const poolMembers = useMemo(() => {
+    const ids = new Set(activeSession?.member_koi_ids ?? []);
+    return kois.filter((k) => ids.has(k.id));
+  }, [kois, activeSession]);
+  const handleRemoveMember = useCallback(async (koiId: string) => {
+    if (!activeSessionId) return;
+    setMemberError("");
+    try {
+      await poolApi.removeMember(activeSessionId, koiId);
+    } catch (e) {
+      setMemberError(String(e));
+    }
+  }, [activeSessionId]);
 
   useEffect(() => {
     if (activeSession) {
@@ -425,8 +441,11 @@ export default function ChatPool() {
   // Listen for pool_session_updated events from backend (pause/resume/archive)
   useEffect(() => {
     let unlisten: (() => void) | null = null;
-    listen<{ id: string; status: string }>("pool_session_updated", (e) => {
+    listen<{ id: string; status: string; member_koi_ids?: string[] }>("pool_session_updated", (e) => {
       dispatch(poolActions.updatePoolSessionStatus({ id: e.payload.id, status: e.payload.status }));
+      if (e.payload.member_koi_ids) {
+        dispatch(poolActions.updatePoolSessionMembers({ id: e.payload.id, memberKoiIds: e.payload.member_koi_ids }));
+      }
     }).then((fn) => { unlisten = fn; });
     return () => { unlisten?.(); };
   }, [dispatch]);
@@ -562,13 +581,16 @@ export default function ChatPool() {
         </div>
 
         <div className="chatpool-participants">
-          <div className="chatpool-participants-title">{t("pool.participants")}</div>
+          <div className="chatpool-participants-title">
+            <span>{t("pool.participants")}</span>
+            <button className="collab-icon-btn" disabled={!activeSessionId} title={t("pool.memberPickerTitle") || "Add members"} onClick={() => { if (activeSessionId) setMemberPickerOpen(true); }}>⚙</button>
+          </div>
           <div className="chatpool-participant">
             <span className="chatpool-participant-icon">🐋</span>
             <span className="chatpool-participant-name">Piscis</span>
             <span className="chatpool-participant-badge">{t("pool.mainAgent")}</span>
           </div>
-          {kois.map((koi) => (
+          {poolMembers.map((koi) => (
             <div key={koi.id} className="chatpool-participant">
               <span className="chatpool-participant-icon">{koi.icon}</span>
               <span className="chatpool-participant-name" style={{ color: koi.color }}>
@@ -581,8 +603,13 @@ export default function ChatPool() {
               {koi.active_todo_count > 0 && (
                 <span className="chatpool-participant-todos">{koi.active_todo_count}</span>
               )}
+              <button className="chatpool-participant-remove" title={t("pool.removeMember") || "Remove"} onClick={() => handleRemoveMember(koi.id)}>×</button>
             </div>
           ))}
+          {poolMembers.length === 0 && (
+            <div className="chatpool-empty-hint">{t("pool.noMembersHint")}</div>
+          )}
+          {memberError && <div className="chatpool-participant-error">{memberError}</div>}
         </div>
 
         {activeSessionId && (
@@ -719,6 +746,15 @@ export default function ChatPool() {
         onConfirm={confirmSessionAction}
         onCancel={() => !actioning && setActionTarget(null)}
       />
+
+      {memberPickerOpen && activeSessionId && (
+        <PoolMemberPicker
+          poolId={activeSessionId}
+          memberKoiIds={activeSession?.member_koi_ids ?? []}
+          onClose={() => setMemberPickerOpen(false)}
+          onManageKois={() => setMemberPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }

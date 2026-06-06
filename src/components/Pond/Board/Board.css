@@ -372,6 +372,16 @@
   color: var(--text-secondary);
 }
 
+.board-empty-hint {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+
 .board-input {
   width: 100%;
   padding: 8px 12px;

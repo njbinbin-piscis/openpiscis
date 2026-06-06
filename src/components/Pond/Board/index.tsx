@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 import { listen } from "@tauri-apps/api/event";
-import { boardApi, koiApi, KoiTodo, KoiWithStats } from "../../../services/tauri";
-import { RootState, boardActions, koiActions } from "../../../store";
+import { boardApi, koiApi, poolApi, KoiTodo, KoiWithStats } from "../../../services/tauri";
+import { RootState, boardActions, koiActions, poolActions } from "../../../store";
 import "./Board.css";
 
 const COLUMNS = [
@@ -367,18 +367,22 @@ function CreateTaskDialog({
 
         <div className="board-form-field">
           <label className="board-form-label">{t("board.assignTo")}</label>
-          <select
-            className="board-select"
-            value={form.owner_id}
-            onChange={(e) => set("owner_id", e.target.value)}
-          >
-            <option value="" disabled>—</option>
-            {kois.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.icon} {k.name}
-              </option>
-            ))}
-          </select>
+          {kois.length === 0 ? (
+            <div className="board-empty-hint">{t("pool.noMembersHint")}</div>
+          ) : (
+            <select
+              className="board-select"
+              value={form.owner_id}
+              onChange={(e) => set("owner_id", e.target.value)}
+            >
+              <option value="" disabled>—</option>
+              {kois.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.icon} {k.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="board-form-field">
@@ -457,6 +461,13 @@ export default function Board() {
   const filterSessionId = useSelector((s: RootState) => s.board.filterSessionId);
   const loading = useSelector((s: RootState) => s.board.loading);
   const kois = useSelector((s: RootState) => s.koi.kois);
+  const sessions = useSelector((s: RootState) => s.pool.sessions);
+  // Only Koi that have joined the selected project can be assigned tasks.
+  const poolMembers = useMemo(() => {
+    const session = sessions.find((s) => s.id === filterSessionId);
+    const ids = new Set(session?.member_koi_ids ?? []);
+    return kois.filter((k) => ids.has(k.id));
+  }, [kois, sessions, filterSessionId]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -477,7 +488,10 @@ export default function Board() {
     if (kois.length === 0) {
       koiApi.list().then((list) => dispatch(koiActions.setKois(list))).catch(() => {});
     }
-  }, [loadTodos, dispatch, kois.length]);
+    if (sessions.length === 0) {
+      poolApi.listSessions().then((list) => dispatch(poolActions.setPoolSessions(list))).catch(() => {});
+    }
+  }, [loadTodos, dispatch, kois.length, sessions.length]);
 
   useEffect(() => {
     let unlisten: (() => void) | null = null;
@@ -538,6 +552,7 @@ export default function Board() {
         description: data.description || undefined,
         priority: data.priority,
         assigned_by: "user",
+        pool_session_id: filterSessionId ?? undefined,
         task_timeout_secs: data.task_timeout_secs,
       });
       dispatch(boardActions.addTodo(created));
@@ -625,7 +640,7 @@ export default function Board() {
 
       {showCreate && (
         <CreateTaskDialog
-          kois={kois}
+          kois={poolMembers}
           saving={saving}
           t={t}
           onSave={handleCreate}

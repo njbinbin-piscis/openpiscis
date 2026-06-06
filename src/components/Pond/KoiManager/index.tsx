@@ -645,11 +645,9 @@ export default function KoiManager() {
     } catch (e) {
       const msg = String(e);
       setError(
-        msg.includes("数量上限") || msg.includes("limit reached")
-          ? t("koi.maxKoisReached")
-          : msg.includes("名称不能") || msg.includes("cannot contain")
-            ? t("koi.invalidName")
-            : msg
+        msg.includes("名称不能") || msg.includes("cannot contain")
+          ? t("koi.invalidName")
+          : msg
       );
     } finally {
       setSaving(false);

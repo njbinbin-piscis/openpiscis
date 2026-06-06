@@ -278,6 +278,9 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .chatpool-participant {
@@ -331,6 +334,61 @@
   background: var(--accent);
   color: #fff;
   flex-shrink: 0;
+}
+
+.chatpool-participant-remove {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #9ca3af);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.chatpool-participant:hover .chatpool-participant-remove {
+  opacity: 1;
+}
+
+.chatpool-participant-remove:hover {
+  color: var(--danger, #ef4444);
+}
+
+.chatpool-participant-error {
+  font-size: 11px;
+  color: var(--danger, #ef4444);
+  line-height: 1.4;
+  padding: 2px 0;
+}
+
+.chatpool-participants-title .collab-icon-btn {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.chatpool-participants-title .collab-icon-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary, rgba(255, 255, 255, 0.05));
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.chatpool-participants-title .collab-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ── Main area ── */

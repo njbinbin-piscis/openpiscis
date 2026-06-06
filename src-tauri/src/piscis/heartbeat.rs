@@ -333,7 +333,8 @@ async fn dispatch_single_pool_attention(
                 "You are reviewing pool '{}' ({}) during a heartbeat scan.\n\
                  Assessment: {} | Decision: {:?}\n\
                  {}\
-                 Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, assign_koi, merge_branches, etc.).\n\
+                 Available coordination tools: pool_org (list, get_todos, get_messages, post_status, resume_todo, add_member, remove_member, list_members, assign_koi, merge_branches, etc.).\n\
+                 Koi must be project members before they can be assigned work: call pool_org(add_member, pool_id, koi_id) first; assign_koi rejects non-members.\n\
                  Do not use pool_chat from heartbeat; Piscis heartbeat communicates through pool_org-controlled actions.\n\
                  If you decide a human must be notified through IM, resolve the route explicitly: use im_channel_list, im_channel_connect if required, then im_channel_binding_lookup(pool_id=\"{}\") before im_send_message. If no binding exists, explain that gap instead of pretending the IM notification was sent.\n\
                  If the pool has a project_dir and branches need merging, prefer incremental pool_org(merge_branches, branch=...) when integration_ready_count > 0.\n\

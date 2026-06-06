@@ -15,6 +15,7 @@ import SearchPanel from "../IDE/SearchPanel";
 import Board from "../Board";
 import PiscisInbox from "../PiscisInbox";
 import KoiManager from "../KoiManager";
+import PoolMemberPicker from "../PoolMemberPicker";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
 import { openPath } from "../../../services/tauri";
 import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
@@ -169,6 +170,11 @@ export default function Collab() {
   const hasMore = activeSessionId ? hasMoreBySession[activeSessionId] ?? false : false;
   const activeSession = useMemo(() => sessions.find((s) => s.id === activeSessionId), [sessions, activeSessionId]);
   const projectDir = activeSession?.project_dir ?? null;
+  // Only Koi explicitly added to the active project are participants.
+  const poolMembers = useMemo(() => {
+    const ids = new Set(activeSession?.member_koi_ids ?? []);
+    return kois.filter((k) => ids.has(k.id));
+  }, [kois, activeSession]);
 
   // Chat state
   const [loadingMore, setLoadingMore] = useState(false);
@@ -192,11 +198,11 @@ export default function Collab() {
   // Pool chat: @!Koi only — Piscis is reached via IDE CLI (main chat · Pool CLI).
   const mentionCandidates = useMemo(() => {
     const list: { name: string; icon: string; desc: string }[] = [];
-    kois.filter(k => k.status !== "offline").forEach(k => {
+    poolMembers.filter(k => k.status !== "offline").forEach(k => {
       list.push({ name: k.name, icon: k.icon || "🐡", desc: k.description || k.role });
     });
     return list;
-  }, [kois]);
+  }, [poolMembers]);
 
   // Filter candidates when user types @
   const filteredMentions = useMemo(() => {
@@ -265,6 +271,8 @@ export default function Collab() {
   const [leftWidth, setLeftWidth] = useState(280);
   const [participantsOpen, setParticipantsOpen] = useState(false);
   const [koiDialogOpen, setKoiDialogOpen] = useState(false);
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [memberError, setMemberError] = useState("");
 
   // IDE state
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
@@ -497,11 +505,24 @@ export default function Collab() {
     scrollHistory.handleScroll(e);
   }, [scrollHistory]);
 
+  const handleRemoveMember = useCallback(async (koiId: string) => {
+    if (!activeSessionId) return;
+    setMemberError("");
+    try {
+      await poolApi.removeMember(activeSessionId, koiId);
+    } catch (e) {
+      setMemberError(String(e));
+    }
+  }, [activeSessionId]);
+
   // ─── Pool session listeners ────────────────────────────────────────
   useEffect(() => {
     let unlisten: (() => void) | null = null;
-    listen<{ id: string; status: string }>("pool_session_updated", (e) => {
+    listen<{ id: string; status: string; member_koi_ids?: string[] }>("pool_session_updated", (e) => {
       dispatch(poolActions.updatePoolSessionStatus({ id: e.payload.id, status: e.payload.status }));
+      if (e.payload.member_koi_ids) {
+        dispatch(poolActions.updatePoolSessionMembers({ id: e.payload.id, memberKoiIds: e.payload.member_koi_ids }));
+      }
     }).then((fn) => { unlisten = fn; });
     return () => { unlisten?.(); };
   }, [dispatch]);
@@ -925,7 +946,7 @@ export default function Collab() {
                 <div className="chatpool-orgspec-header" onClick={() => setParticipantsOpen(!participantsOpen)}>
                   <span>{t("pool.participants") || "Participants"}</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <button className="collab-icon-btn" title={t("koi.title") || "Koi Settings"} onClick={(e) => { e.stopPropagation(); setKoiDialogOpen(true); }}>⚙</button>
+                    <button className="collab-icon-btn" disabled={!activeSessionId} title={t("pool.memberPickerTitle") || "Add members"} onClick={(e) => { e.stopPropagation(); if (activeSessionId) setMemberPickerOpen(true); }}>⚙</button>
                     <span className="chatpool-orgspec-chevron">{participantsOpen ? "▲" : "▼"}</span>
                   </span>
                 </div>
@@ -936,14 +957,19 @@ export default function Collab() {
                       <span className="chatpool-participant-name">Piscis</span>
                       <span className="chatpool-participant-badge" title={t("pool.actAsPiscisRole")}>{t("pool.mainAgent") || "Main Agent"}</span>
                     </div>
-                    {kois.map((koi) => (
+                    {poolMembers.map((koi) => (
                       <div key={koi.id} className="chatpool-participant">
                         <span className="chatpool-participant-icon">{koi.icon}</span>
                         <span className="chatpool-participant-name" style={{ color: koi.color }}>{koi.name}</span>
                         <span className="chatpool-participant-dot" style={{ background: STATUS_COLORS[koi.status] || "#6b7280" }} />
                         {koi.active_todo_count > 0 && <span className="chatpool-participant-todos">{koi.active_todo_count}</span>}
+                        <button className="chatpool-participant-remove" title={t("pool.removeMember") || "Remove"} onClick={() => handleRemoveMember(koi.id)}>×</button>
                       </div>
                     ))}
+                    {poolMembers.length === 0 && (
+                      <div className="chatpool-empty-hint">{t("pool.noMembersHint")}</div>
+                    )}
+                    {memberError && <div className="chatpool-participant-error">{memberError}</div>}
                   </div>
                 )}
               </div>
@@ -1244,6 +1270,16 @@ export default function Collab() {
       {/* Dialogs */}
       <ConfirmDialog open={!!deleteTarget} title={t("pool.confirmDeleteTitle") || "Delete Project"} message={t("pool.confirmDeleteMessage", { name: deleteTarget?.name ?? "" }) || "Delete this project?"} confirmLabel={t("common.delete") || "Delete"} cancelLabel={t("common.cancel") || "Cancel"} variant="danger" loading={deleting} onConfirm={confirmDeleteSession} onCancel={() => !deleting && setDeleteTarget(null)} />
       <ConfirmDialog open={!!actionTarget} title={actionTarget?.action === "pause" ? (t("pool.confirmPauseTitle") || "Pause") : actionTarget?.action === "resume" ? (t("pool.confirmResumeTitle") || "Resume") : (t("pool.confirmArchiveTitle") || "Archive")} message={actionTarget?.action === "pause" ? (t("pool.confirmPauseMessage", { name: actionTarget?.name ?? "" }) || "") : actionTarget?.action === "resume" ? (t("pool.confirmResumeMessage", { name: actionTarget?.name ?? "" }) || "") : (t("pool.confirmArchiveMessage", { name: actionTarget?.name ?? "" }) || "")} confirmLabel={actionTarget?.action === "pause" ? (t("pool.pauseSession") || "Pause") : actionTarget?.action === "resume" ? (t("pool.resumeSession") || "Resume") : (t("pool.archiveSession") || "Archive")} cancelLabel={t("common.cancel") || "Cancel"} variant={actionTarget?.action === "archive" ? "danger" : "primary"} loading={actioning} onConfirm={confirmSessionAction} onCancel={() => !actioning && setActionTarget(null)} />
+
+      {/* Project member picker */}
+      {memberPickerOpen && activeSessionId && (
+        <PoolMemberPicker
+          poolId={activeSessionId}
+          memberKoiIds={activeSession?.member_koi_ids ?? []}
+          onClose={() => setMemberPickerOpen(false)}
+          onManageKois={() => { setMemberPickerOpen(false); setKoiDialogOpen(true); }}
+        />
+      )}
 
       {/* Koi Manager dialog */}
       {koiDialogOpen && (

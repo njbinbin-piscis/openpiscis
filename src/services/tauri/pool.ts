@@ -84,6 +84,9 @@ export interface PoolSession {
   status: string;
   project_dir?: string;
   task_timeout_secs: number;
+  /** Ids of the Koi that are members of this project. Only members appear
+   *  as participants and can be assigned work. */
+  member_koi_ids?: string[];
   last_active_at?: string;
   created_at: string;
   updated_at: string;
@@ -122,6 +125,8 @@ export interface PoolSessionSnapshot {
   status: string;
   project_dir?: string;
   task_timeout_secs: number;
+  /** Ids of the Koi that are members of this project. */
+  member_koi_ids?: string[];
 }
 
 export interface PoolMessageSnapshot {
@@ -316,6 +321,12 @@ export const poolApi = {
     invoke<void>("update_pool_session_config", { id, taskTimeoutSecs }),
   updateSessionDir: (id: string, projectDir: string) =>
     invoke<void>("update_pool_session_dir", { id, projectDir }),
+  listMembers: (poolId: string) =>
+    invoke<KoiDefinition[]>("list_pool_members", { poolId }),
+  addMember: (poolId: string, koiId: string) =>
+    invoke<void>("add_pool_member", { poolId, koiId }),
+  removeMember: (poolId: string, koiId: string) =>
+    invoke<void>("remove_pool_member", { poolId, koiId }),
   dispatchTask: (koiId: string, task: string, poolSessionId?: string, priority?: string, timeoutSecs?: number) =>
     invoke<{ success: boolean; reply: string; result_message_id?: number }>(
       "dispatch_koi_task", { koiId, task, poolSessionId, priority, timeoutSecs }

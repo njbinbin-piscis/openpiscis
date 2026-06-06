@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.41] - 2026-06-06
+
+### Added
+- **Project Koi membership**: Koi now explicitly join a project before they can take part in it. The participants panel shows only members; the gear icon opens a picker to add Koi, and each participant has an × to remove it (blocked while it still has active todos).
+- **`pool_org` membership actions**: `add_member`, `remove_member`, and `list_members`, so Piscis builds the team before assigning work. `assign_koi` and the kanban board now reject non-members.
+
+### Changed
+- **Task assignment is membership-scoped**: the board's “assign to” dropdown and pool `@mention` autocomplete list only project members.
+- **No global Koi limit**: removed the 10-Koi cap; the Koi library can grow without bound.
+
+### Migration
+- Existing pools are backfilled once: each pool's initial roster is derived from the distinct Koi that already own todos in it. Pools without historical Koi todos start empty.
+
+---
+
 ## [0.8.40] - 2026-06-06
 
 ### Fixed

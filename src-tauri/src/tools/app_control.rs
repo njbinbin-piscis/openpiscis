@@ -2524,16 +2524,6 @@ impl AppControlTool {
             .to_string();
 
         let db = self.db.lock().await;
-        let existing = db.list_kois().map_err(|e| anyhow::anyhow!(e))?;
-        const MAX_KOIS: usize = 10;
-        if existing.len() >= MAX_KOIS {
-            return Ok(ToolResult::err(format!(
-                "Koi limit reached ({}/{}). Delete an existing Koi before creating a new one.",
-                existing.len(),
-                MAX_KOIS
-            )));
-        }
-
         let koi = db
             .create_koi(
                 &name,

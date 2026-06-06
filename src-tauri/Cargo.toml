@@ -40,12 +40,12 @@ thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # Shared agent runtime — pin rev across openpiscis, CodeZ, agent-workbench (v0.8.38).
-piscis-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-core", rev = "v0.8.38" }
-piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-kernel", rev = "v0.8.38" }
+piscis-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-core", rev = "v0.8.41" }
+piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-kernel", rev = "v0.8.41" }
 
 [package]
 name = "piscis-desktop"
-version = "0.8.40"
+version = "0.8.41"
 autobins = false
 default-run = "piscis-desktop"
 description = "OpenPiscis - Open-source cross-platform AI Agent Desktop"

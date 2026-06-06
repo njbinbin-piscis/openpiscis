@@ -247,6 +247,81 @@ pub async fn update_pool_session_dir(
         .map_err(|e| e.to_string())
 }
 
+/// List the Koi that are members of a project pool.
+#[tauri::command]
+pub async fn list_pool_members(
+    state: State<'_, AppState>,
+    pool_id: String,
+) -> Result<Vec<crate::pool::KoiDefinition>, String> {
+    let db = state.db.lock().await;
+    db.list_pool_members(&pool_id).map_err(|e| e.to_string())
+}
+
+/// Add a Koi to a project's team. A Koi must be a member before it can
+/// be assigned work in that project.
+#[tauri::command]
+pub async fn add_pool_member(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    pool_id: String,
+    koi_id: String,
+) -> Result<(), String> {
+    let session = {
+        let db = state.db.lock().await;
+        let koi = db
+            .resolve_koi_identifier(&koi_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("Koi '{}' was not found.", koi_id))?;
+        if db
+            .is_pool_member(&pool_id, &koi.id)
+            .map_err(|e| e.to_string())?
+        {
+            return Err(format!("{} 已经是该项目的成员。", koi.name));
+        }
+        db.add_pool_member(&pool_id, &koi.id)
+            .map_err(|e| e.to_string())?;
+        db.get_pool_session(&pool_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("Pool '{}' not found", pool_id))?
+    };
+    emit_pool_status(&app, &session, false);
+    Ok(())
+}
+
+/// Remove a Koi from a project's team. Refused while the Koi still owns
+/// active todos in this pool.
+#[tauri::command]
+pub async fn remove_pool_member(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    pool_id: String,
+    koi_id: String,
+) -> Result<(), String> {
+    let session = {
+        let db = state.db.lock().await;
+        let koi = db
+            .resolve_koi_identifier(&koi_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("Koi '{}' was not found.", koi_id))?;
+        let active = db
+            .count_active_todos_for_member(&pool_id, &koi.id)
+            .map_err(|e| e.to_string())?;
+        if active > 0 {
+            return Err(format!(
+                "无法移除 {}：该 Koi 在本项目还有 {} 个进行中的任务，请先完成或重新分配。",
+                koi.name, active
+            ));
+        }
+        db.remove_pool_member(&pool_id, &koi.id)
+            .map_err(|e| e.to_string())?;
+        db.get_pool_session(&pool_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("Pool '{}' not found", pool_id))?
+    };
+    emit_pool_status(&app, &session, false);
+    Ok(())
+}
+
 /// Dispatch a task to a Koi agent via the KoiRuntime.
 /// This is the unified entry point for programmatic task assignment from the UI.
 ///
