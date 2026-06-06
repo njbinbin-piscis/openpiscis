@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.42] - 2026-06-06
+
+### Changed
+- **MCP engine upgrade (piscis-engine v0.8.42)**: pins the kernel that adds `headers` on MCP server config for authenticated SSE/HTTP connections, and a new streamable HTTP (`http`) transport that POSTs JSON-RPC to a single endpoint, parses JSON or `text/event-stream`, and tracks `Mcp-Session-Id`.
+- **Desktop MCP config**: MCP server config literals in settings now accept the optional `headers` field.
+
+---
+
 ## [0.8.41] - 2026-06-06
 
 ### Added

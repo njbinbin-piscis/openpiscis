@@ -18,25 +18,40 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 
 ---
 
-## 🆕 v0.8.3 更新摘要
+## 🆕 v0.8.42 更新摘要
 
-**Language Server Protocol（LSP）** 一等公民集成，给嵌入式 IDE 和 Agent 工具同时带来真正的代码智能。
+**MCP 鉴权与 Streamable HTTP** —— 支持带认证头的远程 MCP 服务器与 streamable HTTP 传输。
 
-### 🔬 LSP 驱动的 IDE
-- **按语言托管的 LSP 进程**：新增的 Rust `LspManager` 负责生命周期管理（rust-analyzer、typescript-language-server、pyright、clangd），从 `PATH` 自动探测。
-- **Monaco ↔ LSP WebSocket 桥接**：在嵌入式 IDE 中提供诊断、悬停、补全、跳转定义、查找引用、重命名等能力。
+### 🔌 MCP 传输升级（piscis-engine v0.8.42）
+- **MCP 服务器配置新增 `headers`** —— 在 SSE/HTTP MCP 连接上发送 `Authorization: Bearer <token>` 等请求头，对接需鉴权的远程 MCP 服务与一键授权连接器。
+- **Streamable HTTP 传输（`http`）** —— 新传输向单一端点 POST JSON-RPC，解析 JSON 或 `text/event-stream` 响应，并跟踪 `Mcp-Session-Id`。
 
-### 🩺 新增 `read_lints` Agent 工具
-参考 Cursor 的 ReadLints，Agent 现在可以一次性查询运行中的 LSP 服务器，拿到一组文件的编译器 / 类型 / Lint 诊断：
+## 🕘 v0.8.41 — 项目 Koi 成员制
 
-```json
-{ "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
+**项目 Koi 成员制** —— Koi 必须先加入项目，才能参与协作与派活。
+
+### 👥 显式项目名册
+- **参与者面板只显示成员** —— 不再列出全局 Koi 库里的全部 Agent。点击 **齿轮图标** 打开选择器，把 Koi 加入当前项目；每行右侧 **×** 可移除成员（若仍有活跃 todo 会被阻止）。
+- **派活范围限定为成员** —— 看板「分配给」下拉、`@mention` 自动补全、`pool_org(assign_koi)` 与桌面 `create_koi_todo` 均拒绝非成员。
+- **取消全局 Koi 上限** —— 移除原先 10 个 Koi 库上限；可无限创建 Koi，再按项目挑选参与者。
+
+### 🤖 Piscis 组队流程
+Piscis 现在会先建名册，再派活：
+
+```
+pool_org(add_member)  →  pool_org(assign_koi)
 ```
 
-建议在改完文件后调用，作为编译前的快速验证，**不要**每次读文件都触发。与 `lsp` 工具（悬停 / 补全 / 跳转定义 / 引用 / 重命名）配合，构成 Piscis / Koi 循环中的端到端代码理解能力。
+`pool_org` 新增 action：`add_member`、`remove_member`、`list_members`。
+
+### 🔄 迁移说明
+已有项目池会一次性回填：从该池中历史 todo 的 `owner_id` 推导初始成员。新建空池默认只有 Piscis —— 通过 UI 齿轮或 `add_member` 手动添加成员。
 
 ## 🕘 历史版本
 
+- **v0.8.41** —— 项目 Koi 成员制：显式名册、齿轮选择器、成员范围派活/@mention、取消全局 Koi 上限。
+- **v0.8.40** —— 主聊天懒加载历史分页修复；鱼池 Git 活动栏图标样式更新。
+- **v0.8.3** —— LSP 驱动的嵌入式 IDE + `read_lints` Agent 工具。
 - **v0.8.2** —— 集中式无弹窗子进程助手 + 250 ms 文件变更防抖。
 - **v0.8.1** —— Windows IDE 弹窗死循环修复。
 - **v0.8.0** —— 在 Pond 工作区内嵌入完整的 VS Code 风格 IDE。
@@ -84,7 +99,8 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
 - **项目池（Pool Session）**：一个项目对应一个池，包含项目名、状态、组织规范（`org_spec`）和可选 `project_dir`
 - **Pool Chat**：Piscis、Koi 在这里自然对话、交接、提问、@mention 协作
 - **看板（Board / Kanban）**：展示 Koi todo 的 `todo / in_progress / blocked / done / cancelled`
-- **Koi 面板**：展示每个 Koi 的身份、角色、在线状态、当前工作负载
+- **项目成员**：每个项目池有独立名册（`pool_members`）；参与者面板、看板指派与 `@mention` 补全仅显示已加入当前项目的 Koi
+- **Koi 面板**：管理全局 Koi 库（身份、角色、在线状态）；通过参与者区的 **齿轮选择器** 将 Koi 加入具体项目
 - **Piscis Inbox / Heartbeat**：Piscis 的项目级收件箱，用于接收 `@piscis`、状态信号、心跳巡检结果
 - **知识库（`kb/`）**：项目共享知识区，用于沉淀架构、API、缺陷、决策等文档
 - **项目目录 / Git worktree**：若设置 `project_dir`，每个 Koi 可在自己的分支和 worktree 中工作，减少文件冲突
@@ -99,8 +115,9 @@ OpenPiscis 是一款本地优先的跨平台 AI Agent 桌面应用，基于 Taur
    - 用户可以在应用内聊天，也可以通过飞书等 IM 直接告诉 Piscis“创建一个鱼池项目”
    - Piscis 通过 `pool_org(action="create")` 创建项目池，并写入 `org_spec`
 
-2. **Piscis 组织团队**
-   - Piscis 根据项目目标选择合适的 Koi 角色
+2. **Piscis 组建团队并分工**
+   - Piscis 先了解可用 Koi（`pool_org(list_members)` / `app_control(koi_list)`），建池后对每个入选 Koi 执行 `pool_org(add_member)`
+   - 只有成为项目成员后，Piscis 才能通过 `assign_koi` 或看板为其派活
    - Piscis 优先通过 `pool_chat` 发送带 `@KoiName` 的消息来发起工作，而不是死板串行分配
    - 任务委派是异步的：Piscis 通过 `assign_koi` 派发任务后，通过 `get_todos` / `get_messages` 监控进度，不再同步阻塞 `wait_for_koi`
 
@@ -403,6 +420,15 @@ OpenPiscis
 ---
 
 ## 📋 更新日志
+
+### v0.8.42
+- **MCP `headers` + Streamable HTTP**：通过配置头发送鉴权信息连接远程 MCP；新增 `http` 传输并跟踪 `Mcp-Session-Id`（piscis-engine v0.8.42）。
+
+### v0.8.41
+- **项目 Koi 成员制**：Koi 须先加入项目才能参与。参与者面板仅显示成员；齿轮图标打开选择器添加 Koi；× 可移除（有活跃 todo 时阻止）。
+- **`pool_org` 成员 action**：`add_member`、`remove_member`、`list_members`。Piscis 在 `assign_koi` 前先组队；看板与 @mention 限定为成员。
+- **取消全局 Koi 上限**：移除 10 个 Koi 库上限。
+- **迁移**：已有项目池从历史 todo owner 一次性回填成员。
 
 ### v0.7.9
 - **UIA 精度拖拽测试**：前端通过 IPC 直接传入小球与目标的精确物理屏幕坐标（由 `innerPosition()` + `getBoundingClientRect()` × `devicePixelRatio` 计算），Agent 仅需一次 `desktop_automation`/`uia` 调用即可完成拖拽——无需截图识别、无需网格估算。

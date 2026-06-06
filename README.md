@@ -18,25 +18,40 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 
 ---
 
-## 🆕 What's New in v0.8.3
+## 🆕 What's New in v0.8.42
 
-First-class **Language Server Protocol** integration brings real code intelligence to both the embedded IDE and the agent toolset.
+**MCP authentication & streamable HTTP** — connect to remote MCP servers that require auth headers or the streamable HTTP transport.
 
-### 🔬 LSP-powered IDE
-- **Per-language LSP sessions** are spawned and lifecycle-managed by the new Rust `LspManager` (rust-analyzer, typescript-language-server, pyright, clangd) — auto-detected from `PATH`.
-- **Monaco ↔ LSP WebSocket bridge** delivers diagnostics, hover, completion, go-to-definition, references, and rename inside the embedded IDE editor.
+### 🔌 MCP transport upgrades (piscis-engine v0.8.42)
+- **`headers` on MCP server config** — send `Authorization: Bearer <token>` (and other headers) on SSE/HTTP MCP connections for authenticated remote servers and one-click connectors.
+- **Streamable HTTP transport (`http`)** — new transport that POSTs JSON-RPC to a single endpoint, parses JSON or `text/event-stream` responses, and tracks `Mcp-Session-Id`.
 
-### 🩺 New `read_lints` agent tool
-Mirroring Cursor's ReadLints, the agent can now ask the running LSP servers for compiler / type / lint diagnostics on one or more files in a single call:
+## 🕘 v0.8.41 — Project Koi membership
 
-```json
-{ "paths": ["/abs/foo.ts", "/abs/bar.rs"], "severity": "warning", "wait_ms": 1500 }
+**Project Koi membership** — Koi must explicitly join a project before they can participate in it.
+
+### 👥 Explicit project roster
+- **Participants panel shows members only** — not every Koi in your global library. Use the **gear icon** to open a picker and add Koi to the current project; each participant row has an **×** to remove them (blocked while they still own active todos).
+- **Membership-scoped assignment** — the kanban “assign to” dropdown, `@mention` autocomplete, `pool_org(assign_koi)`, and desktop `create_koi_todo` all reject non-members.
+- **No global Koi cap** — the old 10-Koi library limit is removed; grow your Koi roster without bound, then pick who joins each project.
+
+### 🤖 Piscis team-building flow
+Piscis now builds the roster before assigning work:
+
+```
+pool_org(add_member)  →  pool_org(assign_koi)
 ```
 
-Use it AFTER edits to verify code without running a full build. Pairs with the `lsp` tool (hover / completion / definition / references / rename) for end-to-end code understanding inside Piscis/Koi loops.
+New `pool_org` actions: `add_member`, `remove_member`, `list_members`.
+
+### 🔄 Migration
+Existing pools are backfilled once: each pool's initial roster is derived from the distinct Koi that already own todos in it. New empty pools start with Piscis only — add members through the UI or `add_member`.
 
 ## 🕘 Previous releases
 
+- **v0.8.41** — Project Koi membership: explicit roster, gear picker, membership-scoped assign/mention, no global Koi cap.
+- **v0.8.40** — Chat lazy-load history pagination fix; Pond Git activity icon restyled.
+- **v0.8.3** — LSP-powered embedded IDE + `read_lints` agent tool.
 - **v0.8.2** — Centralised popup-safe spawn helper + 250 ms file-change debounce.
 - **v0.8.1** — Windows IDE popup-loop fix.
 - **v0.8.0** — Fully embedded VS Code-style IDE in the Pond workspace.
@@ -84,7 +99,8 @@ The Pond is not a single agent. It is the collaboration workspace around a proje
 - **Project Pool (`Pool Session`)**: a project container with name, status, organization spec (`org_spec`), and optional `project_dir`
 - **Pool Chat**: the shared conversation space where Piscis and Koi discuss, hand off work, ask questions, and @mention each other
 - **Board / Kanban**: visualizes Koi todos as `todo / in_progress / blocked / done / cancelled`
-- **Koi Panel**: shows each Koi's identity, role, availability, and workload
+- **Project members**: each pool has an explicit roster (`pool_members`); the participants panel, kanban assignee list, and `@mention` autocomplete only show Koi who have joined the current project
+- **Koi Panel**: manage your global Koi library (identity, role, availability); use the participants **gear picker** to add them to a specific project
 - **Piscis Inbox / Heartbeat**: Piscis's project-level inbox for `@piscis`, heartbeat scans, and state signals
 - **Knowledge Base (`kb/`)**: shared project documentation space for architecture, API notes, bugs, decisions, and research
 - **Project Directory / Git Worktrees**: when `project_dir` is configured, Koi can work in isolated branches/worktrees to reduce file conflicts
@@ -99,8 +115,9 @@ A typical pond project follows this mechanism:
    - The user can start it from the app or from IM channels such as Feishu by asking Piscis to create a project pool
    - Piscis uses `pool_org(action="create")` to create the pool and write its `org_spec`
 
-2. **Piscis organizes the team**
-   - Piscis chooses suitable Koi roles based on the project
+2. **Piscis builds the team and organizes work**
+   - Piscis reviews available Koi (`pool_org(list_members)` / `app_control(koi_list)`), creates the pool, then calls `pool_org(add_member)` for each Koi that should join the project
+   - Only after a Koi is a project member can Piscis assign it work via `assign_koi` or the kanban board
    - Piscis should primarily kick off work by sending `@KoiName` messages in `pool_chat`, instead of rigid sequential assignment
    - Task delegation is asynchronous: Piscis assigns a task via `assign_koi` and then monitors progress through `get_todos` / `get_messages` instead of blocking with `wait_for_koi`
 
@@ -400,6 +417,15 @@ The `v0.7.0` line is the first release after a major internal cleanup:
 ---
 
 ## 📋 Changelog
+
+### v0.8.42
+- **MCP `headers` + streamable HTTP**: authenticated remote MCP servers via config headers; new `http` transport with `Mcp-Session-Id` tracking (piscis-engine v0.8.42).
+
+### v0.8.41
+- **Project Koi membership**: Koi must explicitly join a project before participating. Participants panel shows members only; gear icon opens a picker to add Koi; × removes them (blocked while active todos exist).
+- **`pool_org` membership actions**: `add_member`, `remove_member`, `list_members`. Piscis builds the team before `assign_koi`. Kanban and mentions are membership-scoped.
+- **No global Koi limit**: removed the 10-Koi cap; the global library can grow without bound.
+- **Migration**: existing pools backfilled once from historical todo owners.
 
 ### v0.7.9
 - **UIA precision drag test**: the agent now receives exact ball/target physical-screen coordinates from the frontend via IPC (computed from `innerPosition()` + `getBoundingClientRect()` × `devicePixelRatio`) and performs the drag in a single `desktop_automation`/`uia` tool call — no vision OCR, no grid estimation.
