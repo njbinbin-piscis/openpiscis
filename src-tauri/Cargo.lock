@@ -1398,7 +1398,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab8ecd87370524b461f8557c119c405552c396ed91fc0a8eec68679eab26f94a"
 dependencies = [
- "libloading 0.7.4",
+ "libloading 0.8.9",
 ]
 
 [[package]]
@@ -2709,7 +2709,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.61.2",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -4609,8 +4609,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-core"
-version = "0.8.41"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.41#c89d279c7bb2492da0c59600e740d9062f853b9e"
+version = "0.8.42"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.42#a164e52f06fc09eb3d88d7636551ff321288c7ab"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4681,8 +4681,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-kernel"
-version = "0.8.41"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.41#c89d279c7bb2492da0c59600e740d9062f853b9e"
+version = "0.8.42"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.42#a164e52f06fc09eb3d88d7636551ff321288c7ab"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5444,7 +5444,7 @@ dependencies = [
 [[package]]
 name = "robotz-automation"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#45e6fec188d620461e6edebad98b3a282fb6b58c"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#f53aee24dcee22d047aa09cab0e08a0ad1213d30"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5466,7 +5466,7 @@ dependencies = [
 [[package]]
 name = "robotz-browser"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#45e6fec188d620461e6edebad98b3a282fb6b58c"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#f53aee24dcee22d047aa09cab0e08a0ad1213d30"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5489,7 +5489,7 @@ dependencies = [
 [[package]]
 name = "robotz-core"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#45e6fec188d620461e6edebad98b3a282fb6b58c"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#f53aee24dcee22d047aa09cab0e08a0ad1213d30"
 dependencies = [
  "anyhow",
  "async-trait",

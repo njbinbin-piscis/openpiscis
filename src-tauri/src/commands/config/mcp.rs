@@ -186,6 +186,7 @@ mod tests {
             ],
             url: String::new(),
             env: HashMap::from([("FEISHU_APP_ID".into(), "${settings:feishu_app_id}".into())]),
+            headers: HashMap::new(),
             enabled: true,
         };
 
@@ -205,6 +206,7 @@ mod tests {
             args: vec!["${settings:anthropic_api_key}".into()],
             url: String::new(),
             env: HashMap::new(),
+            headers: HashMap::new(),
             enabled: true,
         };
 

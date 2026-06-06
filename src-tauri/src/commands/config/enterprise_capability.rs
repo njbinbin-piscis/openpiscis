@@ -367,6 +367,7 @@ fn build_feishu_mcp_server(settings: &Settings) -> McpServerConfig {
         args,
         url: String::new(),
         env: HashMap::new(),
+        headers: HashMap::new(),
         enabled: true,
     }
 }
@@ -379,6 +380,7 @@ fn build_dingtalk_mcp_server(_settings: &Settings) -> McpServerConfig {
         args: Vec::new(),
         url: "${settings:dingtalk_mcp_url}".into(),
         env: HashMap::new(),
+        headers: HashMap::new(),
         enabled: true,
     }
 }
