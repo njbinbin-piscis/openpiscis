@@ -50,6 +50,12 @@
   letter-spacing: 0.5px;
 }
 
+.collab-left-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .collab-icon-btn {
   width: 22px;
   height: 22px;

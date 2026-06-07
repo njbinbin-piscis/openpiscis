@@ -4,9 +4,10 @@ import "./Pond.css";
 
 interface PondProps {
   onNavigateToSchoolKoi?: () => void;
+  visible?: boolean;
 }
 
-export default function Pond({ onNavigateToSchoolKoi }: PondProps) {
+export default function Pond({ onNavigateToSchoolKoi, visible = true }: PondProps) {
   const { t } = useTranslation();
 
   return (
@@ -18,7 +19,7 @@ export default function Pond({ onNavigateToSchoolKoi }: PondProps) {
         </h1>
       </div>
       <div className="feature-topbar-body">
-        <Collab onNavigateToSchoolKoi={onNavigateToSchoolKoi} />
+        <Collab onNavigateToSchoolKoi={onNavigateToSchoolKoi} visible={visible} />
       </div>
     </div>
   );

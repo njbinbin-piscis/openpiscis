@@ -129,6 +129,25 @@ export interface PoolSessionSnapshot {
   member_koi_ids?: string[];
 }
 
+/** Normalise a wire-format pool session (event payload or API) into `PoolSession`. */
+export function poolSessionFromWire(
+  wire: Partial<PoolSession> & Pick<PoolSession, "id" | "name" | "status">,
+): PoolSession {
+  const now = new Date().toISOString();
+  return {
+    id: wire.id,
+    name: wire.name,
+    org_spec: wire.org_spec ?? "",
+    status: wire.status,
+    project_dir: wire.project_dir,
+    task_timeout_secs: wire.task_timeout_secs ?? 0,
+    member_koi_ids: wire.member_koi_ids ?? [],
+    last_active_at: wire.last_active_at,
+    created_at: wire.created_at ?? now,
+    updated_at: wire.updated_at ?? now,
+  };
+}
+
 export interface PoolMessageSnapshot {
   id: number;
   pool_session_id: string;

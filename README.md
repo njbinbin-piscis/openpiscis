@@ -18,9 +18,13 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 
 ---
 
-## 🆕 What's New in v0.8.51
+## 🆕 What's New in v0.8.52
 
-**Input history** — press ↑/↓ in the main chat, pool chat, or IDE CLI to recall previous sends; each input box keeps its own history.
+**Pool project sync** — projects created from main chat show up in the Pond sidebar via real-time events, tab re-entry refresh, and a ↻ refresh button.
+
+## 🕘 v0.8.51 — Input history
+
+Press ↑/↓ in the main chat, pool chat, or IDE CLI to recall previous sends; each input box keeps its own history.
 
 ## 🕘 v0.8.50 — Skill picker
 

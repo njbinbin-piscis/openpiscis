@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.52] - 2026-06-07
+
+### Fixed
+- **Pool project list sync**: listen for `pool_session_created` so projects created from main chat appear in the Pond sidebar immediately; also refresh on tab re-entry and via a new ↻ button (no polling timer).
+
+---
+
 ## [0.8.51] - 2026-06-07
 
 ### Added

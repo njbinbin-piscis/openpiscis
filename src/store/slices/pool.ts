@@ -104,6 +104,14 @@ export const poolSlice = createSlice({
     addPoolSession: (state, action: PayloadAction<PoolSession>) => {
       state.sessions.unshift(action.payload);
     },
+    upsertPoolSession: (state, action: PayloadAction<PoolSession>) => {
+      const idx = state.sessions.findIndex((s) => s.id === action.payload.id);
+      if (idx >= 0) {
+        state.sessions[idx] = { ...state.sessions[idx], ...action.payload };
+      } else {
+        state.sessions.unshift(action.payload);
+      }
+    },
     removePoolSession: (state, action: PayloadAction<string>) => {
       state.sessions = state.sessions.filter((s) => s.id !== action.payload);
       delete state.messagesBySession[action.payload];

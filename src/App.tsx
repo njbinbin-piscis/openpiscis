@@ -308,7 +308,10 @@ function AppContent() {
           )}
           {mountedTabs.has("pond") && (
             <div className="tab-panel" hidden={activeTab !== "pond"}>
-              <Pond onNavigateToSchoolKoi={() => navigateTab("school", { schoolSubTab: "koi" })} />
+              <Pond
+                visible={activeTab === "pond"}
+                onNavigateToSchoolKoi={() => navigateTab("school", { schoolSubTab: "koi" })}
+              />
             </div>
           )}
           {mountedTabs.has("school") && (

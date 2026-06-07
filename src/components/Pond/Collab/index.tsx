@@ -17,7 +17,7 @@ import PiscisInbox from "../PiscisInbox";
 import PoolMemberPicker from "../PoolMemberPicker";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
 import { openPath } from "../../../services/tauri";
-import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/tauri";
+import { poolApi, koiApi, PoolMessage, KoiWithStats, poolSessionFromWire, type PoolSessionSnapshot } from "../../../services/tauri";
 import { RootState, poolActions, koiActions, boardActions, POOL_DEFAULT_CAPACITY, parseMentions, hasMentions } from "../../../store";
 import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
 import { containsDelegatedPiscisMention } from "../../../utils/poolMention";
@@ -171,9 +171,11 @@ const LAZY_LOAD_STEP = 10;
 
 interface CollabProps {
   onNavigateToSchoolKoi?: () => void;
+  /** True when the Pond tab is the active app tab — used to refresh project list on re-entry. */
+  visible?: boolean;
 }
 
-export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
+export default function Collab({ onNavigateToSchoolKoi, visible = true }: CollabProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -399,6 +401,15 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
     }
   }, [loadSessions, dispatch, kois.length]);
 
+  // Re-fetch when the user switches back to the Pond tab (panel stays mounted).
+  const prevVisibleRef = useRef(false);
+  useEffect(() => {
+    if (visible && !prevVisibleRef.current) {
+      loadSessions();
+    }
+    prevVisibleRef.current = visible;
+  }, [visible, loadSessions]);
+
   // Scroll @mention dropdown to keep selected item visible
   useEffect(() => {
     if (mentionFilter === null) return;
@@ -545,14 +556,26 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
 
   // ─── Pool session listeners ────────────────────────────────────────
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    listen<{ id: string; status: string; member_koi_ids?: string[] }>("pool_session_updated", (e) => {
-      dispatch(poolActions.updatePoolSessionStatus({ id: e.payload.id, status: e.payload.status }));
-      if (e.payload.member_koi_ids) {
-        dispatch(poolActions.updatePoolSessionMembers({ id: e.payload.id, memberKoiIds: e.payload.member_koi_ids }));
+    let unlistenCreated: (() => void) | null = null;
+    let unlistenUpdated: (() => void) | null = null;
+
+    listen<PoolSessionSnapshot>("pool_session_created", (e) => {
+      dispatch(poolActions.upsertPoolSession(poolSessionFromWire(e.payload)));
+    }).then((fn) => { unlistenCreated = fn; });
+
+    listen<PoolSessionSnapshot & { id: string; status: string }>("pool_session_updated", (e) => {
+      const payload = e.payload;
+      if (payload.name) {
+        dispatch(poolActions.upsertPoolSession(poolSessionFromWire(payload)));
+      } else {
+        dispatch(poolActions.updatePoolSessionStatus({ id: payload.id, status: payload.status }));
       }
-    }).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
+    }).then((fn) => { unlistenUpdated = fn; });
+
+    return () => {
+      unlistenCreated?.();
+      unlistenUpdated?.();
+    };
   }, [dispatch]);
 
   // ─── File tree / git ────────────────────────────────────────────────
@@ -912,7 +935,18 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
             <div className="collab-left-inner">
               <div className="collab-left-toolbar">
                 <span className="collab-left-title">{t("pool.projects") || "Projects"}</span>
-                <button className="collab-icon-btn" onClick={() => setLeftCollapsed(true)} title={t("common.collapse") || "Collapse"}>«</button>
+                <div className="collab-left-toolbar-actions">
+                  <button
+                    className="collab-icon-btn"
+                    onClick={() => loadSessions()}
+                    disabled={loading}
+                    title={t("common.refresh")}
+                    aria-label={t("common.refresh")}
+                  >
+                    ↻
+                  </button>
+                  <button className="collab-icon-btn" onClick={() => setLeftCollapsed(true)} title={t("common.collapse") || "Collapse"}>«</button>
+                </div>
               </div>
               <button className="chatpool-new-btn" onClick={() => setShowNewDialog(true)}>
                 + {t("pool.newSession") || "New Project"}
