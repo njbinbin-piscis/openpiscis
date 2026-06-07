@@ -426,9 +426,7 @@ impl DesktopHostTools {
             self.gateway = app.try_state::<AppState>().map(|s| s.gateway.clone());
         }
         if self.confirm_flags.is_none() {
-            self.confirm_flags = app
-                .try_state::<AppState>()
-                .map(|s| s.confirm_flags.clone());
+            self.confirm_flags = app.try_state::<AppState>().map(|s| s.confirm_flags.clone());
         }
         self
     }
