@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.50] - 2026-06-07
+
+### Changed
+- **Composer skill picker**: hides system built-in skills (Office/File/Web/System/Desktop); they remain available via progressive `skill_list` — only user-installed skills appear for explicit per-turn selection.
+
+---
+
 ## [0.8.49] - 2026-06-07
 
 ### Fixed

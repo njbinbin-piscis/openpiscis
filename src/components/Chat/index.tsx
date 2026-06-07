@@ -24,6 +24,7 @@ import {
   isMainChatVisibleSession,
   pickMainChatActiveSession,
 } from "../../utils/session";
+import { composerSelectableSkills } from "../../utils/skills";
 import "./Chat.css";
 
 // ─── Mermaid diagram block ────────────────────────────────────────────────────
@@ -1306,7 +1307,7 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
 
   useEffect(() => {
     skillsApi.list()
-      .then((r) => setInstalledSkills(r.skills.filter((s) => s.enabled)))
+      .then((r) => setInstalledSkills(composerSelectableSkills(r.skills)))
       .catch(() => setInstalledSkills([]));
     koiApi.list().then(setKoiList).catch(() => setKoiList([]));
   }, []);
