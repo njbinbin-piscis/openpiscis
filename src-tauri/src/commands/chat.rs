@@ -86,9 +86,10 @@ fn resolve_attachments_for_send(
     for att in attachments {
         if att.media_type.starts_with("image/") {
             if vision_capable {
-                let data = att.data.as_deref().and_then(|b64| {
-                    base64::engine::general_purpose::STANDARD.decode(b64).ok()
-                });
+                let data = att
+                    .data
+                    .as_deref()
+                    .and_then(|b64| base64::engine::general_purpose::STANDARD.decode(b64).ok());
                 media_list.push(crate::gateway::MediaAttachment {
                     media_type: att.media_type.clone(),
                     url: None,
@@ -108,9 +109,7 @@ fn resolve_attachments_for_send(
                     let default_fname = format!("attachment.{}", ext);
                     let fname = att.filename.as_deref().unwrap_or(&default_fname);
                     let tmp = std::env::temp_dir().join(fname);
-                    if let Ok(bytes) =
-                        base64::engine::general_purpose::STANDARD.decode(b64)
-                    {
+                    if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(b64) {
                         let _ = std::fs::write(&tmp, &bytes);
                     }
                     tmp.to_string_lossy().to_string()
@@ -660,13 +659,12 @@ async fn build_chat_prompt_artifacts(
 ) -> Result<ChatPromptArtifacts, String> {
     let persona_koi = if let Some(koi_id) = persona_koi_id.filter(|id| !id.trim().is_empty()) {
         let db = state.db.lock().await;
-        db.get_koi(koi_id)
-            .map_err(|e| e.to_string())?
-            .or_else(|| {
-                db.list_kois()
-                    .ok()
-                    .and_then(|kois| kois.into_iter().find(|k| k.id == koi_id || k.name == koi_id))
+        db.get_koi(koi_id).map_err(|e| e.to_string())?.or_else(|| {
+            db.list_kois().ok().and_then(|kois| {
+                kois.into_iter()
+                    .find(|k| k.id == koi_id || k.name == koi_id)
             })
+        })
     } else {
         None
     };
@@ -795,8 +793,7 @@ async fn build_chat_prompt_artifacts(
         };
 
     let mut system_prompt = if let Some(ref koi) = persona_koi {
-        crate::runtime::koi_prompt::assemble_koi_persona_system_prompt(state, koi, query_text)
-            .await
+        crate::runtime::koi_prompt::assemble_koi_persona_system_prompt(state, koi, query_text).await
     } else {
         let mut prompt = build_main_chat_system_prompt(
             &full_memory_context,
@@ -1044,16 +1041,12 @@ pub async fn chat_send(
         let koi_id = koi_id.as_str();
         let koi_def = {
             let db = state.db.lock().await;
-            db.get_koi(koi_id)
-                .map_err(|e| e.to_string())?
-                .or_else(|| {
-                    db.list_kois()
-                        .ok()
-                        .and_then(|kois| {
-                            kois.into_iter()
-                                .find(|k| k.id == koi_id || k.name == koi_id)
-                        })
+            db.get_koi(koi_id).map_err(|e| e.to_string())?.or_else(|| {
+                db.list_kois().ok().and_then(|kois| {
+                    kois.into_iter()
+                        .find(|k| k.id == koi_id || k.name == koi_id)
                 })
+            })
         };
         if let Some(koi) = koi_def {
             if let Some(ref pid) = koi.llm_provider_id {

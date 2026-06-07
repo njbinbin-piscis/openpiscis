@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.49] - 2026-06-07
+
+### Fixed
+- **Release CI**: `cargo fmt --check` on Windows failed for `chat.rs` (Koi persona changes), which skipped the Tauri bundle job — **v0.8.47 / v0.8.48 GitHub Releases therefore shipped source archives only**. Reformatted; installers publish from this tag.
+
+---
+
 ## [0.8.48] - 2026-06-07
 
 ### Added

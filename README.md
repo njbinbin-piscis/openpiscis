@@ -18,18 +18,18 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 
 ---
 
-## 🆕 What's New in v0.8.48
+## 🆕 What's New in v0.8.49
 
-**Composer popover menus + sticky Koi persona + pool member modal** — scrollable workspace/Koi/skill pickers; Koi stays selected across sends; ⚙ opens a centered dialog.
+**Release fix** — v0.8.47 / v0.8.48 CI failed `cargo fmt --check` on Windows, so those tags shipped source-only. This tag reformats `chat.rs` and publishes installers. Feature set matches v0.8.48.
 
-### 🎨 UI
+### 🎨 UI (same as v0.8.48)
 - **`AppDropdown`**: workspace / Koi / skill in composer, Board filters, and AuditLog tool filter use themed popover lists (click-stay-open, scrollable).
 - **Koi persona**: composer Koi selection persists until you clear it.
 - **Pool participants**: ⚙ gear opens a portal modal instead of squeezing the chat layout.
 
-## 🕘 v0.8.47 — Koi persona & School
+## 🕘 v0.8.48 / v0.8.47 — source-only (CI fmt failure)
 
-Main-chat Koi persona, multi-attach/skills, School page, select styling fixes.
+Use **v0.8.49** or **v0.8.46** for installers.
 
 ## 🕘 v0.8.46 — RobotZ & MCP UI
 
