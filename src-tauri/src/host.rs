@@ -356,6 +356,8 @@ pub struct DesktopHostTools {
     pub gateway: Option<Arc<crate::gateway::GatewayManager>>,
     /// LSP (Language Server Protocol) session manager for agent tools
     pub lsp_manager: Option<Arc<LspManager>>,
+    /// Live confirmation prefs — synced when settings change.
+    pub confirm_flags: Option<piscis_kernel::agent::loop_::ConfirmFlagsHandle>,
 }
 
 fn resolve_desktop_coordinator_config(app: Option<&AppHandle>) -> CoordinatorConfig {
@@ -422,6 +424,11 @@ impl DesktopHostTools {
         }
         if self.gateway.is_none() {
             self.gateway = app.try_state::<AppState>().map(|s| s.gateway.clone());
+        }
+        if self.confirm_flags.is_none() {
+            self.confirm_flags = app
+                .try_state::<AppState>()
+                .map(|s| s.confirm_flags.clone());
         }
         self
     }
@@ -520,6 +527,7 @@ impl HostTools for DesktopHostTools {
                     app_data_dir: dir.clone(),
                     app_handle: self.app_handle.clone(),
                     gateway: self.gateway.clone(),
+                    confirm_flags: self.confirm_flags.clone(),
                 }));
             }
         }
@@ -750,6 +758,7 @@ impl DesktopHost {
             coordinator_config: resolve_desktop_coordinator_config(Some(&app)),
             gateway: Some(state.gateway.clone()),
             lsp_manager: Some(state.lsp_manager.clone()),
+            confirm_flags: Some(state.confirm_flags.clone()),
         });
         let secrets = Arc::new(DesktopSecretsStore::new(state.settings.clone()));
         Self {

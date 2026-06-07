@@ -126,23 +126,7 @@ pub fn content_targets_piscis(content: &str) -> bool {
 /// point for future callers.
 #[allow(dead_code)]
 pub fn spawn_immediate_dispatch(state: &crate::store::AppState, channel: &'static str) {
-    let cloned = crate::store::AppState {
-        db: state.db.clone(),
-        settings: state.settings.clone(),
-        plan_state: state.plan_state.clone(),
-        browser: state.browser.clone(),
-        cancel_flags: state.cancel_flags.clone(),
-        confirmation_responses: state.confirmation_responses.clone(),
-        interactive_responses: state.interactive_responses.clone(),
-        app_handle: state.app_handle.clone(),
-        scheduler: state.scheduler.clone(),
-        scheduled_job_ids: state.scheduled_job_ids.clone(),
-        gateway: state.gateway.clone(),
-        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-        terminals: state.terminals.clone(),
-        file_watchers: state.file_watchers.clone(),
-        lsp_manager: state.lsp_manager.clone(),
-    };
+    let cloned = state.clone();
     tokio::spawn(async move {
         let prompt = {
             let s = cloned.settings.lock().await;
@@ -205,23 +189,7 @@ pub fn spawn_mention_dispatch(
     pool_id: String,
     channel: &'static str,
 ) {
-    let cloned = crate::store::AppState {
-        db: state.db.clone(),
-        settings: state.settings.clone(),
-        plan_state: state.plan_state.clone(),
-        browser: state.browser.clone(),
-        cancel_flags: state.cancel_flags.clone(),
-        confirmation_responses: state.confirmation_responses.clone(),
-        interactive_responses: state.interactive_responses.clone(),
-        app_handle: state.app_handle.clone(),
-        scheduler: state.scheduler.clone(),
-        scheduled_job_ids: state.scheduled_job_ids.clone(),
-        gateway: state.gateway.clone(),
-        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-        terminals: state.terminals.clone(),
-        file_watchers: state.file_watchers.clone(),
-        lsp_manager: state.lsp_manager.clone(),
-    };
+    let cloned = state.clone();
     tokio::spawn(async move {
         let prompt = {
             let s = cloned.settings.lock().await;

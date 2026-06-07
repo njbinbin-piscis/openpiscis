@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.53] - 2026-06-07
+
+### Fixed
+- **Live permission prefs**: turning off shell/file-write confirmation in Settings now applies immediately to in-flight agent sessions (shared `ConfirmFlagsHandle`), not only new chats.
+- **i18n**: Overlay HUD, Fish guide, Settings provider labels, User Tools config, Debug scenario hints, and remaining toast/permission strings.
+- **Office/PPTX (Windows)**: PowerPoint COM reads use numeric visibility; added `read_document` / `read_slides` helpers.
+
+---
+
 ## [0.8.52] - 2026-06-07
 
 ### Fixed

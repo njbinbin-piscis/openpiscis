@@ -1053,8 +1053,8 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
                       <label className="koi-form-label">{t("pool.taskTimeoutField")}</label>
                       <input className="chatpool-input" type="number" min={0} max={7200} value={sessionTaskTimeoutSecs} onChange={(e) => { const v = Number(e.target.value); setSessionTaskTimeoutSecs(Number.isFinite(v) ? Math.max(0, Math.min(7200, v)) : 0); }} />
                       <div className="chatpool-empty-hint">{t("pool.taskTimeoutHelp")}</div>
-                      <textarea className="chatpool-orgspec-editor" value={orgSpecDraft} onChange={(e) => setOrgSpecDraft(e.target.value)} placeholder="# Project Goal\n\n# Koi Roles\n\n# Collaboration Rules\n\n# Success Metrics" rows={10} />
-                      <button className="chatpool-btn chatpool-btn-primary" onClick={handleSaveOrgSpec} disabled={orgSpecSaving || (orgSpecDraft === (activeSession?.org_spec || "") && sessionTaskTimeoutSecs === (activeSession?.task_timeout_secs ?? 0))} style={{ alignSelf: "flex-end", marginTop: 6 }}>{orgSpecSaving ? "Saving..." : (t("common.save") || "Save")}</button>
+                      <textarea className="chatpool-orgspec-editor" value={orgSpecDraft} onChange={(e) => setOrgSpecDraft(e.target.value)} placeholder={t("pool.orgSpecPlaceholder")} rows={10} />
+                      <button className="chatpool-btn chatpool-btn-primary" onClick={handleSaveOrgSpec} disabled={orgSpecSaving || (orgSpecDraft === (activeSession?.org_spec || "") && sessionTaskTimeoutSecs === (activeSession?.task_timeout_secs ?? 0))} style={{ alignSelf: "flex-end", marginTop: 6 }}>{orgSpecSaving ? t("common.saving") : t("common.save")}</button>
                     </div>
                   )}
                 </div>
@@ -1112,7 +1112,11 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
                       <div ref={messagesEndRef} />
                     </div>
                   )}
-                  {unreadCount > 0 && <button className="chatpool-unread-badge" onClick={scrollToBottom}>↓ {unreadCount} 条新消息</button>}
+                  {unreadCount > 0 && (
+                    <button className="chatpool-unread-badge" onClick={scrollToBottom}>
+                      ↓ {t("chat.unreadMessages", { count: unreadCount })}
+                    </button>
+                  )}
                 </div>
                 <div className="collab-input-area">
                   {mentionError && <div className="collab-mention-error">{mentionError}</div>}

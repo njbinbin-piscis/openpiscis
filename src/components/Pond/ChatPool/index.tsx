@@ -655,7 +655,7 @@ export default function ChatPool() {
                   }
                   style={{ alignSelf: "flex-end", marginTop: 6 }}
                 >
-                  {orgSpecSaving ? "Saving..." : (t("common.save") || "Save")}
+                  {orgSpecSaving ? t("common.saving") : t("common.save")}
                 </button>
               </div>
             )}
@@ -703,7 +703,7 @@ export default function ChatPool() {
         )}
         {unreadCount > 0 && (
           <button className="chatpool-unread-badge" onClick={scrollToBottom}>
-            ↓ {unreadCount} 条新消息
+            ↓ {t("chat.unreadMessages", { count: unreadCount })}
           </button>
         )}
         <div className="chatpool-readonly-bar">

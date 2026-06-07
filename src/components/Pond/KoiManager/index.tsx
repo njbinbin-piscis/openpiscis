@@ -39,6 +39,7 @@ interface StatTooltipProps extends TooltipState {
 }
 
 function StatTooltip({ koiId, kind, anchorRect, onMouseEnter, onMouseLeave }: StatTooltipProps) {
+  const { t } = useTranslation();
   const [memories, setMemories] = useState<Memory[] | null>(null);
   const [todos, setTodos] = useState<KoiTodo[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +72,11 @@ function StatTooltip({ koiId, kind, anchorRect, onMouseEnter, onMouseLeave }: St
   }
 
   const statusLabel: Record<string, string> = {
-    todo: "待办", in_progress: "进行中", done: "已完成",
-    cancelled: "已取消", blocked: "阻塞",
+    todo: t("koi.todoStatusTodo"),
+    in_progress: t("koi.todoStatusInProgress"),
+    done: t("koi.todoStatusDone"),
+    cancelled: t("koi.todoStatusCancelled"),
+    blocked: t("koi.todoStatusBlocked"),
   };
 
   return createPortal(
@@ -84,17 +88,17 @@ function StatTooltip({ koiId, kind, anchorRect, onMouseEnter, onMouseLeave }: St
     >
       <div className={`koi-stat-tooltip-inner${flipUp ? " koi-stat-tooltip-inner--flip" : ""}`}>
         <div className="koi-stat-tooltip-title">
-          {kind === "memory" ? "📚 记忆详情" : "📋 待办详情"}
+          {kind === "memory" ? `📚 ${t("koi.statMemoryTitle")}` : `📋 ${t("koi.statTodoTitle")}`}
         </div>
         <div className="koi-stat-tooltip-body">
-          {loading && <div className="koi-stat-tooltip-empty">加载中…</div>}
+          {loading && <div className="koi-stat-tooltip-empty">{t("koi.statLoading")}</div>}
           {!loading && kind === "memory" && (
             memories && memories.length > 0 ? memories.map((m) => (
               <div key={m.id} className="koi-stat-tooltip-item">
                 <span className="koi-stat-tooltip-tag">{m.category}</span>
                 <span className="koi-stat-tooltip-text">{m.content}</span>
               </div>
-            )) : <div className="koi-stat-tooltip-empty">暂无记忆</div>
+            )) : <div className="koi-stat-tooltip-empty">{t("koi.statNoMemory")}</div>
           )}
           {!loading && kind === "todo" && (
             todos && todos.length > 0 ? todos.map((td) => (
@@ -104,7 +108,7 @@ function StatTooltip({ koiId, kind, anchorRect, onMouseEnter, onMouseLeave }: St
                 </span>
                 <span className="koi-stat-tooltip-text">{td.title}</span>
               </div>
-            )) : <div className="koi-stat-tooltip-empty">暂无待办</div>
+            )) : <div className="koi-stat-tooltip-empty">{t("koi.statNoTodos")}</div>
           )}
         </div>
       </div>

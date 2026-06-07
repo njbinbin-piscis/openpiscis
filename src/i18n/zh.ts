@@ -42,6 +42,17 @@ const zh = {
     showKeys: "显示密钥",
     hideKeys: "隐藏密钥",
     builtin: "内置",
+    collapse: "收起",
+    expand: "展开",
+    navigate: "选择",
+    select: "确认",
+    dismiss: "关闭",
+    loadingApp: "正在加载 OpenPiscis...",
+  },
+
+  app: {
+    defaultToastTitle: "Piscis",
+    toastDismiss: "关闭",
   },
 
   // 导航
@@ -148,6 +159,9 @@ const zh = {
     assistantSend: "发送",
     assistantClear: "清除",
     assistantOpenMainChat: "主会话",
+    cancel: "取消",
+    closePanel: "关闭",
+    closeTerminal: "关闭终端",
     commit: "提交",
     commitPlaceholder: "提交说明 (Ctrl+Enter 提交)",
     commitNeedMessage: "请先填写提交说明",
@@ -249,6 +263,16 @@ const zh = {
     taskTimeoutKoiHelp:
       "0 = 继续继承项目或系统默认值；适合为慢角色单独放宽执行时间。",
     taskTimeoutStatTooltip: "默认任务超时",
+    statMemoryTitle: "记忆详情",
+    statTodoTitle: "待办详情",
+    statLoading: "加载中…",
+    statNoMemory: "暂无记忆",
+    statNoTodos: "暂无待办",
+    todoStatusTodo: "待办",
+    todoStatusInProgress: "进行中",
+    todoStatusDone: "已完成",
+    todoStatusCancelled: "已取消",
+    todoStatusBlocked: "阻塞",
   },
 
   // 聊天室
@@ -301,6 +325,9 @@ const zh = {
     noDelegateSelfPiscis: "不能以 @!Piscis 委派自己。请 @!Koi 名称委派任务；与 Piscis 深聊请用 IDE「Piscis CLI」。",
     mustMention: "请以 Piscis 身份发送，并包含 @!Koi名（或 @!all）以指定接收者",
     mentionAll: "所有人",
+    selectSession: "请先在左侧选择一个项目",
+    orgSpecPlaceholder:
+      "# 项目目标\n\n# 锦鲤角色\n\n# 协作规则\n\n# 成功指标",
   },
 
   // 看板
@@ -345,6 +372,7 @@ const zh = {
     blockedReason: "阻塞原因",
     resumeHint: "该任务已停止，但仍可在审查后继续恢复执行。",
     supersededHint: "该任务已被替代，原任务恢复入口已关闭以避免冲突。",
+    selectProject: "请先在左侧选择一个项目以查看任务看板",
   },
 
   // 小鱼
@@ -363,7 +391,26 @@ const zh = {
     sectionUser: "自定义小鱼",
     sectionUserDesc: "放置 FISH.toml 文件到目录即可加载",
     sectionGuide: "创建自定义小鱼",
+    guidePath: "在以下路径创建文件：",
+    guideExample: `id = "my-fish"
+name = "我的小鱼"
+description = "专注于某类任务的助手"
+icon = "🐡"
+tools = ["file_read", "shell", "memory_store"]
+
+[agent]
+system_prompt = "你是一条专注于..."
+max_iterations = 20
+model = "default"`,
     empty: "暂无小鱼",
+  },
+
+  overlay: {
+    restoreMain: "恢复主界面",
+    quit: "退出 OpenPiscis",
+    restore: "恢复",
+    toolFailed: "{{name}} 失败",
+    toolDone: "{{name}} 完成",
   },
 
   school: {
@@ -474,6 +521,10 @@ const zh = {
     failed: "失败",
     idle: "待运行",
     run: "运行",
+    requiresConfigTitle: "需要先完成配置，请前往设置",
+    configureFirstTitle: "请先在设置中完成相关配置",
+    sshConfigRequired:
+      "⚠ 此场景需要先完成配置。请前往「设置 → SSH 服务器」添加服务器后再运行。",
     passCount: "{{pass}}/{{total}} 通过",
     logLines: "{{count}} 行",
     loadingScenarios: "加载场景中...",
@@ -691,6 +742,19 @@ const zh = {
     reviewNew: "新建",
     reviewEdit: "修改",
     reviewUndoFailed: "撤销失败",
+    workspaceOutsideAutoEnabled:
+      "所选目录在工作区根目录之外，已自动开启「允许访问工作区以外的文件」。",
+    unreadMessages: "{{count}} 条新消息",
+    contextPreviewStats:
+      "{{count}} 条消息 · 总计 ~{{total}} / {{budget}} tok",
+    contextPreviewBody:
+      "消息体 ~{{tokens}} tok · 工具 {{tools}} 个",
+    fishProgressThinking: "思考中",
+    fishProgressToolCall: "调用工具",
+    fishProgressToolDone: "工具完成",
+    fishProgressDone: "已完成",
+    fishProgressStep: "第 {{n}} 步",
+    fishProgressSection: "小鱼进度",
   },
 
   // 记忆
@@ -727,6 +791,7 @@ const zh = {
     installFailed: "安装失败：{{error}}",
     uninstallBtn: "卸载",
     uninstallConfirm: "确定卸载技能「{{name}}」？",
+    uninstallConfirmTitle: "确认卸载技能",
     uninstallSuccess: "已卸载：{{name}}",
     uninstallFailed: "卸载失败：{{error}}",
     sourceBadgeBuiltin: "内置",
@@ -852,6 +917,14 @@ const zh = {
     // AI 提供商
     aiProvider: "AI 提供商",
     provider: "提供商",
+    providerAnthropic: "Anthropic (Claude)",
+    providerOpenai: "OpenAI (GPT)",
+    providerDeepseek: "DeepSeek（深度求索）",
+    providerQwen: "阿里百炼（通义千问 Qwen）",
+    providerMinimax: "MiniMax（稀宇科技）",
+    providerZhipu: "智谱 AI（GLM / Z.AI）",
+    providerKimi: "Kimi（月之暗面 Moonshot）",
+    providerCustom: "自定义（OpenAI 兼容）",
     model: "模型名称",
     modelPlaceholder: "模型名称",
     anthropicKey: "Anthropic API Key",
@@ -874,6 +947,27 @@ const zh = {
     maxTokensHint: "控制模型每次回复的最大输出长度，不影响上下文窗口大小。",
     contextWindow: "上下文窗口大小（Token 数）",
     contextWindowHint: "模型的输入上下文限制。0 = 自动（根据输出设置推算）。DeepSeek: 128000，GPT-4o: 128000，Claude: 200000，Gemini 1.5 Pro: 1000000。",
+
+    namedLlmTitle: "多供应商配置",
+    namedLlmDesc:
+      "配置多个命名 LLM 供应商，每个锦鲤可在编辑界面独立选择；未选择时使用上方全局默认配置。",
+    namedLlmNoModel: "（未设置模型）",
+    namedLlmEdit: "编辑",
+    namedLlmDelete: "删除",
+    namedLlmAddTitle: "添加供应商",
+    namedLlmEditTitle: "编辑供应商",
+    namedLlmIdLabel: "ID（唯一标识）*",
+    namedLlmLabelLabel: "显示名称",
+    namedLlmLabelPlaceholder: "工作用 GPT-4",
+    namedLlmProviderTypeLabel: "供应商类型 *",
+    namedLlmModelLabel: "模型名称 *",
+    namedLlmApiKeyKeepHint: "留空表示不修改",
+    namedLlmApiKeyKeepPlaceholder: "（保持不变）",
+    namedLlmMaxTokensLabel: "最大输出 Token（0 = 继承全局）",
+    namedLlmAddBtn: "+ 添加供应商",
+    allowMultipleInstances: "允许多开",
+    allowMultipleInstancesDesc:
+      "开启后可同时运行多个 OpenPiscis 实例；关闭时再次启动会激活已有窗口（重启后生效）。",
 
     // 工作区
     workspace: "工作区",

@@ -980,8 +980,6 @@ pub async fn chat_send(
         workspace_root,
         mut max_tokens,
         context_window,
-        confirm_shell,
-        confirm_file_write,
         policy_mode,
         tool_rate_limit_per_minute,
         tool_settings,
@@ -1008,8 +1006,6 @@ pub async fn chat_send(
             settings.workspace_root.clone(),
             settings.max_tokens,
             settings.context_window,
-            settings.confirm_shell_commands,
-            settings.confirm_file_writes,
             settings.policy_mode.clone(),
             settings.tool_rate_limit_per_minute,
             std::sync::Arc::new(piscis_kernel::agent::tool::ToolSettings::from_settings(
@@ -1299,10 +1295,7 @@ pub async fn chat_send(
         prompt_artifacts.system_prompt,
         max_tokens,
         context_window,
-        piscis_kernel::agent::harness::config::ConfirmFlags {
-            confirm_shell,
-            confirm_file_write,
-        },
+        state.confirm_flags.clone(),
         Some(vision_capable),
         vision_delegate,
         vision_model.clone(),
@@ -2739,8 +2732,8 @@ This applies to every new task, no exceptions.
   `write_cells` takes a `cells` array of {{cell, value}} objects. Values starting with `=` are auto-treated as formulas.
 → **Word workflow**: create → add_paragraph (with style: 'Heading 1'..'Heading 4', 'List Bullet', 'Normal') → add_table (2D array) → add_picture → set_header_footer
   `find_replace` for template filling (replace placeholders like {{{{NAME}}}} with actual values).
-→ **PowerPoint workflow**: create → add_slides (batch array of {{title, content, layout}}) → add_image → export_pdf
-  `add_slides` creates multiple slides in one call. layout=1 (title only), 2 (title+content), 11 (blank).
+→ **PowerPoint workflow**: read_document/read_slides (extract slide text from .pptx) → create → add_slides (batch array of {{title, content, layout}}) → add_image → export_pdf
+  `read_document` returns JSON `[{{slide, text}}, ...]`. `add_slides` creates multiple slides in one call. layout=1 (title only), 2 (title+content), 11 (blank).
 → Do NOT use `shell` to write Office files — always use `office` actions which handle all escaping internally.
 → Use `uia` for UI-level interaction with Office apps
 

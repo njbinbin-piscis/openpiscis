@@ -250,9 +250,9 @@ export default function Skills() {
 
         <ConfirmDialog
           open={!!uninstallTarget}
-          title={t("skills.uninstallConfirmTitle", { defaultValue: "确认卸载" })}
+          title={t("skills.uninstallConfirmTitle")}
           message={t("skills.uninstallConfirm", { name: uninstallTarget ?? "" })}
-          confirmLabel={t("skills.uninstallBtn", { defaultValue: "卸载" })}
+          confirmLabel={t("skills.uninstallBtn")}
           cancelLabel={t("common.cancel")}
           loading={uninstalling}
           onConfirm={doUninstall}

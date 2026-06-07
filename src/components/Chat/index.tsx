@@ -2215,7 +2215,7 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
                   setUnreadCount(0);
                 }}
               >
-                ↓ {unreadCount} 条新消息
+                ↓ {t("chat.unreadMessages", { count: unreadCount })}
               </button>
             )}
 
@@ -2469,10 +2469,17 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
                   {contextPreview.model}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  {contextPreview.messages.length} 条消息 · 总计 ~{contextPreview.total_tokens.toLocaleString()} / {contextPreview.total_input_budget.toLocaleString()} tok
+                  {t("chat.contextPreviewStats", {
+                    count: contextPreview.messages.length,
+                    total: contextPreview.total_tokens.toLocaleString(),
+                    budget: contextPreview.total_input_budget.toLocaleString(),
+                  })}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  消息体 ~{contextPreview.messages_tokens.toLocaleString()} tok · 工具 {contextPreview.tool_count} 个
+                  {t("chat.contextPreviewBody", {
+                    tokens: contextPreview.messages_tokens.toLocaleString(),
+                    tools: contextPreview.tool_count,
+                  })}
                 </span>
                 {contextPreview.rolling_summary_version > 0 && (
                   <span style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-secondary)", padding: "2px 7px", borderRadius: 8, border: "1px solid var(--border)" }}>
@@ -2946,12 +2953,13 @@ function ArtifactsPanel({ artifacts }: { artifacts: SessionArtifact[] }) {
 }
 
 function FishProgressBadge({ progress }: { progress: NonNullable<ToolStep["fishProgress"]> }) {
+  const { t } = useTranslation();
   const statusLabel: Record<string, string> = {
-    thinking: "思考中",
-    thinking_text: "思考中",
-    tool_call: "调用工具",
-    tool_done: "工具完成",
-    done: "已完成",
+    thinking: t("chat.fishProgressThinking"),
+    thinking_text: t("chat.fishProgressThinking"),
+    tool_call: t("chat.fishProgressToolCall"),
+    tool_done: t("chat.fishProgressToolDone"),
+    done: t("chat.fishProgressDone"),
   };
   const label = statusLabel[progress.status] ?? progress.status;
   const isRunning = progress.status !== "done";
@@ -2962,7 +2970,7 @@ function FishProgressBadge({ progress }: { progress: NonNullable<ToolStep["fishP
       <span className="fish-progress-icon">🐠</span>
       <span className="fish-progress-name">{progress.fishName}</span>
       {progress.iteration > 0 && (
-        <span className="fish-progress-iter">第 {progress.iteration} 步</span>
+        <span className="fish-progress-iter">{t("chat.fishProgressStep", { n: progress.iteration })}</span>
       )}
       {progress.toolName && (
         <span className="fish-progress-tool">{progress.toolName}</span>
@@ -3019,7 +3027,7 @@ function ToolStepCard({ step, onToggle }: { step: ToolStep; onToggle: () => void
           {/* Fish progress detail when expanded */}
           {step.fishProgress && (
             <div className="tool-step-section">
-              <span className="tool-step-section-label">🐠 小鱼进度</span>
+              <span className="tool-step-section-label">🐠 {t("chat.fishProgressSection")}</span>
               <FishProgressBadge progress={step.fishProgress} />
             </div>
           )}

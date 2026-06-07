@@ -98,6 +98,8 @@ pub struct AppControlTool {
     /// to IM targets when the agent passes `targets: ["im_binding:..."]`,
     /// without coupling the tool to Tauri-specific state plumbing.
     pub gateway: Option<Arc<GatewayManager>>,
+    /// Live confirmation prefs — kept in sync when settings_set changes them.
+    pub confirm_flags: Option<piscis_kernel::agent::loop_::ConfirmFlagsHandle>,
 }
 
 impl AppControlTool {
@@ -1012,6 +1014,13 @@ impl AppControlTool {
 
         match s.save() {
             Ok(_) => {
+                if let Some(handle) = &self.confirm_flags {
+                    piscis_kernel::agent::loop_::sync_confirm_flags(
+                        handle,
+                        s.confirm_shell_commands,
+                        s.confirm_file_writes,
+                    );
+                }
                 self.emit_settings_changed();
                 Ok(ToolResult::ok(format!(
                     "Settings saved. Changed:\n{}",

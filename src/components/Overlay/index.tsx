@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -66,6 +67,7 @@ interface ContextMenuProps {
 }
 
 function ContextMenu({ onClose, onRestore, onQuit }: ContextMenuProps) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLUListElement>(null);
 
   // Close on outside click
@@ -82,10 +84,10 @@ function ContextMenu({ onClose, onRestore, onQuit }: ContextMenuProps) {
   return (
     <ul className="hud-menu" ref={ref}>
       <li onMouseDown={(e) => { e.stopPropagation(); onRestore(); }}>
-        🪟 恢复主界面
+        🪟 {t("overlay.restoreMain")}
       </li>
       <li onMouseDown={(e) => { e.stopPropagation(); onQuit(); }}>
-        ✕ 退出 OpenPiscis
+        ✕ {t("overlay.quit")}
       </li>
     </ul>
   );
@@ -96,6 +98,7 @@ function ContextMenu({ onClose, onRestore, onQuit }: ContextMenuProps) {
 let _toastId = 0;
 
 export default function OverlayApp() {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showMenu, setShowMenu] = useState(false);
   const [status, setStatus] = useState<"idle" | "running">("idle");
@@ -160,7 +163,9 @@ export default function OverlayApp() {
         setLastTool(p.name);
         addToast({
           icon: p.is_error ? "❌" : "✓",
-          text: p.is_error ? `${p.name} 失败` : `${p.name} 完成`,
+          text: p.is_error
+            ? t("overlay.toolFailed", { name: p.name })
+            : t("overlay.toolDone", { name: p.name }),
           kind: p.is_error ? "error" : "end",
         });
       } else if (p.type === "done") {
@@ -169,7 +174,7 @@ export default function OverlayApp() {
       }
     }).then((fn) => { unlisten = fn; });
     return () => { unlisten?.(); };
-  }, [addToast]);
+  }, [addToast, t]);
 
   // ── Restore main window ───────────────────────────────────────────────────
 
@@ -229,9 +234,9 @@ export default function OverlayApp() {
         <button
           className="hud-restore-btn"
           onClick={handleRestore}
-          title="恢复主界面"
+          title={t("overlay.restoreMain")}
         >
-          ↑ 恢复
+          ↑ {t("overlay.restore")}
         </button>
       </div>
 

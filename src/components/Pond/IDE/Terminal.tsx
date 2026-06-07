@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -18,6 +19,7 @@ export default function TerminalPanel({
   onClose,
   height,
 }: TerminalPanelProps) {
+  const { t } = useTranslation();
   const termRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -147,9 +149,9 @@ export default function TerminalPanel({
   return (
     <div className="ide-terminal-panel" style={height ? { height } : undefined}>
       <div className="ide-terminal-header">
-        <span className="term-title">Terminal</span>
+        <span className="term-title">{t("ide.terminal")}</span>
         <div style={{ flex: 1 }} />
-        <button onClick={onClose} title="Close terminal">✕</button>
+        <button onClick={onClose} title={t("ide.closeTerminal")}>✕</button>
       </div>
       <div className="ide-terminal-body" ref={containerRef} />
     </div>

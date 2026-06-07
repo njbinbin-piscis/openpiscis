@@ -256,9 +256,9 @@ export default function AssistantPanel({
         </button>
         <button onClick={clearLog} title={t("ide.assistantClear") || "Clear"}>⌫</button>
         {busy && (
-          <button onClick={cancelCurrent} title="Cancel">⏹</button>
+          <button onClick={cancelCurrent} title={t("ide.cancel")}>⏹</button>
         )}
-        <button onClick={onClose} title="Close">✕</button>
+        <button onClick={onClose} title={t("ide.closePanel")}>✕</button>
       </div>
       <div className="ide-assistant-body" ref={bodyRef}>
         {lines.length === 0 && (

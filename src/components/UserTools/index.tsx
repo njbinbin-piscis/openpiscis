@@ -30,7 +30,7 @@ function ConfigForm({ tool, onClose, onSaved }: ConfigFormProps) {
     setMessage("");
     try {
       await userToolsApi.saveConfig(tool.name, values);
-      setMessage(t("userTools.configSaved"));
+      setMessage(t("tools.configSaved"));
       onSaved();
     } catch (err) {
       setMessage(`${t("common.error")}: ${err}`);
@@ -85,7 +85,7 @@ function ConfigForm({ tool, onClose, onSaved }: ConfigFormProps) {
           type={isPassword ? "password" : "text"}
           className="config-input"
           value={value as string}
-          placeholder={isPassword ? (value === "••••••••" ? "已保存（留空不更改）" : placeholder) : placeholder}
+          placeholder={isPassword ? (value === "••••••••" ? t("tools.passwordSaved") : placeholder) : placeholder}
           onChange={(e) => {
             // If user clears the masked value, treat as "keep existing"
             if (isPassword && e.target.value === "") {
@@ -108,7 +108,7 @@ function ConfigForm({ tool, onClose, onSaved }: ConfigFormProps) {
     <div className="config-modal-overlay" onClick={onClose}>
       <div className="config-modal" onClick={(e) => e.stopPropagation()}>
         <div className="config-modal-header">
-          <h3>{t("userTools.configTitle")} — {tool.name}</h3>
+          <h3>{t("tools.configTitle")} — {tool.name}</h3>
           <button className="config-close-btn" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit} className="config-form">
@@ -116,14 +116,14 @@ function ConfigForm({ tool, onClose, onSaved }: ConfigFormProps) {
             renderField(key, schema)
           )}
           {Object.keys(tool.config_schema).length === 0 && (
-            <p className="config-empty">此工具无需配置</p>
+            <p className="config-empty">{t("tools.noConfigNeeded")}</p>
           )}
           <div className="config-actions">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               {t("common.cancel")}
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? t("userTools.savingConfig") : t("userTools.saveConfig")}
+              {saving ? t("tools.savingConfig") : t("tools.saveConfig")}
             </button>
           </div>
           {message && <p className="config-message">{message}</p>}
@@ -165,9 +165,9 @@ function ToolCard({ tool, onUninstall, onConfigure }: ToolCardProps) {
         <div className="tool-badges">
           <span className="badge badge-runtime">{tool.runtime}</span>
           {tool.has_config ? (
-            <span className="badge badge-ok">{t("userTools.hasConfig")}</span>
+            <span className="badge badge-ok">{t("tools.hasConfig")}</span>
           ) : (
-            <span className="badge badge-warn">{t("userTools.noConfig")}</span>
+            <span className="badge badge-warn">{t("tools.noConfig")}</span>
           )}
         </div>
       </div>
@@ -181,13 +181,13 @@ function ToolCard({ tool, onUninstall, onConfigure }: ToolCardProps) {
             className="btn btn-sm btn-secondary"
             onClick={() => onConfigure(tool)}
           >
-            {t("userTools.configure")}
+            {t("tools.configure")}
           </button>
           <button
             className="btn btn-sm btn-danger"
             onClick={() => onUninstall(tool.name)}
           >
-            {t("userTools.uninstall")}
+            {t("tools.uninstall")}
           </button>
         </div>
       </div>
@@ -228,11 +228,11 @@ export default function UserTools() {
     setStatus(null);
     try {
       await userToolsApi.install(installSource.trim());
-      setStatus({ type: "ok", msg: t("userTools.installSuccess") });
+      setStatus({ type: "ok", msg: t("tools.installSuccess") });
       setInstallSource("");
       await refresh();
     } catch (err) {
-      setStatus({ type: "err", msg: `${t("userTools.installFailed")}: ${err}` });
+      setStatus({ type: "err", msg: `${t("tools.installFailed")}: ${err}` });
     } finally {
       setInstalling(false);
     }
@@ -247,10 +247,10 @@ export default function UserTools() {
     setUninstalling(true);
     try {
       await userToolsApi.uninstall(uninstallTarget);
-      setStatus({ type: "ok", msg: t("userTools.uninstallSuccess") });
+      setStatus({ type: "ok", msg: t("tools.uninstallSuccess") });
       await refresh();
     } catch (err) {
-      setStatus({ type: "err", msg: `${t("userTools.uninstallFailed")}: ${err}` });
+      setStatus({ type: "err", msg: `${t("tools.uninstallFailed")}: ${err}` });
     } finally {
       setUninstalling(false);
       setUninstallTarget(null);
@@ -260,20 +260,20 @@ export default function UserTools() {
   return (
     <div className="user-tools-page">
       <div className="page-header">
-        <h2>{t("userTools.title")}</h2>
-        <p className="page-subtitle">{t("userTools.subtitle")}</p>
+        <h2>{t("tools.title")}</h2>
+        <p className="page-subtitle">{t("tools.subtitle")}</p>
       </div>
 
       {/* Install box */}
       <div className="install-box">
-        <h3 className="section-title">{t("userTools.installTitle")}</h3>
+        <h3 className="section-title">{t("tools.installTitle")}</h3>
         <div className="install-row">
           <input
             className="install-input"
             type="text"
             value={installSource}
             onChange={(e) => setInstallSource(e.target.value)}
-            placeholder={t("userTools.installPlaceholder")}
+            placeholder={t("tools.installPlaceholder")}
             onKeyDown={(e) => e.key === "Enter" && handleInstall()}
           />
           <button
@@ -281,10 +281,10 @@ export default function UserTools() {
             onClick={handleInstall}
             disabled={installing || !installSource.trim()}
           >
-            {installing ? t("userTools.installing") : t("userTools.installBtn")}
+            {installing ? t("tools.installing") : t("tools.installBtn")}
           </button>
         </div>
-        <p className="hint">{t("userTools.runtimeHint")}</p>
+        <p className="hint">{t("tools.runtimeHint")}</p>
         {status && (
           <div className={`status-banner status-${status.type}`}>{status.msg}</div>
         )}
@@ -292,11 +292,11 @@ export default function UserTools() {
 
       {/* Installed tools */}
       <div className="tools-list">
-        <h3 className="section-title">{t("userTools.installed")} ({tools.length})</h3>
+        <h3 className="section-title">{t("tools.installed")} ({tools.length})</h3>
         {loading ? (
           <div className="loading-row">{t("common.loading")}</div>
         ) : tools.length === 0 ? (
-          <div className="empty-state">{t("userTools.noTools")}</div>
+          <div className="empty-state">{t("tools.noTools")}</div>
         ) : (
           tools.map((tool) => (
             <ToolCard
@@ -323,9 +323,9 @@ export default function UserTools() {
 
       <ConfirmDialog
         open={!!uninstallTarget}
-        title={t("userTools.uninstall")}
+        title={t("tools.uninstall")}
         message={`${t("tools.confirmUninstall", { name: uninstallTarget ?? "" })}`}
-        confirmLabel={t("userTools.uninstall")}
+        confirmLabel={t("tools.uninstall")}
         cancelLabel={t("common.cancel")}
         loading={uninstalling}
         onConfirm={doUninstall}

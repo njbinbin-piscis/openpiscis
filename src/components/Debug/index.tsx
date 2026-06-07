@@ -420,7 +420,7 @@ function ScenarioListItem({
   onSelect: () => void;
   available?: boolean;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isEn = i18n.language.startsWith("en");
   const displayName = isEn && scenario.name_en ? scenario.name_en : scenario.name;
 
@@ -428,7 +428,7 @@ function ScenarioListItem({
     <div
       className={`dbg-scenario-item ${selected ? "selected" : ""} ${!available ? "unavailable" : ""}`}
       onClick={onSelect}
-      title={!available ? (isEn ? "Requires configuration — see Settings" : "需要先完成配置，请前往设置") : undefined}
+      title={!available ? t("debug.requiresConfigTitle") : undefined}
     >
       <span className="dbg-scenario-item-badge">
         {!available
@@ -470,7 +470,7 @@ function ScenarioDetail({
           className="dbg-btn dbg-btn-primary"
           onClick={onRun}
           disabled={isRunning || !available}
-          title={!available ? (isEn ? "Configure required settings first" : "请先在设置中完成相关配置") : undefined}
+          title={!available ? t("debug.configureFirstTitle") : undefined}
         >
           {isRunning ? t("debug.running") : t("debug.run")}
         </button>
@@ -479,9 +479,7 @@ function ScenarioDetail({
       {/* Unavailable notice */}
       {!available && (
         <div className="dbg-requires-config">
-          {isEn
-            ? "⚠ This scenario requires configuration. Go to Settings → SSH Servers to add a server."
-            : "⚠ 此场景需要先完成配置。请前往「设置 → SSH 服务器」添加服务器后再运行。"}
+          {t("debug.sshConfigRequired")}
         </div>
       )}
 

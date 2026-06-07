@@ -18,9 +18,13 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 
 ---
 
-## 🆕 What's New in v0.8.52
+## 🆕 What's New in v0.8.53
 
-**Pool project sync** — projects created from main chat show up in the Pond sidebar via real-time events, tab re-entry refresh, and a ↻ refresh button.
+**Live permission settings** — disabling shell/file-write confirmation in Settings takes effect immediately for running sessions. Plus i18n fixes (overlay, settings, debug) and Windows PPTX read improvements.
+
+## 🕘 v0.8.52 — Pool project sync
+
+Projects created from main chat show up in the Pond sidebar via real-time events, tab re-entry refresh, and a ↻ refresh button.
 
 ## 🕘 v0.8.51 — Input history
 

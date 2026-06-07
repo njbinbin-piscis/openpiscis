@@ -159,23 +159,7 @@ pub async fn trigger_heartbeat(state: State<'_, AppState>) -> Result<(), String>
     if !enabled {
         return Err("Heartbeat is not enabled in settings".into());
     }
-    let state_ref = crate::store::AppState {
-        db: state.db.clone(),
-        settings: state.settings.clone(),
-        plan_state: state.plan_state.clone(),
-        browser: state.browser.clone(),
-        cancel_flags: state.cancel_flags.clone(),
-        confirmation_responses: state.confirmation_responses.clone(),
-        interactive_responses: state.interactive_responses.clone(),
-        app_handle: state.app_handle.clone(),
-        scheduler: state.scheduler.clone(),
-        scheduled_job_ids: state.scheduled_job_ids.clone(),
-        gateway: state.gateway.clone(),
-        piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-        terminals: state.terminals.clone(),
-        file_watchers: state.file_watchers.clone(),
-        lsp_manager: state.lsp_manager.clone(),
-    };
+    let state_ref = (*state).clone();
     tokio::spawn(async move {
         let _ = crate::piscis::heartbeat::dispatch_heartbeat(&state_ref, &prompt, "internal").await;
     });

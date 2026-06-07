@@ -5,7 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { store, RootState, settingsActions, sessionsActions, chatActions } from "./store";
 import { settingsApi, sessionsApi, windowApi } from "./services/tauri";
 import { isInternalSession } from "./utils/session";
-import { setLanguage } from "./i18n";
+import i18n, { setLanguage } from "./i18n";
 import Chat from "./components/Chat";
 import Toaster from "./components/Toaster";
 import "./theme.css";
@@ -202,7 +202,7 @@ function AppContent() {
       <>
         <div className="loading-screen">
           <div className="loading-spinner" />
-          <p>Loading OpenPiscis...</p>
+          <p>{t("common.loadingApp")}</p>
         </div>
         <Toaster />
       </>
@@ -212,7 +212,7 @@ function AppContent() {
   if (showOnboarding) {
     return (
       <>
-        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
+        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>{t("common.loadingApp")}</p></div>}>
           <Onboarding onComplete={() => dispatch(settingsActions.setShowOnboarding(false))} />
         </Suspense>
         <Toaster />
@@ -289,7 +289,7 @@ function AppContent() {
         </div>
       </aside>
       <main className="main-content">
-        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
+        <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>{t("common.loadingApp")}</p></div>}>
           {mountedTabs.has("chat") && (
             <div className="tab-panel" hidden={activeTab !== "chat"}>
               <Chat
@@ -349,7 +349,7 @@ function AppContent() {
 export default function App() {
   if (IS_OVERLAY) {
     return (
-      <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>Loading OpenPiscis...</p></div>}>
+      <Suspense fallback={<div className="loading-screen"><div className="loading-spinner" /><p>{i18n.t("common.loadingApp")}</p></div>}>
         <OverlayApp />
       </Suspense>
     );

@@ -141,17 +141,11 @@ export default function FishPage({ embedded }: FishPageProps = {}) {
 
           <section className="fish-section fish-guide-section">
             <h3 className="fish-section-title">{t("fish.sectionGuide")}</h3>
-            <p className="fish-section-desc">在 <code>{fishDir ? `${fishDir}/my-fish/FISH.toml` : ".../fish/my-fish/FISH.toml"}</code> 创建文件：</p>
-            <pre className="fish-code-example">{`id = "my-fish"
-name = "我的小鱼"
-description = "专注于某类任务的助手"
-icon = "🐡"
-tools = ["file_read", "shell", "memory_store"]
-
-[agent]
-system_prompt = "你是一条专注于..."
-max_iterations = 20
-model = "default"`}</pre>
+            <p className="fish-section-desc">
+              {t("fish.guidePath")}{" "}
+              <code>{fishDir ? `${fishDir}/my-fish/FISH.toml` : ".../fish/my-fish/FISH.toml"}</code>
+            </p>
+            <pre className="fish-code-example">{t("fish.guideExample")}</pre>
           </section>
         </>
       )}

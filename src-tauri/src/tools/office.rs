@@ -44,6 +44,7 @@ impl Tool for OfficeTool {
          \n\
          **PowerPoint** (app=\"powerpoint\"):\n\
            create, open, close, save, save_as,\n\
+           read_document / read_slides (extract text from every slide),\n\
            add_slide (append slide with title+content),\n\
            add_slides (batch: array of {title,content,layout} objects),\n\
            set_slide_text (edit existing slide text),\n\
@@ -865,7 +866,7 @@ $word.Quit()
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Add($false)
 $pres.SaveAs($path, 24)
 $pres.Close()
@@ -881,13 +882,49 @@ $ppt.Quit()
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $true, $false, $false)
 $info = "File: " + $pres.Name + " | Slides: " + $pres.Slides.Count
 $pres.Close()
 $ppt.Quit()
 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($ppt) | Out-Null
 $info
+"#, path_var = ps_str(path)))
+            }
+
+            ("powerpoint", "read_document") | ("powerpoint", "read_slides") => {
+                let path = input["path"].as_str().unwrap_or("");
+                if path.is_empty() {
+                    return Err("read_document requires 'path' to the .pptx file".into());
+                }
+                Ok(format!(r#"
+$path = {path_var}
+$ppt = New-Object -ComObject PowerPoint.Application
+$ppt.Visible = 0
+$pres = $ppt.Presentations.Open($path, $true, $false, $false)
+$slides = @()
+foreach ($slide in @($pres.Slides)) {{
+    $parts = @()
+    foreach ($shape in @($slide.Shapes)) {{
+        try {{
+            if ($shape.HasTextFrame -eq -1) {{
+                $tf = $shape.TextFrame
+                if ($tf.HasText -eq -1) {{
+                    $t = $tf.TextRange.Text.Trim()
+                    if ($t) {{ $parts += $t }}
+                }}
+            }}
+        }} catch {{ }}
+    }}
+    $slides += [ordered]@{{
+        slide = $slide.SlideIndex
+        text = ($parts -join "`n")
+    }}
+}}
+$pres.Close()
+$ppt.Quit()
+[System.Runtime.Interopservices.Marshal]::ReleaseComObject($ppt) | Out-Null
+$slides | ConvertTo-Json -Depth 4 -Compress
 "#, path_var = ps_str(path)))
             }
 
@@ -902,7 +939,7 @@ $path = {path_var}
 $slideTitle = {title_var}
 $slideContent = {content_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $layout = $pres.SlideMaster.CustomLayouts.Item({layout})
 $slide = $pres.Slides.AddSlide($pres.Slides.Count + 1, $layout)
@@ -946,7 +983,7 @@ if ($slide{i}.Shapes.Count -ge 2 -and $c{i} -ne '') {{ $slide{i}.Shapes(2).TextF
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $existed = Test-Path $path
 if ($existed) {{
     $pres = $ppt.Presentations.Open($path, $false, $false, $false)
@@ -973,7 +1010,7 @@ $path = {path_var}
 $slideTitle = {title_var}
 $slideContent = {content_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $slide = $pres.Slides({idx})
 if ($slide.Shapes.Count -ge 1 -and $slideTitle -ne '') {{ $slide.Shapes(1).TextFrame.TextRange.Text = $slideTitle }}
@@ -996,7 +1033,7 @@ $ppt.Quit()
 $path = {path_var}
 $imgPath = {img_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $slide = $pres.Slides({idx})
 $slide.Shapes.AddPicture($imgPath, $false, $true, 50, 150, 600, 350) | Out-Null
@@ -1013,7 +1050,7 @@ $ppt.Quit()
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $true, $false, $false)
 $count = $pres.Slides.Count
 $pres.Close()
@@ -1032,7 +1069,7 @@ $ppt.Quit()
 $path = {path_var}
 $pdfPath = {pdf_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $pres.ExportAsFixedFormat($pdfPath, 2)
 $pres.Close()
@@ -1047,7 +1084,7 @@ $ppt.Quit()
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $pres.Save()
 $pres.Close()
@@ -1065,7 +1102,7 @@ $ppt.Quit()
 $path = {path_var}
 $newPath = {new_path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $pres.SaveAs($newPath, 24)
 $pres.Close()
@@ -1080,7 +1117,7 @@ $ppt.Quit()
                 Ok(format!(r#"
 $path = {path_var}
 $ppt = New-Object -ComObject PowerPoint.Application
-$ppt.Visible = [Microsoft.Office.Core.MsoTriState]::msoFalse
+$ppt.Visible = 0
 $pres = $ppt.Presentations.Open($path, $false, $false, $false)
 $pres.Close()
 $ppt.Quit()
@@ -1171,7 +1208,7 @@ $result | ConvertTo-Json -Depth 3
                 "Unknown action '{}' for app '{}'. \
                  Excel: create/open/close/save/save_as/write_cells/set_formula/read_range/get_sheet_names/add_sheet/add_chart/auto_fit/run_macro. \
                  Word: create/open/close/save/save_as/read_document/write_document/add_paragraph/append_text/add_table/add_picture/set_header_footer/find_replace. \
-                 PowerPoint: create/open/close/save/save_as/add_slide/add_slides/set_slide_text/add_image/get_slide_count/export_pdf. \
+                 PowerPoint: create/open/close/save/save_as/read_document/read_slides/add_slide/add_slides/set_slide_text/add_image/get_slide_count/export_pdf. \
                  Outlook: send_email/read_emails/get_calendar.",
                 action, app
             )),

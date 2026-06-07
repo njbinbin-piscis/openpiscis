@@ -42,6 +42,17 @@ const en = {
     showKeys: "Show Keys",
     hideKeys: "Hide Keys",
     builtin: "builtin",
+    collapse: "Collapse",
+    expand: "Expand",
+    navigate: "navigate",
+    select: "select",
+    dismiss: "dismiss",
+    loadingApp: "Loading OpenPiscis...",
+  },
+
+  app: {
+    defaultToastTitle: "Piscis",
+    toastDismiss: "Dismiss",
   },
 
   // Navigation
@@ -148,6 +159,9 @@ const en = {
     assistantSend: "Send",
     assistantClear: "Clear",
     assistantOpenMainChat: "Main Chat",
+    cancel: "Cancel",
+    closePanel: "Close",
+    closeTerminal: "Close terminal",
     commit: "Commit",
     commitPlaceholder: "Commit message (Ctrl+Enter to commit)",
     commitNeedMessage: "Enter a commit message first",
@@ -249,6 +263,16 @@ const en = {
     taskTimeoutKoiHelp:
       "0 = keep inheriting the project or system default; useful for slower specialist roles.",
     taskTimeoutStatTooltip: "Default task timeout",
+    statMemoryTitle: "Memory details",
+    statTodoTitle: "Todo details",
+    statLoading: "Loading…",
+    statNoMemory: "No memories yet",
+    statNoTodos: "No todos yet",
+    todoStatusTodo: "Todo",
+    todoStatusInProgress: "In progress",
+    todoStatusDone: "Done",
+    todoStatusCancelled: "Cancelled",
+    todoStatusBlocked: "Blocked",
   },
 
   // Chat Pool
@@ -301,6 +325,9 @@ const en = {
     noDelegateSelfPiscis: "You cannot @!Piscis to delegate to yourself. Use @!KoiName, or Piscis CLI in the IDE for a direct chat.",
     mustMention: "Send as Piscis and include @!KoiName (or @!all) to name a recipient.",
     mentionAll: "Everyone",
+    selectSession: "Select a project on the left",
+    orgSpecPlaceholder:
+      "# Project Goal\n\n# Koi Roles\n\n# Collaboration Rules\n\n# Success Metrics",
   },
 
   // Board
@@ -345,6 +372,7 @@ const en = {
     blockedReason: "Blocked Reason",
     resumeHint: "This task stopped, but it can still be resumed after review.",
     supersededHint: "This task has been replaced, so its original resume path is locked to avoid conflicts.",
+    selectProject: "Select a project on the left to view the task board",
   },
 
   // Fish
@@ -363,7 +391,26 @@ const en = {
     sectionUser: "Custom Fish",
     sectionUserDesc: "Drop a FISH.toml file in the fish directory to load",
     sectionGuide: "Create a custom Fish",
+    guidePath: "Create a file at",
+    guideExample: `id = "my-fish"
+name = "My Fish"
+description = "Assistant focused on a specific task type"
+icon = "🐡"
+tools = ["file_read", "shell", "memory_store"]
+
+[agent]
+system_prompt = "You are a fish focused on..."
+max_iterations = 20
+model = "default"`,
     empty: "No fish yet",
+  },
+
+  overlay: {
+    restoreMain: "Restore main window",
+    quit: "Quit OpenPiscis",
+    restore: "Restore",
+    toolFailed: "{{name}} failed",
+    toolDone: "{{name}} done",
   },
 
   school: {
@@ -474,6 +521,10 @@ const en = {
     failed: "Failed",
     idle: "Pending",
     run: "Run",
+    requiresConfigTitle: "Requires configuration — see Settings",
+    configureFirstTitle: "Configure required settings first",
+    sshConfigRequired:
+      "⚠ This scenario requires configuration. Go to Settings → SSH Servers to add a server.",
     passCount: "{{pass}}/{{total}} passed",
     logLines: "{{count}} lines",
     loadingScenarios: "Loading scenarios...",
@@ -691,6 +742,19 @@ const en = {
     reviewNew: "new",
     reviewEdit: "edit",
     reviewUndoFailed: "Undo failed",
+    workspaceOutsideAutoEnabled:
+      "The selected directory is outside the workspace root — \"Allow access outside workspace\" was turned on automatically.",
+    unreadMessages: "{{count}} new messages",
+    contextPreviewStats:
+      "{{count}} messages · ~{{total}} / {{budget}} tok total",
+    contextPreviewBody:
+      "Message body ~{{tokens}} tok · {{tools}} tools",
+    fishProgressThinking: "Thinking",
+    fishProgressToolCall: "Calling tool",
+    fishProgressToolDone: "Tool done",
+    fishProgressDone: "Done",
+    fishProgressStep: "Step {{n}}",
+    fishProgressSection: "Fish progress",
   },
 
   // Memory
@@ -727,6 +791,7 @@ const en = {
     installFailed: "Installation failed: {{error}}",
     uninstallBtn: "Uninstall",
     uninstallConfirm: "Uninstall skill \"{{name}}\"?",
+    uninstallConfirmTitle: "Uninstall Skill",
     uninstallSuccess: "Uninstalled: {{name}}",
     uninstallFailed: "Uninstall failed: {{error}}",
     sourceBadgeBuiltin: "builtin",
@@ -852,6 +917,14 @@ const en = {
     // AI Provider
     aiProvider: "AI Provider",
     provider: "Provider",
+    providerAnthropic: "Anthropic (Claude)",
+    providerOpenai: "OpenAI (GPT)",
+    providerDeepseek: "DeepSeek",
+    providerQwen: "Alibaba Bailian (Qwen)",
+    providerMinimax: "MiniMax",
+    providerZhipu: "Zhipu AI (GLM / Z.AI)",
+    providerKimi: "Kimi (Moonshot AI)",
+    providerCustom: "Custom (OpenAI compatible)",
     model: "Model",
     modelPlaceholder: "Model name",
     anthropicKey: "Anthropic API Key",
@@ -874,6 +947,27 @@ const en = {
     maxTokensHint: "Controls the maximum length of each model reply. Does not affect context window size.",
     contextWindow: "Context Window Size (tokens)",
     contextWindowHint: "The model's input context limit. 0 = auto (inferred from output setting). DeepSeek: 128000, GPT-4o: 128000, Claude: 200000, Gemini 1.5 Pro: 1000000.",
+
+    namedLlmTitle: "Named LLM providers",
+    namedLlmDesc:
+      "Configure multiple named LLM providers. Each Koi can pick one in its editor; otherwise the global default above is used.",
+    namedLlmNoModel: "(no model set)",
+    namedLlmEdit: "Edit",
+    namedLlmDelete: "Delete",
+    namedLlmAddTitle: "Add provider",
+    namedLlmEditTitle: "Edit provider",
+    namedLlmIdLabel: "ID (unique) *",
+    namedLlmLabelLabel: "Display name",
+    namedLlmLabelPlaceholder: "Work GPT-4",
+    namedLlmProviderTypeLabel: "Provider type *",
+    namedLlmModelLabel: "Model name *",
+    namedLlmApiKeyKeepHint: "leave blank to keep unchanged",
+    namedLlmApiKeyKeepPlaceholder: "(unchanged)",
+    namedLlmMaxTokensLabel: "Max output tokens (0 = inherit global)",
+    namedLlmAddBtn: "+ Add provider",
+    allowMultipleInstances: "Allow multiple instances",
+    allowMultipleInstancesDesc:
+      "When enabled, multiple OpenPiscis instances can run at once. When disabled, launching again focuses the existing window (takes effect after restart).",
 
     // Workspace
     workspace: "Workspace",

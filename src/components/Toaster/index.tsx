@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import "./Toaster.css";
 
@@ -60,6 +61,7 @@ function normalizeLevel(raw?: string): ToastLevel {
 }
 
 export default function Toaster() {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const dismiss = useCallback((id: string) => {
@@ -81,7 +83,7 @@ export default function Toaster() {
 
       const toast: Toast = {
         id: p.id || `toast_${Date.now()}_${Math.random()}`,
-        title: p.title?.trim() || "Piscis",
+        title: p.title?.trim() || t("app.defaultToastTitle"),
         message: p.message,
         level,
         poolId: p.pool_id,
@@ -109,25 +111,25 @@ export default function Toaster() {
 
   return (
     <div className="piscis-toaster" role="region" aria-label="Piscis notifications">
-      {toasts.map((t) => (
+      {toasts.map((toast) => (
         <div
-          key={t.id}
-          className={`piscis-toast piscis-toast-${t.level}`}
-          role={t.level === "critical" || t.level === "error" ? "alert" : "status"}
+          key={toast.id}
+          className={`piscis-toast piscis-toast-${toast.level}`}
+          role={toast.level === "critical" || toast.level === "error" ? "alert" : "status"}
         >
-          <div className="piscis-toast-icon">{LEVEL_ICONS[t.level]}</div>
+          <div className="piscis-toast-icon">{LEVEL_ICONS[toast.level]}</div>
           <div className="piscis-toast-body">
-            <div className="piscis-toast-title">{t.title}</div>
-            <div className="piscis-toast-message">{t.message}</div>
-            {t.poolId && (
-              <div className="piscis-toast-meta">pool: {t.poolId}</div>
+            <div className="piscis-toast-title">{toast.title}</div>
+            <div className="piscis-toast-message">{toast.message}</div>
+            {toast.poolId && (
+              <div className="piscis-toast-meta">pool: {toast.poolId}</div>
             )}
           </div>
           <button
             className="piscis-toast-close"
-            onClick={() => dismiss(t.id)}
-            aria-label="Dismiss"
-            title="Dismiss"
+            onClick={() => dismiss(toast.id)}
+            aria-label={t("app.toastDismiss")}
+            title={t("app.toastDismiss")}
           >
             ✕
           </button>

@@ -12,6 +12,7 @@ use tokio::sync::Mutex;
 use crate::lsp::manager::LspManager;
 
 /// Global application state managed by Tauri
+#[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Mutex<Database>>,
     pub settings: Arc<Mutex<Settings>>,
@@ -47,6 +48,8 @@ pub struct AppState {
     pub file_watchers: Arc<Mutex<std::collections::HashMap<String, notify::RecommendedWatcher>>>,
     /// LSP (Language Server Protocol) session manager
     pub lsp_manager: Arc<LspManager>,
+    /// Live shell/file-write confirmation prefs — agent loops read on each tool call.
+    pub confirm_flags: piscis_kernel::agent::loop_::ConfirmFlagsHandle,
 }
 
 impl AppState {
@@ -87,9 +90,15 @@ impl AppState {
             ..Default::default()
         };
 
+        let confirm_flags = piscis_kernel::agent::loop_::confirm_flags_handle(
+            settings.confirm_shell_commands,
+            settings.confirm_file_writes,
+        );
+
         Ok(Self {
             db: Arc::new(Mutex::new(db)),
             settings: Arc::new(Mutex::new(settings)),
+            confirm_flags,
             plan_state: Arc::new(Mutex::new(std::collections::HashMap::new())),
             cancel_flags: Arc::new(Mutex::new(std::collections::HashMap::new())),
             browser: robotz_browser::create_browser_manager(browser_options),

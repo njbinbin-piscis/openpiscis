@@ -312,24 +312,8 @@ fn run_impl() {
                 scheduler.start().await?;
                 store::AppState::new_sync(&app_handle, scheduler)
             })?;
-            let managed_state = store::AppState {
-                db: state.db.clone(),
-                settings: state.settings.clone(),
-                plan_state: state.plan_state.clone(),
-                browser: state.browser.clone(),
-                cancel_flags: state.cancel_flags.clone(),
-                confirmation_responses: state.confirmation_responses.clone(),
-                interactive_responses: state.interactive_responses.clone(),
-                app_handle: state.app_handle.clone(),
-                scheduler: state.scheduler.clone(),
-                scheduled_job_ids: state.scheduled_job_ids.clone(),
-                gateway: state.gateway.clone(),
-                piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-                terminals: state.terminals.clone(),
-                file_watchers: state.file_watchers.clone(),
-                lsp_manager: state.lsp_manager.clone(),
-            };
-            app.manage(managed_state);
+            let managed = state.clone();
+            app.manage(managed);
 
             // Warm the UIA-click calibration cache as early as possible so the
             // very first `uia.click` after launch (e.g. via the headless agent)
@@ -371,6 +355,7 @@ fn run_impl() {
                 let terminals = state.terminals.clone();
                 let file_watchers = state.file_watchers.clone();
                 let lsp_manager = state.lsp_manager.clone();
+                let confirm_flags = state.confirm_flags.clone();
                 let im_session_locks: std::sync::Arc<
                     tokio::sync::Mutex<
                         std::collections::HashMap<
@@ -423,6 +408,7 @@ fn run_impl() {
                                         terminals: terminals.clone(),
                                         file_watchers: file_watchers.clone(),
                                         lsp_manager: lsp_manager.clone(),
+                                        confirm_flags: confirm_flags.clone(),
                                     },
                                 )
                                 .await
@@ -588,6 +574,7 @@ fn run_impl() {
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
                                     lsp_manager: lsp_manager.clone(),
+                                    confirm_flags: confirm_flags.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -663,6 +650,7 @@ fn run_impl() {
                                     terminals: terminals.clone(),
                                     file_watchers: file_watchers.clone(),
                                     lsp_manager: lsp_manager.clone(),
+                                    confirm_flags: confirm_flags.clone(),
                                 };
 
                                 let gw = gateway.clone();
@@ -804,6 +792,7 @@ fn run_impl() {
                 let terminals_arc = state.terminals.clone();
                 let file_watchers_arc = state.file_watchers.clone();
                 let lsp_manager_arc = state.lsp_manager.clone();
+                let confirm_flags_arc = state.confirm_flags.clone();
                 tauri::async_runtime::spawn(async move {
                     loop {
                         let (enabled, interval_mins, prompt) = {
@@ -848,6 +837,7 @@ fn run_impl() {
                             terminals: terminals_arc.clone(),
                             file_watchers: file_watchers_arc.clone(),
                             lsp_manager: lsp_manager_arc.clone(),
+                            confirm_flags: confirm_flags_arc.clone(),
                         };
                         let _ = crate::piscis::heartbeat::dispatch_heartbeat(
                             &state_ref,
@@ -1106,40 +1096,10 @@ fn run_impl() {
                     }
                 }
 
-                let startup_headless_state = store::AppState {
-                    db: state.db.clone(),
-                    settings: state.settings.clone(),
-                    plan_state: state.plan_state.clone(),
-                    browser: state.browser.clone(),
-                    cancel_flags: state.cancel_flags.clone(),
-                    confirmation_responses: state.confirmation_responses.clone(),
-                    interactive_responses: state.interactive_responses.clone(),
-                    app_handle: app_handle.clone(),
-                    scheduler: state.scheduler.clone(),
-                    scheduled_job_ids: state.scheduled_job_ids.clone(),
-                    gateway: state.gateway.clone(),
-                    piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-                    terminals: state.terminals.clone(),
-                    file_watchers: state.file_watchers.clone(),
-                    lsp_manager: state.lsp_manager.clone(),
-                };
-                let startup_trial_state = store::AppState {
-                    db: state.db.clone(),
-                    settings: state.settings.clone(),
-                    plan_state: state.plan_state.clone(),
-                    browser: state.browser.clone(),
-                    cancel_flags: state.cancel_flags.clone(),
-                    confirmation_responses: state.confirmation_responses.clone(),
-                    interactive_responses: state.interactive_responses.clone(),
-                    app_handle: app_handle.clone(),
-                    scheduler: state.scheduler.clone(),
-                    scheduled_job_ids: state.scheduled_job_ids.clone(),
-                    gateway: state.gateway.clone(),
-                    piscis_heartbeat_cursor: state.piscis_heartbeat_cursor.clone(),
-                    terminals: state.terminals.clone(),
-                    file_watchers: state.file_watchers.clone(),
-                    lsp_manager: state.lsp_manager.clone(),
-                };
+                let mut startup_headless_state = state.clone();
+                startup_headless_state.app_handle = app_handle.clone();
+                let mut startup_trial_state = state.clone();
+                startup_trial_state.app_handle = app_handle.clone();
 
                 if let Ok(prompt) = std::env::var("PISCIS_HEADLESS_PROMPT") {
                     if !prompt.trim().is_empty() {

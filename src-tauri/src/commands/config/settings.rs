@@ -549,6 +549,11 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
     let headless = settings.browser_headless;
     settings.save().map_err(|e| e.to_string())?;
     let saved = settings.clone();
+    piscis_kernel::agent::loop_::sync_confirm_flags(
+        &state.confirm_flags,
+        saved.confirm_shell_commands,
+        saved.confirm_file_writes,
+    );
     drop(settings); // release lock before touching browser
 
     // Sync headless mode to browser manager (takes effect on next browser launch)

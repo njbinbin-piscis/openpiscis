@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -17,13 +18,16 @@ export default function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = "确认",
-  cancelLabel = "取消",
+  confirmLabel,
+  cancelLabel,
   variant = "danger",
   loading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedConfirm = confirmLabel ?? t("common.confirm");
+  const resolvedCancel = cancelLabel ?? t("common.cancel");
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape" && !loading) onCancel();
@@ -100,7 +104,7 @@ export default function ConfirmDialog({
               cursor: loading ? "default" : "pointer",
             }}
           >
-            {cancelLabel}
+            {resolvedCancel}
           </button>
           <button
             onClick={onConfirm}
@@ -117,7 +121,7 @@ export default function ConfirmDialog({
               color: "#fff",
             }}
           >
-            {loading ? "..." : confirmLabel}
+            {loading ? "..." : resolvedConfirm}
           </button>
         </div>
       </div>
