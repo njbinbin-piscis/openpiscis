@@ -21,6 +21,12 @@ import { poolApi, koiApi, PoolMessage, KoiWithStats } from "../../../services/ta
 import { RootState, poolActions, koiActions, boardActions, POOL_DEFAULT_CAPACITY, parseMentions, hasMentions } from "../../../store";
 import { useScrollPrependedHistory } from "../../../hooks/useScrollPrependedHistory";
 import { containsDelegatedPiscisMention } from "../../../utils/poolMention";
+import {
+  handleInputHistoryKeyDown,
+  pushInputHistory,
+  resetInputHistoryNav,
+  seedInputHistory,
+} from "../../../utils/inputHistory";
 import ConfirmDialog from "../../ConfirmDialog";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import type { FileNode, OpenTab, GitFileStatus } from "../IDE/types";
@@ -180,6 +186,16 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
   const kois = useSelector((s: RootState) => s.koi.kois);
 
   const messages = activeSessionId ? messagesBySession[activeSessionId] ?? [] : [];
+  const poolInputHistoryScope = activeSessionId ? `pool:${activeSessionId}` : null;
+
+  useEffect(() => {
+    if (!poolInputHistoryScope) return;
+    const texts = messages
+      .filter((m) => m.sender_id === "piscis")
+      .map((m) => m.content);
+    seedInputHistory(poolInputHistoryScope, texts);
+  }, [poolInputHistoryScope, messages]);
+
   const hasMore = activeSessionId ? hasMoreBySession[activeSessionId] ?? false : false;
   const activeSession = useMemo(() => sessions.find((s) => s.id === activeSessionId), [sessions, activeSessionId]);
   const projectDir = activeSession?.project_dir ?? null;
@@ -837,6 +853,8 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
         msg_type: "mention",
         metadata,
       });
+      if (poolInputHistoryScope) pushInputHistory(poolInputHistoryScope, text);
+      if (poolInputHistoryScope) resetInputHistoryNav(poolInputHistoryScope);
       setUserInput("");
     } catch (e) {
       console.error("[Collab] send message error:", e);
@@ -873,8 +891,12 @@ export default function Collab({ onNavigateToSchoolKoi }: CollabProps) {
         return;
       }
     }
+    if (poolInputHistoryScope && handleInputHistoryKeyDown(e, poolInputHistoryScope, setUserInput)) {
+      return;
+    }
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
+      if (poolInputHistoryScope) resetInputHistoryNav(poolInputHistoryScope);
       handleSendMessage();
     }
   };

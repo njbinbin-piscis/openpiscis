@@ -19,6 +19,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { sessionsApi, chatApi, type AgentEventType } from "../../../services/tauri/chat";
 import { RootState, sessionsActions } from "../../../store";
 import { isPondCliSession } from "../../../utils/session";
+import {
+  handleInputHistoryKeyDown,
+  pushInputHistory,
+  resetInputHistoryNav,
+} from "../../../utils/inputHistory";
 
 interface AssistantPanelProps {
   projectDir: string | null;
@@ -169,9 +174,13 @@ export default function AssistantPanel({
     unlistenRef.current = unlisten;
   }, [append, updateLastAssistant]);
 
+  const cliInputHistoryScope = `cli:${projectDir ?? "global"}`;
+
   const sendCurrent = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
+    pushInputHistory(cliInputHistoryScope, text);
+    resetInputHistoryNav(cliInputHistoryScope);
     setInput("");
     append({ kind: "user", text });
     setBusy(true);
@@ -186,7 +195,7 @@ export default function AssistantPanel({
       append({ kind: "error", text: `send failed: ${String(err)}` });
       setBusy(false);
     }
-  }, [input, busy, append, ensureSession, subscribe]);
+  }, [input, busy, append, ensureSession, subscribe, cliInputHistoryScope]);
 
   const cancelCurrent = useCallback(async () => {
     const sid = sessionIdRef.current;
@@ -275,8 +284,10 @@ export default function AssistantPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
+            if (handleInputHistoryKeyDown(e, cliInputHistoryScope, setInput)) return;
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
+              resetInputHistoryNav(cliInputHistoryScope);
               sendCurrent();
             }
           }}

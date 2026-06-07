@@ -18,9 +18,13 @@ OpenPiscis is a local-first AI Agent desktop application built with Tauri 2 + Ru
 
 ---
 
-## 🆕 What's New in v0.8.50
+## 🆕 What's New in v0.8.51
 
-**Skill picker** — composer skill dropdown lists user-installed skills only; five built-in skills stay available via progressive `skill_list` and are hidden from explicit selection.
+**Input history** — press ↑/↓ in the main chat, pool chat, or IDE CLI to recall previous sends; each input box keeps its own history.
+
+## 🕘 v0.8.50 — Skill picker
+
+Composer skill dropdown lists user-installed skills only; built-in skills stay available via progressive `skill_list`.
 
 ## 🕘 v0.8.49 — CI release fix
 

@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.51] - 2026-06-07
+
+### Added
+- **Input history (↑/↓)**: restore previously sent text with arrow keys in the main chat composer, pool collab chat, and IDE CLI assistant — each input keeps its own independent history (per session / per pool / per project).
+
+---
+
 ## [0.8.50] - 2026-06-07
 
 ### Changed

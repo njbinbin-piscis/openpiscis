@@ -25,6 +25,12 @@ import {
   pickMainChatActiveSession,
 } from "../../utils/session";
 import { composerSelectableSkills } from "../../utils/skills";
+import {
+  handleInputHistoryKeyDown,
+  pushInputHistory,
+  resetInputHistoryNav,
+  seedInputHistory,
+} from "../../utils/inputHistory";
 import "./Chat.css";
 
 // ─── Mermaid diagram block ────────────────────────────────────────────────────
@@ -403,8 +409,6 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
     : undefined;
 
   // ── Input history navigation (up/down arrows) ──────────────────────────
-  const [historyIndex, setHistoryIndex] = useState(-1); // -1 = not navigating, 0 = oldest, N-1 = newest
-  const historyDraftRef = useRef<string>(""); // preserved draft before navigating history
 
   // Composer: one-shot attachments/skills per send; Koi persona stays until user clears
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachmentItem[]>([]);
@@ -590,6 +594,15 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
   }, [dispatch]);
 
   const rawMessages = displaySessionId ? messagesBySession[displaySessionId] ?? [] : [];
+  const chatInputHistoryScope = displaySessionId ? `chat:${displaySessionId}` : null;
+
+  useEffect(() => {
+    if (!chatInputHistoryScope) return;
+    const texts = rawMessages
+      .filter((m) => m.role === "user" && !m.id.startsWith("optimistic_"))
+      .map((m) => m.content);
+    seedInputHistory(chatInputHistoryScope, texts);
+  }, [chatInputHistoryScope, rawMessages]);
 
   const interactiveCards = displaySessionId
     ? interactiveCardsBySession[displaySessionId] ?? {}
@@ -801,9 +814,6 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
     scrollRestoreRef.current = null;
     loadingMoreRef.current = false;
     setLoadingMoreHistory(false);
-    // Reset history navigation on session switch
-    setHistoryIndex(-1);
-    historyDraftRef.current = "";
     prevLastChatIdRef.current = null;
     isNearBottomRef.current = true;
     setActiveArtifacts([]);
@@ -1697,6 +1707,10 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
   ) => {
     if (!displaySessionId) return;
 
+    if (content.trim()) {
+      pushInputHistory(`chat:${displaySessionId}`, content);
+    }
+
     dispatch(chatActions.clearToolSteps(displaySessionId));
     if (clearPlan) dispatch(chatActions.clearPlan(displaySessionId));
     dispatch(chatActions.clearStreaming(displaySessionId));
@@ -1845,89 +1859,15 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
     setPermissionRequest(null);
   }, [permissionRequest]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // Reset history navigation on send
-      setHistoryIndex(-1);
-      historyDraftRef.current = "";
+      if (chatInputHistoryScope) resetInputHistoryNav(chatInputHistoryScope);
       handleSend();
       return;
     }
 
-    // ── Arrow-up / down: navigate sent-message history ──────────────────
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-      // Only intercept when cursor is at start of textarea (or on empty input)
-      const ta = textareaRef.current;
-      if (ta) {
-        const atStart = ta.selectionStart === 0 && ta.selectionEnd === 0;
-        const isSingleLine = ta.value.indexOf("\n") === -1;
-        // Intercept up-arrow at start of line, or on empty/single-line input
-        const interceptUp = e.key === "ArrowUp" && (atStart || isSingleLine);
-        const interceptDown = e.key === "ArrowDown" && historyIndex >= 0;
-        if (!interceptUp && !interceptDown) return;
-      }
-
-      e.preventDefault();
-
-      // Collect user-sent messages (real, not optimistic) for this session
-      const userMessages = rawMessages.filter(
-        (m) => m.role === "user" && !m.id.startsWith("optimistic_")
-      );
-      if (userMessages.length === 0) return;
-
-      // On first arrow-up: save current draft and start from newest
-      if (e.key === "ArrowUp") {
-        if (historyIndex < 0) {
-          historyDraftRef.current = input;
-          setHistoryIndex(userMessages.length - 1); // newest
-          setInput(userMessages[userMessages.length - 1].content);
-        } else if (historyIndex > 0) {
-          const next = historyIndex - 1;
-          setHistoryIndex(next);
-          setInput(userMessages[next].content);
-        }
-        // historyIndex === 0: already at oldest, do nothing
-      } else {
-        // ArrowDown
-        if (historyIndex < 0) return; // shouldn't reach here due to guard above
-        if (historyIndex < userMessages.length - 1) {
-          const next = historyIndex + 1;
-          setHistoryIndex(next);
-          setInput(userMessages[next].content);
-        } else {
-          // Past newest: restore draft
-          setHistoryIndex(-1);
-          setInput(historyDraftRef.current);
-          historyDraftRef.current = "";
-        }
-      }
-
-      // Move cursor to end of input after setting value
-      requestAnimationFrame(() => {
-        const ta = textareaRef.current;
-        if (ta) {
-          ta.selectionStart = ta.selectionEnd = ta.value.length;
-        }
-      });
-      return;
-    }
-
-    // ── Escape: exit history navigation, restore draft ──────────────────
-    if (e.key === "Escape" && historyIndex >= 0) {
-      e.preventDefault();
-      setHistoryIndex(-1);
-      setInput(historyDraftRef.current);
-      historyDraftRef.current = "";
-      return;
-    }
-
-    // Any other key while navigating: exit history and keep the displayed text as draft
-    if (historyIndex >= 0 && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      // Exit history mode so the user's typed character appends normally
-      historyDraftRef.current = "";
-      setHistoryIndex(-1);
-      // Let the key event pass through naturally — the onChange handler will pick it up
+    if (chatInputHistoryScope && handleInputHistoryKeyDown(e, chatInputHistoryScope, setInput)) {
       return;
     }
   };
