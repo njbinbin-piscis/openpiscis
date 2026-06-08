@@ -138,6 +138,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--sidebar-bg);
 }
 
 .ide-sidebar-header button {
@@ -175,7 +179,7 @@
 .file-tree-item {
   display: flex;
   align-items: center;
-  padding: 3px 12px;
+  padding: 1px 12px;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;

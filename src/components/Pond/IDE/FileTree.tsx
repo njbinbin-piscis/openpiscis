@@ -147,6 +147,8 @@ function TreeNode({
   depth,
   creating,
   renaming,
+  expandAllVersion,
+  collapseAllVersion,
   onCommitCreate,
   onCancelCreate,
   onStartRename,
@@ -164,6 +166,8 @@ function TreeNode({
   depth: number;
   creating: CreatingState | null;
   renaming: RenamingState | null;
+  expandAllVersion: number;
+  collapseAllVersion: number;
   onCommitCreate: (name: string) => void;
   onCancelCreate: () => void;
   onStartRename: (path: string) => void;
@@ -177,6 +181,15 @@ function TreeNode({
   useEffect(() => {
     if (isCreateTarget) setExpanded(true);
   }, [isCreateTarget]);
+
+  // Respond to "expand all" / "collapse all" signals from the header buttons
+  useEffect(() => {
+    if (node.is_dir && expandAllVersion > 0) setExpanded(true);
+  }, [expandAllVersion, node.is_dir]);
+
+  useEffect(() => {
+    if (node.is_dir && collapseAllVersion > 0) setExpanded(false);
+  }, [collapseAllVersion, node.is_dir]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -288,6 +301,8 @@ function TreeNode({
               depth={depth + 1}
               creating={creating}
               renaming={renaming}
+              expandAllVersion={expandAllVersion}
+              collapseAllVersion={collapseAllVersion}
               onCommitCreate={onCommitCreate}
               onCancelCreate={onCancelCreate}
               onStartRename={onStartRename}
@@ -319,6 +334,8 @@ export default function FileTree({
   const { t } = useTranslation();
   const [creating, setCreating] = useState<CreatingState | null>(null);
   const [renaming, setRenaming] = useState<RenamingState | null>(null);
+  const [expandAllVersion, setExpandAllVersion] = useState(0);
+  const [collapseAllVersion, setCollapseAllVersion] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
   /** Determine the target parent directory for a new file/folder based on
@@ -507,6 +524,22 @@ export default function FileTree({
         <div className="ide-sidebar-header-actions">
           <button
             type="button"
+            onClick={() => setCollapseAllVersion(v => v + 1)}
+            title={t("ide.collapseAll") || "Collapse All"}
+            aria-label={t("ide.collapseAll") || "Collapse All"}
+          >
+            ⊟
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpandAllVersion(v => v + 1)}
+            title={t("ide.expandAll") || "Expand All"}
+            aria-label={t("ide.expandAll") || "Expand All"}
+          >
+            ⊞
+          </button>
+          <button
+            type="button"
             onClick={() => startCreate(false)}
             disabled={!projectDir}
             title={t("ide.newFile") || "New File"}
@@ -561,6 +594,8 @@ export default function FileTree({
               depth={0}
               creating={creating}
               renaming={renaming}
+              expandAllVersion={expandAllVersion}
+              collapseAllVersion={collapseAllVersion}
               onCommitCreate={commitCreate}
               onCancelCreate={cancelCreate}
               onStartRename={startRename}
