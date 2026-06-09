@@ -92,10 +92,68 @@ pub fn install_to_installed(
     let skill_file = skill_dir.join("SKILL.md");
     std::fs::write(&skill_file, content)?;
 
-    if source == "clawhub" {
+    if source == "clawhub" || source == "claude-plugins-official" {
         let _ = provenance::add_hub_lock(root, &skill_id);
     }
     Ok((skill_id, skill.name))
+}
+
+/// Install a skill directory (SKILL.md + bundled scripts/references/assets).
+pub fn install_from_skill_dir(
+    db: &Database,
+    root: &Path,
+    src_dir: &Path,
+    source: &str,
+    source_url: Option<String>,
+    session_id: Option<String>,
+) -> Result<(String, String)> {
+    provenance::ensure_evolution_dirs(root)?;
+    let skill_md = src_dir.join("SKILL.md");
+    let content =
+        std::fs::read_to_string(&skill_md).with_context(|| format!("read {:?}", skill_md))?;
+    let loader = SkillLoader::new(root);
+    let skill = loader
+        .parse_skill_from_content(&content)
+        .context("parse SKILL.md")?;
+    if skill.name.is_empty() || skill.name == "unnamed" {
+        anyhow::bail!("SKILL.md must declare a name");
+    }
+    let skill_id = sanitize_skill_id(&skill.name);
+    let meta = SkillConfigMeta::installed(source, source_url, session_id);
+    register_skill_db(
+        db,
+        &skill_id,
+        &skill.name,
+        &skill.description,
+        &meta,
+        Some(source),
+    )?;
+
+    let dest_dir = provenance::installed_dir(root).join(&skill_id);
+    if dest_dir.exists() {
+        std::fs::remove_dir_all(&dest_dir)?;
+    }
+    copy_dir_all(src_dir, &dest_dir)?;
+
+    if source == "clawhub" || source == "claude-plugins-official" {
+        let _ = provenance::add_hub_lock(root, &skill_id);
+    }
+    Ok((skill_id, skill.name))
+}
+
+fn copy_dir_all(src: &Path, dest: &Path) -> Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let path = entry.path();
+        let dest_path = dest.join(entry.file_name());
+        if path.is_dir() {
+            copy_dir_all(&path, &dest_path)?;
+        } else {
+            std::fs::copy(&path, &dest_path)?;
+        }
+    }
+    Ok(())
 }
 
 pub fn create_draft(

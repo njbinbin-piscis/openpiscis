@@ -45,7 +45,7 @@ piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", 
 
 [package]
 name = "piscis-desktop"
-version = "0.8.57"
+version = "0.8.58"
 autobins = false
 default-run = "piscis-desktop"
 description = "OpenPiscis - Open-source cross-platform AI Agent Desktop"
@@ -140,6 +140,9 @@ urlencoding = "2"
 qrcode = "0.14"
 # ZIP extraction for skill / user-tool bundle installs
 zip = { version = "2", default-features = false, features = ["deflate"] }
+# Tarball extraction for Claude official plugin git-subdir installs
+tar = "0.4"
+flate2 = "1"
 
 # SSH client - use ring backend to avoid NASM dependency on Windows
 russh = { version = "0.57", default-features = false, features = ["ring"] }

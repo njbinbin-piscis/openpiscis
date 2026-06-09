@@ -6,6 +6,15 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.58] - 2026-06-10
+
+### Added
+- **Anthropic official plugins**: browse `claude-plugins-official` in-app (Skills → Anthropic 官方); git-subdir tarball fetch installs all `skills/*/SKILL.md` bundles with scripts/references/assets.
+- **Tauri API**: `claude_plugins_list`, `claude_plugins_detail`, `claude_plugins_install`.
+- **`install_from_skill_dir`**: full skill directory install (not only `SKILL.md`); hub-locked under source `claude-plugins-official`.
+
+---
+
 ## [0.8.57] - 2026-06-10
 
 ### Added

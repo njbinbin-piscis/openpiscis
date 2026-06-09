@@ -5,6 +5,7 @@
 //!
 //! - [`settings`] — global settings (LLM, theme, workspace, …)
 //! - [`skills`] — skill catalog & install/uninstall, Clawhub bridge
+//! - [`claude_plugins`] — Anthropic official plugin git-subdir install
 //! - [`memory`] — long-term memory listing / add / delete
 //! - [`mcp`] — MCP server list / save / test
 //! - [`tools`] — builtin tool listing + manual heartbeat trigger
@@ -18,6 +19,7 @@
 pub mod activity;
 pub mod audit;
 pub mod bundled_mcp;
+pub mod claude_plugins;
 pub mod enterprise_capability;
 pub mod mcp;
 pub mod memory;

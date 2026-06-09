@@ -5,10 +5,13 @@ import { RootState, skillsActions } from "../../store";
 import {
   skillsApi,
   clawHubApi,
+  claudePluginsApi,
   skillEvolutionApi,
   parseSkillConfig,
   SkillCatalogItem,
   ClawHubSkill,
+  ClaudePluginListItem,
+  ClaudePluginDetail,
   SkillCompatibilityCheck,
   CuratorStatus,
   SkillRevision,
@@ -47,12 +50,21 @@ export default function Skills() {
   const [syncing, setSyncing] = useState(false);
 
   // ClawHub marketplace
-  const [hubTab, setHubTab] = useState<"local" | "evolution" | "hub">("local");
+  const [hubTab, setHubTab] = useState<"local" | "evolution" | "hub" | "official">("local");
   const [hubQuery, setHubQuery] = useState("");
   const [hubResults, setHubResults] = useState<ClawHubSkill[]>([]);
   const [hubSearching, setHubSearching] = useState(false);
   const [hubError, setHubError] = useState<string | null>(null);
   const [hubInstalling, setHubInstalling] = useState<string | null>(null);
+
+  // Anthropic official plugins
+  const [officialQuery, setOfficialQuery] = useState("");
+  const [officialPlugins, setOfficialPlugins] = useState<ClaudePluginListItem[]>([]);
+  const [officialSearching, setOfficialSearching] = useState(false);
+  const [officialError, setOfficialError] = useState<string | null>(null);
+  const [officialDetail, setOfficialDetail] = useState<ClaudePluginDetail | null>(null);
+  const [officialDetailLoading, setOfficialDetailLoading] = useState(false);
+  const [officialInstalling, setOfficialInstalling] = useState<string | null>(null);
 
   // Skill evolution
   const [curatorStatus, setCuratorStatus] = useState<CuratorStatus | null>(null);
@@ -204,6 +216,66 @@ export default function Skills() {
       setHubSearching(false);
     }
   }, [hubQuery, t]);
+
+  const handleOfficialSearch = useCallback(async () => {
+    setOfficialSearching(true);
+    setOfficialError(null);
+    setOfficialDetail(null);
+    try {
+      const result = await claudePluginsApi.list(officialQuery.trim(), 50);
+      setOfficialPlugins(result.items);
+      if (result.items.length === 0) {
+        setOfficialError(t("skills.officialNoResults"));
+      }
+    } catch (e) {
+      setOfficialError(t("skills.officialSearchFailed", { error: String(e) }));
+    } finally {
+      setOfficialSearching(false);
+    }
+  }, [officialQuery, t]);
+
+  useEffect(() => {
+    if (hubTab === "official" && officialPlugins.length === 0 && !officialSearching) {
+      handleOfficialSearch();
+    }
+  }, [hubTab, officialPlugins.length, officialSearching, handleOfficialSearch]);
+
+  const handleOfficialSelect = async (plugin: ClaudePluginListItem) => {
+    setOfficialDetailLoading(true);
+    setOfficialError(null);
+    try {
+      const detail = await claudePluginsApi.detail(plugin.id);
+      setOfficialDetail(detail);
+    } catch (e) {
+      setOfficialError(t("skills.officialDetailFailed", { error: String(e) }));
+    } finally {
+      setOfficialDetailLoading(false);
+    }
+  };
+
+  const handleOfficialInstall = async (pluginId: string, skillDirs?: string[]) => {
+    setOfficialInstalling(pluginId);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const result = await claudePluginsApi.install(pluginId, skillDirs);
+      const names = result.installed.map((s) => s.name).join(", ");
+      if (names) {
+        setSuccessMsg(t("skills.officialInstallSuccess", { names, count: result.installed.length }));
+      }
+      if (result.errors.length > 0) {
+        setError(t("skills.officialInstallPartial", { errors: result.errors.join("; ") }));
+      }
+      loadSkills();
+      if (officialDetail?.plugin.id === pluginId) {
+        await handleOfficialSelect(officialDetail.plugin);
+      }
+    } catch (e) {
+      setError(t("skills.installFailed", { error: String(e) }));
+    } finally {
+      setOfficialInstalling(null);
+    }
+  };
 
   const handleHubInstall = async (skill: ClawHubSkill) => {
     // Block install if we already know it's incompatible
@@ -359,7 +431,7 @@ export default function Skills() {
 
         {/* Tab switcher */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
-          {(["local", "evolution", "hub"] as const).map((tab) => (
+          {(["local", "evolution", "hub", "official"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setHubTab(tab)}
@@ -379,7 +451,9 @@ export default function Skills() {
                 ? `⚡ ${t("skills.tabLocal")}`
                 : tab === "evolution"
                   ? `🧬 ${t("skills.tabEvolution")}`
-                  : `🛒 ${t("skills.tabHub")}`}
+                  : tab === "hub"
+                    ? `🛒 ${t("skills.tabHub")}`
+                    : `🏛 ${t("skills.tabOfficial")}`}
             </button>
           ))}
         </div>
@@ -637,6 +711,125 @@ export default function Skills() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {hubTab === "official" && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 8, fontSize: 14 }}>
+                🏛 {t("skills.officialSearch")}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  value={officialQuery}
+                  onChange={(e) => setOfficialQuery(e.target.value)}
+                  placeholder={t("skills.officialSearchPlaceholder")}
+                  onKeyDown={(e) => e.key === "Enter" && handleOfficialSearch()}
+                  disabled={officialSearching}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={handleOfficialSearch}
+                  disabled={officialSearching}
+                  style={{ flexShrink: 0 }}
+                >
+                  {officialSearching ? t("common.loading") : t("common.search")}
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                {t("skills.officialHint")}
+              </p>
+            </div>
+
+            {officialError && (
+              <div style={{ padding: "8px 14px", background: "rgba(220,53,69,0.1)", borderLeft: "3px solid #dc3545", color: "#ff6b6b", fontSize: 12, marginBottom: 12 }}>
+                {officialError}
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: officialDetail ? "1fr 1.2fr" : "1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12, alignContent: "start" }}>
+                {officialPlugins.length === 0 && !officialSearching && !officialError && (
+                  <div className="empty-state" style={{ padding: "28px 16px", gridColumn: "1 / -1" }}>
+                    <div className="empty-state-title">{t("skills.officialEmpty")}</div>
+                    <div className="empty-state-desc">{t("skills.officialEmptyDesc")}</div>
+                  </div>
+                )}
+                {officialPlugins.map((plugin) => (
+                  <div
+                    key={plugin.id}
+                    className="card"
+                    style={{
+                      padding: 12,
+                      cursor: "pointer",
+                      border: officialDetail?.plugin.id === plugin.id ? "1px solid var(--accent)" : undefined,
+                    }}
+                    onClick={() => handleOfficialSelect(plugin)}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>{plugin.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>
+                      {plugin.category || "plugin"} · {plugin.author}
+                    </div>
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>
+                      {plugin.description || t("skills.noDescription")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {officialDetail && (
+                <div className="card" style={{ padding: 14, alignSelf: "start" }}>
+                  {officialDetailLoading ? (
+                    <div>{t("common.loading")}</div>
+                  ) : (
+                    <>
+                      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{officialDetail.plugin.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
+                        {officialDetail.plugin.source_path}
+                        {officialDetail.plugin.homepage && (
+                          <> · <a href={officialDetail.plugin.homepage} target="_blank" rel="noreferrer">GitHub</a></>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                        {officialDetail.plugin.description}
+                      </p>
+                      {officialDetail.skills.length === 0 ? (
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t("skills.officialNoSkills")}</div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                            {t("skills.officialSkillsTitle", { count: officialDetail.skills.length })}
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                            {officialDetail.skills.map((skill) => (
+                              <div key={skill.dir_name} style={{ padding: 8, border: "1px solid var(--border)", borderRadius: 6 }}>
+                                <div style={{ fontWeight: 600, fontSize: 13 }}>{skill.name}</div>
+                                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{skill.dir_name}</div>
+                                <p style={{ fontSize: 12, margin: "4px 0 0", color: "var(--text-secondary)" }}>
+                                  {skill.description || t("skills.noDescription")}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            className="btn btn-primary"
+                            disabled={officialInstalling === officialDetail.plugin.id}
+                            onClick={() => handleOfficialInstall(officialDetail.plugin.id)}
+                          >
+                            {officialInstalling === officialDetail.plugin.id
+                              ? t("skills.installing")
+                              : t("skills.officialInstallAll", { count: officialDetail.skills.length })}
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

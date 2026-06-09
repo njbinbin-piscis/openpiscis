@@ -2,7 +2,7 @@
  * Tauri IPC — config domain.
  *
  * User-facing configuration & registries: settings, memory, skills (+ ClawHub
- * bridge), MCP servers, builtin & user tool plugins, and audit log.
+ * bridge), Anthropic official plugins, MCP servers, builtin & user tool plugins, and audit log.
  *
  * Mirrors Rust-side `src-tauri/src/commands/config/*`.
  */
@@ -283,6 +283,58 @@ export const clawHubApi = {
     invoke<ClawHubSearchResult>("clawhub_search", { query, limit }),
   install: (slug: string, version?: string) =>
     invoke<SkillCatalogItem>("clawhub_install", { slug, version }),
+};
+
+// ---------------------------------------------------------------------------
+// Anthropic claude-plugins-official (git-subdir skill bundles)
+// ---------------------------------------------------------------------------
+
+export interface ClaudePluginListItem {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  author: string;
+  source_path: string;
+  homepage: string | null;
+  skill_count: number;
+}
+
+export interface ClaudePluginSkillPreview {
+  dir_name: string;
+  name: string;
+  description: string;
+  version: string;
+}
+
+export interface ClaudePluginListResult {
+  items: ClaudePluginListItem[];
+  total: number;
+  query: string;
+}
+
+export interface ClaudePluginDetail {
+  plugin: ClaudePluginListItem;
+  skills: ClaudePluginSkillPreview[];
+}
+
+export interface ClaudePluginInstallResult {
+  plugin_id: string;
+  installed: SkillCatalogItem[];
+  skipped: string[];
+  errors: string[];
+}
+
+export const claudePluginsApi = {
+  list: (query: string, limit?: number) =>
+    invoke<ClaudePluginListResult>("claude_plugins_list", { query, limit }),
+  detail: (pluginId: string) =>
+    invoke<ClaudePluginDetail>("claude_plugins_detail", { pluginId }),
+  install: (pluginId: string, skillDirs?: string[]) =>
+    invoke<ClaudePluginInstallResult>("claude_plugins_install", {
+      pluginId,
+      skillDirs: skillDirs ?? null,
+    }),
 };
 
 // ---------------------------------------------------------------------------
