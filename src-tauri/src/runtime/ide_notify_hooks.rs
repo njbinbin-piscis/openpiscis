@@ -7,11 +7,11 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use once_cell::sync::Lazy;
 use piscis_kernel::agent::file_journal::FileJournal;
 use piscis_kernel::agent::hooks::{AgentHooks, ContextHookEvent, HookDecision, ToolHookEvent};
 use piscis_kernel::agent::tool::ToolResult;
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
 use tauri::{AppHandle, Emitter, Manager};

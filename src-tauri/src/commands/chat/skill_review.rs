@@ -2,13 +2,13 @@
 
 use crate::skills::service::{self, SKILL_TEMPLATE};
 use crate::store::AppState;
+use once_cell::sync::Lazy;
 use piscis_kernel::llm::{
     build_client_with_timeout, ContentBlock, LlmMessage, LlmRequest, MessageContent,
 };
 use piscis_kernel::store::SkillEvolutionSettings;
 use serde::Deserialize;
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use tracing::debug;
