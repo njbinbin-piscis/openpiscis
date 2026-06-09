@@ -8,11 +8,18 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use piscis_kernel::agent::file_journal::FileJournal;
-use piscis_kernel::agent::hooks::{AgentHooks, HookDecision, ToolHookEvent};
+use piscis_kernel::agent::hooks::{AgentHooks, ContextHookEvent, HookDecision, ToolHookEvent};
 use piscis_kernel::agent::tool::ToolResult;
-use tauri::{AppHandle, Emitter};
+use std::collections::HashMap;
+use std::sync::{LazyLock, Mutex};
+
+use tauri::{AppHandle, Emitter, Manager};
 
 const FILE_TOOLS: &[&str] = &["file_write", "file_edit"];
+const COMPACTION_CONSOLIDATION_THRESHOLD: u32 = 3;
+
+static SESSION_COMPACTION_COUNTS: LazyLock<Mutex<HashMap<String, u32>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Wraps [`FileJournal`] and broadcasts IDE refresh events after file mutations.
 pub struct JournalWithIdeNotify {
@@ -63,6 +70,20 @@ impl JournalWithIdeNotify {
 #[async_trait]
 impl AgentHooks for JournalWithIdeNotify {
     async fn before_tool(&self, ev: &ToolHookEvent<'_>) -> HookDecision {
+        if FILE_TOOLS.contains(&ev.tool_name) {
+            if let Some(path) = ev.input.get("path").and_then(|v| v.as_str()) {
+                let normalized = path.replace('\\', "/").to_lowercase();
+                if normalized.contains("/skills/installed/")
+                    || normalized.contains("/skills/.hub/")
+                    || normalized.ends_with("/skill.md")
+                        && normalized.contains("/skills/")
+                {
+                    return HookDecision::Deny(
+                        "Cannot modify locked skill files via file_write/file_edit. Use skill_manage for draft/learned skills.".into(),
+                    );
+                }
+            }
+        }
         self.journal.before_tool(ev).await
     }
 
@@ -72,5 +93,32 @@ impl AgentHooks for JournalWithIdeNotify {
             return;
         }
         self.emit_file_changed(ev, "modified");
+    }
+
+    async fn on_context_event(&self, ev: &ContextHookEvent<'_>) {
+        if let ContextHookEvent::AfterCompact { session_id, .. } = ev {
+            let count = {
+                let mut counts = SESSION_COMPACTION_COUNTS.lock().unwrap_or_else(|e| e.into_inner());
+                let entry = counts.entry(session_id.to_string()).or_insert(0);
+                *entry = entry.saturating_add(1);
+                *entry
+            };
+            if count >= COMPACTION_CONSOLIDATION_THRESHOLD {
+                SESSION_COMPACTION_COUNTS
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .remove(*session_id);
+                if let Some(state) = self.app.try_state::<crate::store::AppState>() {
+                    let state = state.inner().clone();
+                    let sid = session_id.to_string();
+                    tokio::spawn(async move {
+                        let _ = crate::commands::chat::scheduler::trigger_consolidation_for_session(
+                            &state, &sid,
+                        )
+                        .await;
+                    });
+                }
+            }
+        }
     }
 }

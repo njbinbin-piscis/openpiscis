@@ -72,7 +72,7 @@ scripts/bench_swe_lite/results/
 docs/tribon/
 
 # Local skills development (machine-specific, deployed via Junction to AppData)
-skills/
+/skills/
 
 # Local reference repos / docs
 references/

@@ -337,6 +337,11 @@ fn run_impl() {
                             commands::chat::scheduler::register_task_job(&state, &task).await;
                         }
                     }
+                    let _ = commands::chat::scheduler::ensure_memory_consolidation_task(
+                        tauri::Manager::state(&app_handle),
+                        None,
+                    )
+                    .await;
                 });
             }
 
@@ -845,6 +850,17 @@ fn run_impl() {
                             "heartbeat",
                         )
                         .await;
+                        crate::commands::chat::curator::maybe_run_curator_idle(&state_ref).await;
+                    }
+                });
+            }
+
+            {
+                let state_curator = state.clone();
+                tauri::async_runtime::spawn(async move {
+                    loop {
+                        tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+                        crate::commands::chat::curator::maybe_run_curator_idle(&state_curator).await;
                     }
                 });
             }
@@ -941,6 +957,14 @@ fn run_impl() {
                         .app_data_dir()
                         .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
                     let skills_dir = app_dir.join("skills");
+                    let _ = crate::skills::provenance::ensure_evolution_dirs(&skills_dir);
+                    if let Ok(n) =
+                        crate::skills::provenance::migrate_flat_skills_to_installed(&skills_dir)
+                    {
+                        if n > 0 {
+                            tracing::info!("Migrated {} flat skills to installed/", n);
+                        }
+                    }
 
                     let mut loader = crate::skills::loader::SkillLoader::new(&skills_dir);
                     if let Err(e) = loader.load_all() {
@@ -1235,6 +1259,19 @@ fn run_impl() {
             commands::config::skills::clawhub_search,
             commands::config::skills::clawhub_install,
             commands::config::skills::check_skill_compat,
+            commands::config::activity::get_session_activity_log,
+            commands::config::skill_evolution::promote_skill,
+            commands::config::skill_evolution::discard_draft_skill,
+            commands::config::skill_evolution::lock_skill,
+            commands::config::skill_evolution::unlock_skill,
+            commands::config::skill_evolution::pin_skill,
+            commands::config::skill_evolution::unpin_skill,
+            commands::config::skill_evolution::list_skill_revisions,
+            commands::config::skill_evolution::list_skill_usage,
+            commands::config::skill_evolution::curator_status,
+            commands::config::skill_evolution::curator_run,
+            commands::config::skill_evolution::curator_rollback,
+            commands::config::skill_evolution::restore_archived_skill,
             commands::config::audit::get_audit_log,
             commands::config::audit::clear_audit_log,
             commands::config::user_tools::list_user_tools,

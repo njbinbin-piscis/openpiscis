@@ -7,6 +7,7 @@
  * Mirrors Rust-side `src-tauri/src/commands/config/*`.
  */
 import { invoke } from "@tauri-apps/api/core";
+import type { SessionArtifact } from "./chat";
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -109,6 +110,17 @@ export interface Settings {
   heartbeat_enabled: boolean;
   heartbeat_interval_mins: number;
   heartbeat_prompt: string;
+  skill_evolution?: {
+    review_enabled?: boolean;
+    review_every_turn?: boolean;
+    create_skill_min_tool_calls?: number;
+    umbrella_skill_interval_turns?: number;
+    curator_interval_hours?: number;
+    curator_min_idle_hours?: number;
+    stale_after_days?: number;
+    archive_after_days?: number;
+    curator_llm_merge_enabled?: boolean;
+  };
   // Vision / multimodal
   vision_enabled: boolean;
   // Vision model (for UIA / screen_capture / desktop_automation)
@@ -170,7 +182,10 @@ export interface Memory {
   content: string;
   category: string;
   confidence: number;
-  source_session_id?: string;
+  source_session_id?: string | null;
+  kind?: string;
+  evidence_session_id?: string | null;
+  last_seen_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -181,6 +196,11 @@ export const memoryApi = {
     invoke<Memory>("add_memory", { content, category, confidence }),
   delete: (memoryId: string) => invoke<void>("delete_memory", { memoryId }),
   clear: () => invoke<void>("clear_memories"),
+  /** Run the nightly Memory Consolidation (Dream) task immediately. */
+  runConsolidationNow: () => invoke<string>("run_memory_consolidation_now", {}),
+  /** Session-scoped lightweight consolidation after a long chat. */
+  triggerConsolidationForSession: (sessionId: string) =>
+    invoke<string>("trigger_memory_consolidation_for_session", { sessionId }),
 };
 
 // ---------------------------------------------------------------------------
@@ -266,6 +286,79 @@ export const clawHubApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Skill evolution (draft / promote / lock / curator)
+// ---------------------------------------------------------------------------
+
+export interface SkillRevision {
+  id: string;
+  skill_id: string;
+  session_id: string | null;
+  origin: string | null;
+  diff_summary: string | null;
+  content_before_hash: string | null;
+  content_after_hash: string | null;
+  created_at: string;
+}
+
+export interface SkillUsage {
+  skill_id: string;
+  view_count: number;
+  use_count: number;
+  patch_count: number;
+  last_used_at: string | null;
+  last_patched_at: string | null;
+  state: string;
+  pinned: number;
+  created_by: string | null;
+}
+
+export interface CuratorStatus {
+  last_run_at: string | null;
+  agent_created_count: number;
+  draft_count: number;
+  learned_count: number;
+  archived_count: number;
+  top_used: SkillUsage[];
+  least_used: SkillUsage[];
+}
+
+export interface SkillConfigMeta {
+  lifecycle?: string;
+  locked?: boolean;
+  pinned?: boolean;
+  source?: string;
+}
+
+export function parseSkillConfig(config: string): SkillConfigMeta {
+  try {
+    return JSON.parse(config) as SkillConfigMeta;
+  } catch {
+    return { lifecycle: "installed", locked: true, pinned: false };
+  }
+}
+
+export const skillEvolutionApi = {
+  promote: (skillId: string) => invoke<void>("promote_skill", { skillId }),
+  discard: (skillId: string) => invoke<void>("discard_draft_skill", { skillId }),
+  lock: (skillId: string) => invoke<void>("lock_skill", { skillId }),
+  unlock: (skillId: string) => invoke<void>("unlock_skill", { skillId }),
+  pin: (skillId: string) => invoke<void>("pin_skill", { skillId }),
+  unpin: (skillId: string) => invoke<void>("unpin_skill", { skillId }),
+  listRevisions: (params?: { skillId?: string; sessionId?: string; limit?: number }) =>
+    invoke<{ revisions: SkillRevision[] }>("list_skill_revisions", {
+      skillId: params?.skillId,
+      sessionId: params?.sessionId,
+      limit: params?.limit,
+    }),
+  listUsage: () => invoke<{ usage: SkillUsage[] }>("list_skill_usage"),
+  curatorStatus: () => invoke<CuratorStatus>("curator_status"),
+  curatorRun: (dryRun?: boolean) => invoke<string>("curator_run", { dryRun }),
+  curatorRollback: () => invoke<void>("curator_rollback"),
+  restoreArchived: (skillId: string) =>
+    invoke<void>("restore_archived_skill", { skillId }),
+};
+
+// ---------------------------------------------------------------------------
 // Audit log
 // ---------------------------------------------------------------------------
 
@@ -289,6 +382,35 @@ export const auditApi = {
       offset: params?.offset ?? 0,
     }),
   clear: (sessionId?: string) => invoke<void>('clear_audit_log', { sessionId }),
+};
+
+// ---------------------------------------------------------------------------
+// Session activity log (audits + plan snapshots + artifacts per session)
+// ---------------------------------------------------------------------------
+
+export interface PlanSnapshot {
+  id: string;
+  session_id: string;
+  label: string;
+  items_json: string;
+  created_at: string;
+}
+
+export interface SessionActivityBundle {
+  session_id: string;
+  session_title: string;
+  session_updated_at: string;
+  audits: AuditEntry[];
+  plan_snapshots: PlanSnapshot[];
+  artifacts: SessionArtifact[];
+  skill_revisions: SkillRevision[];
+}
+
+export const activityApi = {
+  list: (limitSessions?: number) =>
+    invoke<SessionActivityBundle[]>("get_session_activity_log", {
+      limitSessions: limitSessions ?? 30,
+    }),
 };
 
 // ---------------------------------------------------------------------------

@@ -331,6 +331,55 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
         settings.koi_timeout_secs = v.max(60) as u32; // minimum 60s
     }
 
+    // Skill evolution
+    if let Some(evo) = updates.get("skill_evolution").and_then(|v| v.as_object()) {
+        if let Some(v) = evo.get("review_enabled").and_then(|x| x.as_bool()) {
+            settings.skill_evolution.review_enabled = v;
+        }
+        if let Some(v) = evo
+            .get("review_every_turn")
+            .and_then(|x| x.as_bool())
+        {
+            settings.skill_evolution.review_every_turn = v;
+        }
+        if let Some(v) = evo
+            .get("create_skill_min_tool_calls")
+            .and_then(|x| x.as_u64())
+        {
+            settings.skill_evolution.create_skill_min_tool_calls = v.max(1) as u32;
+        }
+        if let Some(v) = evo
+            .get("umbrella_skill_interval_turns")
+            .and_then(|x| x.as_u64())
+        {
+            settings.skill_evolution.umbrella_skill_interval_turns = v.max(1) as u32;
+        }
+        if let Some(v) = evo
+            .get("curator_interval_hours")
+            .and_then(|x| x.as_u64())
+        {
+            settings.skill_evolution.curator_interval_hours = v.max(1) as u32;
+        }
+        if let Some(v) = evo
+            .get("curator_min_idle_hours")
+            .and_then(|x| x.as_u64())
+        {
+            settings.skill_evolution.curator_min_idle_hours = v as u32;
+        }
+        if let Some(v) = evo.get("stale_after_days").and_then(|x| x.as_u64()) {
+            settings.skill_evolution.stale_after_days = v.max(1) as u32;
+        }
+        if let Some(v) = evo.get("archive_after_days").and_then(|x| x.as_u64()) {
+            settings.skill_evolution.archive_after_days = v.max(1) as u32;
+        }
+        if let Some(v) = evo
+            .get("curator_llm_merge_enabled")
+            .and_then(|x| x.as_bool())
+        {
+            settings.skill_evolution.curator_llm_merge_enabled = v;
+        }
+    }
+
     // Heartbeat
     if let Some(v) = updates["heartbeat_enabled"].as_bool() {
         settings.heartbeat_enabled = v;

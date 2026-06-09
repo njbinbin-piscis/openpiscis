@@ -1,9 +1,11 @@
 // Chat-domain submodules (registered as Tauri commands by `app::bootstrap`).
 pub mod collab_trial;
+pub mod curator;
 pub mod debug;
 pub mod fish;
 pub mod gateway;
 pub mod scheduler;
+pub mod skill_review;
 
 use crate::commands::config::scene::{
     build_registry_for_scene, load_skill_loader, HistorySliceMode, MemorySliceMode,
@@ -343,7 +345,29 @@ pub(crate) async fn persist_task_spine_from_plan_state(
             Some(&summary),
             Some(status),
         );
+        let items_json = serde_json::to_string(&todos).unwrap_or_else(|_| "[]".into());
+        let label: String = goal.chars().take(100).collect();
+        let _ = db.insert_plan_snapshot(plan_session_id, &label, &items_json);
     }
+}
+
+pub(crate) async fn archive_plan_before_clear(
+    db_arc: &Arc<tokio::sync::Mutex<crate::store::Database>>,
+    plan_state: &Arc<tokio::sync::Mutex<std::collections::HashMap<String, Vec<piscis_kernel::agent::plan::PlanTodoItem>>>>,
+    session_id: &str,
+    label: &str,
+) {
+    let items = {
+        let plans = plan_state.lock().await;
+        plans.get(session_id).cloned().unwrap_or_default()
+    };
+    if items.is_empty() {
+        return;
+    }
+    let items_json = serde_json::to_string(&items).unwrap_or_else(|_| "[]".into());
+    let snapshot_label: String = label.chars().take(100).collect();
+    let db = db_arc.lock().await;
+    let _ = db.insert_plan_snapshot(session_id, &snapshot_label, &items_json);
 }
 
 async fn persist_session_task_contract(
@@ -1141,6 +1165,13 @@ pub async fn chat_send(
     // clear_plan defaults to true; pass false to preserve an existing plan (continue previous tasks).
     let replace_task_contract = clear_plan.unwrap_or(true);
     if replace_task_contract {
+        archive_plan_before_clear(
+            &state.db,
+            &state.plan_state,
+            &session_id,
+            &effective_content,
+        )
+        .await;
         let mut plans = state.plan_state.lock().await;
         plans.remove(&session_id);
     }
@@ -1340,6 +1371,8 @@ pub async fn chat_send(
     let api_key_clone = api_key.clone();
     let base_url_clone = base_url.clone();
     let effective_content_clone = effective_content.clone();
+    let app_state_for_dream = state.inner().clone();
+    let memory_owner_clone = ctx.memory_owner_id.clone();
     tracing::info!(
         "chat_send: spawning agent background task for session={}",
         session_id
@@ -1416,17 +1449,47 @@ pub async fn chat_send(
                         },
                         120, // memory extraction uses default timeout
                     );
+                    let state_for_dream = app_state_for_dream.clone();
+                    let owner_for_mem = memory_owner_clone.clone();
                     tokio::spawn(async move {
                         auto_extract_memories(
                             db_for_mem,
-                            sid_for_mem,
-                            msgs_for_mem,
+                            sid_for_mem.clone(),
+                            msgs_for_mem.clone(),
                             mem_client,
-                            model_for_mem,
+                            model_for_mem.clone(),
                             max_tokens_clone,
-                            "piscis".to_string(),
+                            owner_for_mem.clone(),
                         )
                         .await;
+                        crate::commands::chat::skill_review::run_background_skill_review(
+                            std::sync::Arc::new(state_for_dream.clone()),
+                            sid_for_mem.clone(),
+                            msgs_for_mem,
+                            provider_clone.clone(),
+                            api_key_clone.clone(),
+                            if base_url_clone.is_empty() {
+                                None
+                            } else {
+                                Some(base_url_clone.clone())
+                            },
+                            model_for_mem,
+                            max_tokens_clone,
+                            owner_for_mem,
+                        )
+                        .await;
+                        if let Err(e) = crate::commands::chat::scheduler::trigger_consolidation_for_session(
+                            &state_for_dream,
+                            &sid_for_mem,
+                        )
+                        .await
+                        {
+                            tracing::debug!(
+                                "session memory consolidation skipped for {}: {}",
+                                sid_for_mem,
+                                e
+                            );
+                        }
                     });
                 }
 
@@ -2007,6 +2070,9 @@ pub async fn run_agent_headless(
                 .map_err(|e| e.to_string())?;
             }
         }
+        if desired_session_title != session_id {
+            let _ = db.rename_session(session_id, &desired_session_title);
+        }
         // Check if this user message was already pre-inserted by lib.rs (to ensure it's visible
         // in the frontend before the agent starts). Skip duplicate insertion if so.
         let already_inserted = db
@@ -2221,6 +2287,7 @@ pub async fn run_agent_headless(
             None
         };
 
+    let model_for_post_turn = model.clone();
     let agent = piscis_kernel::agent::harness::HarnessConfig::for_main_headless(
         model,
         headless_fallback_models,
@@ -2414,6 +2481,57 @@ pub async fn run_agent_headless(
         &effective_user_message,
     )
     .await;
+
+    {
+        let db_for_mem = state.db.clone();
+        let sid_for_mem = session_id.to_string();
+        let msgs_for_mem = final_msgs.clone();
+        let model_for_mem = model_for_post_turn.clone();
+        let provider_for_mem = provider.clone();
+        let api_key_for_mem = api_key.clone();
+        let base_url_for_mem = if base_url.is_empty() {
+            None
+        } else {
+            Some(base_url.clone())
+        };
+        let state_for_dream = state.clone();
+        let owner_for_mem = memory_owner_id.clone();
+        tokio::spawn(async move {
+            let mem_client = build_client_with_timeout(
+                &provider_for_mem,
+                &api_key_for_mem,
+                base_url_for_mem.as_deref(),
+                120,
+            );
+            auto_extract_memories(
+                db_for_mem,
+                sid_for_mem.clone(),
+                msgs_for_mem.clone(),
+                mem_client,
+                model_for_mem.clone(),
+                max_tokens,
+                owner_for_mem.clone(),
+            )
+            .await;
+            crate::commands::chat::skill_review::run_background_skill_review(
+                std::sync::Arc::new(state_for_dream.clone()),
+                sid_for_mem.clone(),
+                msgs_for_mem,
+                provider_for_mem,
+                api_key_for_mem,
+                base_url_for_mem,
+                model_for_mem,
+                max_tokens,
+                owner_for_mem,
+            )
+            .await;
+            let _ = crate::commands::chat::scheduler::trigger_consolidation_for_session(
+                &state_for_dream,
+                &sid_for_mem,
+            )
+            .await;
+        });
+    }
 
     // Emit Done event for tool-steps panel
     let done_payload = serde_json::to_value(&AgentEvent::Done {
@@ -4231,7 +4349,17 @@ pub async fn auto_extract_memories(
                 };
 
                 if !content.is_empty() {
-                    let _ = db.save_memory(
+                    let kind = match category {
+                        "preference" => "preference",
+                        "task" => "open_item",
+                        _ => "fact",
+                    };
+                    let extras = crate::store::db::MemorySaveExtras {
+                        kind: Some(kind.to_string()),
+                        evidence_session_id: Some(session_id.clone()),
+                        evidence_tool_use_id: None,
+                    };
+                    let _ = db.save_memory_structured(
                         content,
                         category,
                         0.75,
@@ -4240,6 +4368,7 @@ pub async fn auto_extract_memories(
                         "private",
                         &owner_id,
                         None,
+                        extras,
                     );
                     tracing::info!("Auto-extracted memory [{category}] for {owner_id}: {content}");
                 }

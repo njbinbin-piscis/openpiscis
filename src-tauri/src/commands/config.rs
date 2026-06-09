@@ -15,6 +15,7 @@
 //! None of these deal with chat turn execution or pool coordination; those
 //! live in [`crate::commands::chat`] and [`crate::commands::pool`].
 
+pub mod activity;
 pub mod audit;
 pub mod bundled_mcp;
 pub mod enterprise_capability;
@@ -22,6 +23,7 @@ pub mod mcp;
 pub mod memory;
 pub mod scene;
 pub mod settings;
+pub mod skill_evolution;
 pub mod skills;
 pub mod tools;
 pub mod user_tools;

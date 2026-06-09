@@ -207,10 +207,37 @@ pub async fn sync_skills_from_disk(state: State<'_, AppState>) -> Result<SyncSki
             continue;
         }
 
-        // Register the skill in the DB (enabled by default)
+        let meta = match skill.lifecycle.as_str() {
+            crate::skills::provenance::LIFECYCLE_BUILTIN => {
+                crate::skills::provenance::SkillConfigMeta::builtin()
+            }
+            crate::skills::provenance::LIFECYCLE_DRAFT => {
+                crate::skills::provenance::SkillConfigMeta::draft("sync", None)
+            }
+            crate::skills::provenance::LIFECYCLE_LEARNED => {
+                let mut m =
+                    crate::skills::provenance::SkillConfigMeta::draft("sync", None);
+                m.lifecycle = crate::skills::provenance::LIFECYCLE_LEARNED.to_string();
+                m
+            }
+            _ => crate::skills::provenance::SkillConfigMeta::installed("sync", None, None),
+        };
+        let skill_id = if !skill.skill_id.is_empty() {
+            skill.skill_id.clone()
+        } else {
+            safe_name.clone()
+        };
+
         let db = state.db.lock().await;
-        match db.upsert_skill(&safe_name, &skill.name, &skill.description, "📦") {
+        match db.upsert_skill_with_config(
+            &skill_id,
+            &skill.name,
+            &skill.description,
+            "📦",
+            Some(&meta.to_json()),
+        ) {
             Ok(_) => {
+                let _ = db.ensure_skill_usage(&skill_id, meta.source.as_deref());
                 info!("sync_skills_from_disk: registered '{}'", skill.name);
                 synced += 1;
             }
@@ -233,14 +260,22 @@ async fn install_skill_from_content(
     state: &State<'_, AppState>,
     content: String,
 ) -> Result<SkillCatalogItem, String> {
+    install_skill_from_content_sourced(state, content, "manual", None).await
+}
+
+async fn install_skill_from_content_sourced(
+    state: &State<'_, AppState>,
+    content: String,
+    source: &str,
+    source_url: Option<String>,
+) -> Result<SkillCatalogItem, String> {
     let app_dir = state
         .app_handle
         .path()
         .app_data_dir()
         .unwrap_or_else(|_| std::path::PathBuf::from(".piscis"));
-    let skills_dir = app_dir.join("skills");
+    let skills_dir = crate::skills::service::skills_root_from_app_data(&app_dir);
 
-    // Parse and validate frontmatter
     let loader = crate::skills::loader::SkillLoader::new(&skills_dir);
     let skill = loader
         .parse_skill_from_content(&content)
@@ -250,7 +285,6 @@ async fn install_skill_from_content(
         return Err("SKILL.md must declare a 'name' field in frontmatter".into());
     }
 
-    // ── Compatibility check ───────────────────────────────────────────────────
     let compat = check_skill_compatibility(&skill).await;
     if !compat.compatible {
         return Err(format!(
@@ -263,7 +297,6 @@ async fn install_skill_from_content(
         warn!("Skill '{}' compatibility warning: {}", skill.name, w);
     }
 
-    // Warn if the skill declares elevated permissions
     if !skill.permissions.is_empty() {
         warn!(
             "Installing skill '{}' with permissions: {:?}",
@@ -271,44 +304,21 @@ async fn install_skill_from_content(
         );
     }
 
-    // Sanitise name for use as directory name
-    let safe_name: String = skill
-        .name
-        .chars()
-        .map(|c| {
-            if c.is_alphanumeric() || c == '-' || c == '_' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>()
-        .to_lowercase();
-
-    // Register in DB first — if this fails we abort before touching the filesystem
-    {
+    let (safe_name, _display_name) = {
         let db = state.db.lock().await;
-        db.upsert_skill(&safe_name, &skill.name, &skill.description, "📦")
-            .map_err(|e| format!("Failed to register skill in database: {}", e))?;
-    }
+        crate::skills::service::install_to_installed(
+            &db,
+            &skills_dir,
+            &content,
+            source,
+            source_url,
+            None,
+        )
+        .map_err(|e| format!("Failed to install skill: {}", e))?
+    };
 
-    let skill_dir = skills_dir.join(&safe_name);
-    if let Err(e) = tokio::fs::create_dir_all(&skill_dir).await {
-        // Roll back DB entry on filesystem failure
-        let db = state.db.lock().await;
-        let _ = db.delete_skill(&safe_name);
-        return Err(format!("Failed to create skill directory: {}", e));
-    }
-
+    let skill_dir = crate::skills::provenance::installed_dir(&skills_dir).join(&safe_name);
     let skill_file = skill_dir.join("SKILL.md");
-    if let Err(e) = tokio::fs::write(&skill_file, &content).await {
-        // Roll back DB entry and directory on write failure
-        let db = state.db.lock().await;
-        let _ = db.delete_skill(&safe_name);
-        let _ = tokio::fs::remove_dir_all(&skill_dir).await;
-        return Err(format!("Failed to write SKILL.md: {}", e));
-    }
-
     info!("Installed skill '{}' to {:?}", skill.name, skill_dir);
 
     // Spawn background task: enrich triggers with LLM (bilingual, non-blocking)
@@ -1130,7 +1140,8 @@ pub async fn clawhub_install(
             .map_err(|e| format!("从 zip 中提取 SKILL.md 失败：{}", e))?
     };
 
-    install_skill_from_content(&state, content).await
+    let source_url = Some(format!("{}/skills/{}", CLAWHUB_API, slug));
+    install_skill_from_content_sourced(&state, content, "clawhub", source_url).await
 }
 
 /// Extract SKILL.md text from a zip archive bytes.

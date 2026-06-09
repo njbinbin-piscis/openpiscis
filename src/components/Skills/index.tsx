@@ -2,7 +2,17 @@ import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RootState, skillsActions } from "../../store";
-import { skillsApi, clawHubApi, SkillCatalogItem, ClawHubSkill, SkillCompatibilityCheck } from "../../services/tauri";
+import {
+  skillsApi,
+  clawHubApi,
+  skillEvolutionApi,
+  parseSkillConfig,
+  SkillCatalogItem,
+  ClawHubSkill,
+  SkillCompatibilityCheck,
+  CuratorStatus,
+  SkillRevision,
+} from "../../services/tauri";
 import ConfirmDialog from "../ConfirmDialog";
 import type { SyncSkillsResult } from "../../services/tauri";
 
@@ -37,12 +47,18 @@ export default function Skills() {
   const [syncing, setSyncing] = useState(false);
 
   // ClawHub marketplace
-  const [hubTab, setHubTab] = useState<"local" | "hub">("local");
+  const [hubTab, setHubTab] = useState<"local" | "evolution" | "hub">("local");
   const [hubQuery, setHubQuery] = useState("");
   const [hubResults, setHubResults] = useState<ClawHubSkill[]>([]);
   const [hubSearching, setHubSearching] = useState(false);
   const [hubError, setHubError] = useState<string | null>(null);
   const [hubInstalling, setHubInstalling] = useState<string | null>(null);
+
+  // Skill evolution
+  const [curatorStatus, setCuratorStatus] = useState<CuratorStatus | null>(null);
+  const [curatorRunning, setCuratorRunning] = useState(false);
+  const [revisions, setRevisions] = useState<SkillRevision[]>([]);
+  const [evolutionBusy, setEvolutionBusy] = useState<string | null>(null);
 
   const loadSkills = useCallback(() => {
     skillsApi.list().then(({ skills }) => {
@@ -52,9 +68,15 @@ export default function Skills() {
     skillsApi.catalog().then(setCatalog).catch(() => {});
   }, [dispatch, t]);
 
+  const loadEvolution = useCallback(() => {
+    skillEvolutionApi.curatorStatus().then(setCuratorStatus).catch(() => {});
+    skillEvolutionApi.listRevisions({ limit: 20 }).then((r) => setRevisions(r.revisions)).catch(() => {});
+  }, []);
+
   useEffect(() => {
     loadSkills();
-  }, [loadSkills]);
+    loadEvolution();
+  }, [loadSkills, loadEvolution]);
 
   const handleSyncFromDisk = useCallback(async () => {
     setSyncing(true);
@@ -208,11 +230,87 @@ export default function Skills() {
   };
 
   const catalogByName = Object.fromEntries(catalog.map((c) => [c.name.toLowerCase(), c]));
-  // Hide built-in pseudo skills from user-facing UI; only show user/workspace/registry skills.
   const visibleSkills = skills.filter((skill) => {
-    const source = catalogByName[skill.name.toLowerCase()]?.source ?? "builtin";
+    const meta = parseSkillConfig(skill.config);
+    if (meta.lifecycle === "builtin") return false;
+    const source = catalogByName[skill.name.toLowerCase()]?.source ?? meta.lifecycle ?? "builtin";
     return source !== "builtin";
   });
+
+  const installedSkills = visibleSkills.filter((s) => {
+    const m = parseSkillConfig(s.config);
+    return !m.lifecycle || m.lifecycle === "installed";
+  });
+  const draftSkills = visibleSkills.filter((s) => parseSkillConfig(s.config).lifecycle === "draft");
+  const learnedSkills = visibleSkills.filter((s) => parseSkillConfig(s.config).lifecycle === "learned");
+
+  const handlePromote = async (skillId: string, name: string) => {
+    setEvolutionBusy(skillId);
+    try {
+      await skillEvolutionApi.promote(skillId);
+      setSuccessMsg(t("skills.promoteSuccess", { name }));
+      loadSkills();
+      loadEvolution();
+    } catch (e) {
+      setError(t("skills.evolutionFailed", { error: String(e) }));
+    } finally {
+      setEvolutionBusy(null);
+    }
+  };
+
+  const handleDiscard = async (skillId: string, name: string) => {
+    setEvolutionBusy(skillId);
+    try {
+      await skillEvolutionApi.discard(skillId);
+      setSuccessMsg(t("skills.discardSuccess", { name }));
+      loadSkills();
+      loadEvolution();
+    } catch (e) {
+      setError(t("skills.evolutionFailed", { error: String(e) }));
+    } finally {
+      setEvolutionBusy(null);
+    }
+  };
+
+  const handleLockToggle = async (skillId: string, locked: boolean) => {
+    setEvolutionBusy(skillId);
+    try {
+      if (locked) await skillEvolutionApi.unlock(skillId);
+      else await skillEvolutionApi.lock(skillId);
+      loadSkills();
+    } catch (e) {
+      setError(t("skills.evolutionFailed", { error: String(e) }));
+    } finally {
+      setEvolutionBusy(null);
+    }
+  };
+
+  const handlePinToggle = async (skillId: string, pinned: boolean) => {
+    setEvolutionBusy(skillId);
+    try {
+      if (pinned) await skillEvolutionApi.unpin(skillId);
+      else await skillEvolutionApi.pin(skillId);
+      loadSkills();
+    } catch (e) {
+      setError(t("skills.evolutionFailed", { error: String(e) }));
+    } finally {
+      setEvolutionBusy(null);
+    }
+  };
+
+  const handleCuratorRun = async (dryRun: boolean) => {
+    setCuratorRunning(true);
+    try {
+      const msg = await skillEvolutionApi.curatorRun(dryRun);
+      setSuccessMsg(msg);
+      loadEvolution();
+      loadSkills();
+    } catch (e) {
+      setError(t("skills.evolutionFailed", { error: String(e) }));
+    } finally {
+      setCuratorRunning(false);
+    }
+  };
 
   return (
     <div className="page">
@@ -261,7 +359,7 @@ export default function Skills() {
 
         {/* Tab switcher */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
-          {(["local", "hub"] as const).map((tab) => (
+          {(["local", "evolution", "hub"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setHubTab(tab)}
@@ -277,7 +375,11 @@ export default function Skills() {
                 marginBottom: -1,
               }}
             >
-              {tab === "local" ? `⚡ ${t("skills.tabLocal")}` : `🛒 ${t("skills.tabHub")}`}
+              {tab === "local"
+                ? `⚡ ${t("skills.tabLocal")}`
+                : tab === "evolution"
+                  ? `🧬 ${t("skills.tabEvolution")}`
+                  : `🛒 ${t("skills.tabHub")}`}
             </button>
           ))}
         </div>
@@ -416,6 +518,126 @@ export default function Skills() {
             </div>
             )}
           </>
+        )}
+
+        {hubTab === "evolution" && (
+          <div>
+            <div style={{ marginBottom: 20, padding: 14, border: "1px solid var(--border)", borderRadius: 8, background: "var(--bg-secondary)" }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>🧹 {t("skills.curator")}</div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 10 }}>
+                {curatorStatus?.last_run_at
+                  ? t("skills.curatorLastRun", { time: new Date(curatorStatus.last_run_at).toLocaleString() })
+                  : t("skills.curatorNever")}
+                {" · "}
+                {t("skills.curatorDrafts", { count: curatorStatus?.draft_count ?? 0 })}
+                {" · "}
+                {t("skills.curatorLearned", { count: curatorStatus?.learned_count ?? 0 })}
+                {" · "}
+                {t("skills.curatorArchived", { count: curatorStatus?.archived_count ?? 0 })}
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn btn-primary" disabled={curatorRunning} onClick={() => handleCuratorRun(false)}>
+                  {curatorRunning ? t("common.loading") : t("skills.curatorRun")}
+                </button>
+                <button className="btn btn-secondary" disabled={curatorRunning} onClick={() => handleCuratorRun(true)}>
+                  {t("skills.curatorDryRun")}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={async () => {
+                    try {
+                      await skillEvolutionApi.curatorRollback();
+                      setSuccessMsg("Curator rollback OK");
+                      loadSkills();
+                      loadEvolution();
+                    } catch (e) {
+                      setError(t("skills.evolutionFailed", { error: String(e) }));
+                    }
+                  }}
+                >
+                  {t("skills.curatorRollback")}
+                </button>
+              </div>
+            </div>
+
+            {draftSkills.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 14, marginBottom: 8 }}>{t("skills.draft")}</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10 }}>
+                  {draftSkills.map((skill) => (
+                    <div key={skill.id} className="card" style={{ padding: 12 }}>
+                      <div style={{ fontWeight: 600 }}>{skill.name}</div>
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>{skill.description}</p>
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        <button className="btn btn-primary" style={{ fontSize: 12 }} disabled={evolutionBusy === skill.id} onClick={() => handlePromote(skill.id, skill.name)}>
+                          {t("skills.promote")}
+                        </button>
+                        <button className="btn btn-secondary" style={{ fontSize: 12 }} disabled={evolutionBusy === skill.id} onClick={() => handleDiscard(skill.id, skill.name)}>
+                          {t("skills.discard")}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: 14, marginBottom: 8 }}>{t("skills.tabLocal")}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10 }}>
+                {installedSkills.map((skill) => {
+                  const meta = parseSkillConfig(skill.config);
+                  return (
+                    <div key={skill.id} className="card" style={{ padding: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontWeight: 600 }}>{skill.name}</span>
+                        <span style={{ fontSize: 10, color: meta.locked ? "#dc3545" : "#28a745" }}>
+                          {meta.locked ? `🔒 ${t("skills.locked")}` : `🔓 ${t("skills.unlocked")}`}
+                        </span>
+                      </div>
+                      <button className="btn btn-secondary" style={{ fontSize: 12, marginTop: 8 }} disabled={evolutionBusy === skill.id} onClick={() => handleLockToggle(skill.id, !!meta.locked)}>
+                        {meta.locked ? t("skills.unlockBtn") : t("skills.lockBtn")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {learnedSkills.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 14, marginBottom: 8 }}>{t("skills.learned")}</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 10 }}>
+                  {learnedSkills.map((skill) => {
+                    const meta = parseSkillConfig(skill.config);
+                    return (
+                      <div key={skill.id} className="card" style={{ padding: 12 }}>
+                        <div style={{ fontWeight: 600 }}>{skill.name}</div>
+                        <button className="btn btn-secondary" style={{ fontSize: 12, marginTop: 8 }} disabled={evolutionBusy === skill.id} onClick={() => handlePinToggle(skill.id, !!meta.pinned)}>
+                          {meta.pinned ? t("skills.unpinBtn") : t("skills.pinBtn")}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {revisions.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: 14, marginBottom: 8 }}>{t("skills.revisionHistory")}</h3>
+                <div style={{ border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                  {revisions.map((rev) => (
+                    <div key={rev.id} style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", fontSize: 12 }}>
+                      <strong>{rev.skill_id}</strong>
+                      {rev.origin && <span style={{ marginLeft: 8, color: "var(--text-muted)" }}>{rev.origin}</span>}
+                      {rev.diff_summary && <div style={{ color: "var(--text-secondary)", marginTop: 4 }}>{rev.diff_summary}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {hubTab === "hub" && (

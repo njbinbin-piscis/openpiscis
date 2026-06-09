@@ -142,6 +142,18 @@ pub async fn list_builtin_tools(
             icon: "🎯".into(),
             windows_only: false,
         },
+        BuiltinToolInfo {
+            name: "skill_list".into(),
+            description: "列出已加载技能及触发条件，支持渐进式披露深读 SKILL.md".into(),
+            icon: "⚡".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
+            name: "skill_manage".into(),
+            description: "创建/修改 Agent 草稿技能（installed/locked 技能受保护）".into(),
+            icon: "🧬".into(),
+            windows_only: false,
+        },
     ];
     Ok(tools)
 }

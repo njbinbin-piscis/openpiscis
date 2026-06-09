@@ -39,13 +39,13 @@ anyhow = "1"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-# Shared agent runtime — pin rev across openpiscis, AgentZ, agent-workbench (v0.8.56).
-piscis-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-core", rev = "v0.8.56" }
-piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-kernel", rev = "v0.8.56" }
+# Shared agent runtime — pin rev across openpiscis, AgentZ, agent-workbench (v0.8.57).
+piscis-core = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-core", rev = "v0.8.57" }
+piscis-kernel = { git = "https://github.com/njbinbin-piscis/piscis-engine.git", package = "piscis-kernel", rev = "v0.8.57" }
 
 [package]
 name = "piscis-desktop"
-version = "0.8.56"
+version = "0.8.57"
 autobins = false
 default-run = "piscis-desktop"
 description = "OpenPiscis - Open-source cross-platform AI Agent Desktop"
@@ -200,3 +200,8 @@ strip = true
 # [patch."https://github.com/njbinbin-piscis/RobotZ.git"]
 # robotz-automation = { path = "../../RobotZ/crates/robotz-automation" }
 # robotz-browser = { path = "../../RobotZ/crates/robotz-browser" }
+
+# Local path override for engine hacking:
+# [patch."https://github.com/njbinbin-piscis/piscis-engine.git"]
+# piscis-core = { path = "../../piscis-engine/piscis-core" }
+# piscis-kernel = { path = "../../piscis-engine/piscis-kernel" }

@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.57] - 2026-06-10
+
+### Added
+- **Trusted skill evolution**: quadrant storage (`installed/` / `.draft/` / `learned/` / `.archive/`), `skill_manage` tool, background review fork, and Curator maintenance (stale marking, LLM merge, backup/rollback).
+- **Skill evolution settings**: `skill_evolution` block in settings JSON (`review_enabled`, curator intervals, stale/archive days, etc.).
+- **Skills UI**: Evolution tab with Promote/Discard, lock/unlock, pin, Curator panel, and revision history.
+- **Memory hardening**: L2 compaction triggers session consolidation; headless/Koi paths run auto-extract + skill review.
+- **Activity log**: per-session skill revision section in Audit Log (engine `v0.8.57`).
+
+### Fixed
+- **`.gitignore`**: root `skills/` pattern no longer ignores `src-tauri/src/skills/` source modules.
+- **`skill_manage`**: path traversal guard on `write_file` / `remove_file`.
+
+---
+
 ## [0.8.56] - 2026-06-06
 
 ### Fixed

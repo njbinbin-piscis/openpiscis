@@ -15,6 +15,7 @@ pub mod office;
 pub mod powershell;
 pub mod read_lints;
 pub mod skill_list;
+pub mod skill_manage;
 pub mod system_info;
 #[cfg(target_os = "windows")]
 pub mod wmi_tool;

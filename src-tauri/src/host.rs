@@ -38,7 +38,7 @@ use crate::skills::loader::SkillLoader;
 use crate::store::{AppState, Database, Settings};
 use crate::tools::{
     app_control, call_fish, call_koi, chat_ui, chat_ui_listen, chat_ui_patch, im_channel, im_send,
-    skill_list, system_info, BrowserTool, DesktopAutomationTool, ScreenTool,
+    skill_list, skill_manage, system_info, BrowserTool, DesktopAutomationTool, ScreenTool,
 };
 
 #[cfg(target_os = "windows")]
@@ -572,6 +572,17 @@ impl HostTools for DesktopHostTools {
         if self.is_enabled("skill_list") {
             if let Some(ref loader) = self.skill_loader {
                 registry.register(Box::new(skill_list::SkillListTool {
+                    loader: loader.clone(),
+                }));
+            }
+        }
+        if self.is_enabled("skill_manage") {
+            if let (Some(ref loader), Some(ref db), Some(ref app_data_dir)) =
+                (&self.skill_loader, &self.db, &self.app_data_dir)
+            {
+                registry.register(Box::new(skill_manage::SkillManageTool {
+                    db: db.clone(),
+                    app_data_dir: app_data_dir.clone(),
                     loader: loader.clone(),
                 }));
             }

@@ -25,6 +25,12 @@ pub struct SkillDefinition {
     pub platform: Vec<String>,
     #[serde(default)]
     pub source: String,
+    #[serde(default)]
+    pub lifecycle: String,
+    #[serde(default)]
+    pub locked: bool,
+    #[serde(default)]
+    pub skill_id: String,
     pub instructions: String,
     pub source_path: PathBuf,
 }
@@ -147,22 +153,43 @@ impl SkillLoader {
             std::fs::create_dir_all(&self.skills_dir)?;
             self.create_builtin_skills()?;
         }
+        let _ = crate::skills::provenance::ensure_evolution_dirs(&self.skills_dir);
+        let _ = crate::skills::provenance::migrate_flat_skills_to_installed(&self.skills_dir);
 
-        let entries = std::fs::read_dir(&self.skills_dir)?;
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
+        self.skills.clear();
+        let scan_roots = [
+            self.skills_dir.clone(),
+            crate::skills::provenance::installed_dir(&self.skills_dir),
+            crate::skills::provenance::draft_dir(&self.skills_dir),
+            crate::skills::provenance::learned_dir(&self.skills_dir),
+        ];
+        for root in scan_roots {
+            if !root.exists() {
+                continue;
+            }
+            let entries = match std::fs::read_dir(&root) {
+                Ok(e) => e,
+                Err(e) => {
+                    warn!("Failed to read skill root {:?}: {}", root, e);
+                    continue;
+                }
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if !path.is_dir() {
+                    continue;
+                }
                 let skill_file = path.join("SKILL.md");
-                if skill_file.exists() {
-                    match self.load_skill(&skill_file) {
-                        Ok(skill) => {
-                            info!("Loaded skill: {}", skill.name);
-                            self.skills.insert(skill.name.clone(), skill);
-                        }
-                        Err(e) => {
-                            warn!("Failed to load skill from {:?}: {}", skill_file, e);
-                        }
+                if !skill_file.exists() {
+                    continue;
+                }
+                match self.load_skill(&skill_file) {
+                    Ok(skill) => {
+                        info!("Loaded skill: {} ({})", skill.name, skill.lifecycle);
+                        self.skills.insert(skill.skill_id.clone(), skill);
+                    }
+                    Err(e) => {
+                        warn!("Failed to load skill from {:?}: {}", skill_file, e);
                     }
                 }
             }
@@ -245,6 +272,15 @@ impl SkillLoader {
                 .unwrap_or_default()
         };
 
+        let skill_id = path
+            .parent()
+            .and_then(|p| p.file_name())
+            .and_then(|n| n.to_str())
+            .unwrap_or("unnamed")
+            .to_string();
+        let lifecycle =
+            crate::skills::provenance::infer_lifecycle_from_path(&self.skills_dir, path);
+
         Ok(SkillDefinition {
             name: frontmatter
                 .get("name")
@@ -272,6 +308,13 @@ impl SkillLoader {
             triggers: parse_str_list("triggers"),
             platform: parse_str_list("platform"),
             source,
+            lifecycle: lifecycle.clone(),
+            locked: matches!(
+                lifecycle.as_str(),
+                crate::skills::provenance::LIFECYCLE_BUILTIN
+                    | crate::skills::provenance::LIFECYCLE_INSTALLED
+            ),
+            skill_id,
             instructions,
             source_path: path.parent().unwrap_or(path).to_path_buf(),
         })
@@ -531,6 +574,22 @@ impl SkillLoader {
             triggers: parse_str_list("triggers"),
             platform: parse_str_list("platform"),
             source: "installed".to_string(),
+            lifecycle: crate::skills::provenance::LIFECYCLE_INSTALLED.to_string(),
+            locked: true,
+            skill_id: frontmatter
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unnamed")
+                .chars()
+                .map(|c| {
+                    if c.is_alphanumeric() || c == '-' || c == '_' {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
+                .collect::<String>()
+                .to_lowercase(),
             instructions,
             source_path: tmp.to_path_buf(),
         })
