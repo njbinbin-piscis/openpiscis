@@ -247,6 +247,7 @@ async fn harness_live_smoke() {
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
+        loop_halt: None,
     };
 
     let prompt = task_prompt(&workspace);

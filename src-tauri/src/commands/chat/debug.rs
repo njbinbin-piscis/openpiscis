@@ -1453,6 +1453,7 @@ pub async fn run_debug_scenario(
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
+        loop_halt: None,
     };
 
     // Inject the effective workspace path into the prompt so the agent knows where to write files.

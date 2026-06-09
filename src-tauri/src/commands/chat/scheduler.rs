@@ -872,6 +872,7 @@ pub async fn execute_task(
         pool_session_id: None,
         tool_use_id: None,
         cancel: cancel.clone(),
+        loop_halt: None,
     };
 
     let messages = vec![LlmMessage {

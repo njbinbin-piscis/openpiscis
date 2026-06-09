@@ -570,6 +570,7 @@ impl CallKoiTool {
             pool_session_id: pool_session_id.clone(),
             tool_use_id: None,
             cancel: cancel.clone(),
+            loop_halt: None,
         };
 
         let (event_tx, mut event_rx) = tokio::sync::mpsc::channel::<AgentEvent>(256);

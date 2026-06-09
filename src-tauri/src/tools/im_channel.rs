@@ -592,6 +592,7 @@ mod tests {
             pool_session_id: Some("pool_123".to_string()),
             tool_use_id: None,
             cancel: Arc::new(AtomicBool::new(false)),
+            loop_halt: None,
         }
     }
 

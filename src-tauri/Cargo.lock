@@ -4600,7 +4600,7 @@ name = "piscis-bench"
 version = "0.0.0"
 dependencies = [
  "piscis-desktop",
- "piscis-kernel 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55)",
+ "piscis-kernel",
  "serde_json",
  "tokio",
  "tracing-subscriber",
@@ -4609,19 +4609,7 @@ dependencies = [
 [[package]]
 name = "piscis-core"
 version = "0.8.47"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.53#b0c739409b75e7c2e3dc80eeb4a2a5258c22d8f5"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "piscis-core"
-version = "0.8.47"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55#dc123f230f8a07096b431f89e35f71dca6f48a0f"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.56#0941b8ba4c9d6b725b4e3bb5cf51522667c333c4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4652,8 +4640,8 @@ dependencies = [
  "notify",
  "once_cell",
  "pdf-extract",
- "piscis-core 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55)",
- "piscis-kernel 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55)",
+ "piscis-core",
+ "piscis-kernel",
  "portable-pty",
  "qrcode",
  "regex",
@@ -4693,7 +4681,7 @@ dependencies = [
 [[package]]
 name = "piscis-kernel"
 version = "0.8.47"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.53#b0c739409b75e7c2e3dc80eeb4a2a5258c22d8f5"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.56#0941b8ba4c9d6b725b4e3bb5cf51522667c333c4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4710,44 +4698,7 @@ dependencies = [
  "lopdf",
  "once_cell",
  "pdf-extract",
- "piscis-core 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.53)",
- "regex",
- "reqwest 0.12.28",
- "rusqlite",
- "russh",
- "scraper",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tokio-cron-scheduler",
- "tracing",
- "urlencoding",
- "uuid",
- "windows 0.58.0",
-]
-
-[[package]]
-name = "piscis-kernel"
-version = "0.8.47"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55#dc123f230f8a07096b431f89e35f71dca6f48a0f"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "chacha20poly1305",
- "chrono",
- "dirs 5.0.1",
- "encoding_rs",
- "futures",
- "getrandom 0.2.17",
- "hex",
- "image",
- "lettre",
- "lopdf",
- "once_cell",
- "pdf-extract",
- "piscis-core 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.55)",
+ "piscis-core",
  "regex",
  "reqwest 0.12.28",
  "rusqlite",
@@ -5492,7 +5443,7 @@ dependencies = [
 [[package]]
 name = "robotz-automation"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#93a0e11864f86ef1f5c0897193d5e88e426b4aa8"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#1ab4a025669b57488caf17c5292a202999f51e72"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5500,7 +5451,7 @@ dependencies = [
  "chrono",
  "image",
  "once_cell",
- "piscis-kernel 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.53)",
+ "piscis-kernel",
  "robotz-core",
  "serde",
  "serde_json",
@@ -5514,7 +5465,7 @@ dependencies = [
 [[package]]
 name = "robotz-browser"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#93a0e11864f86ef1f5c0897193d5e88e426b4aa8"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#1ab4a025669b57488caf17c5292a202999f51e72"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5523,7 +5474,7 @@ dependencies = [
  "dirs 5.0.1",
  "futures",
  "once_cell",
- "piscis-kernel 0.8.47 (git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.53)",
+ "piscis-kernel",
  "reqwest 0.12.28",
  "robotz-core",
  "serde",
@@ -5537,7 +5488,7 @@ dependencies = [
 [[package]]
 name = "robotz-core"
 version = "0.1.1"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#93a0e11864f86ef1f5c0897193d5e88e426b4aa8"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?branch=master#1ab4a025669b57488caf17c5292a202999f51e72"
 dependencies = [
  "anyhow",
  "async-trait",

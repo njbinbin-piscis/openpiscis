@@ -541,6 +541,7 @@ impl KoiRuntime {
                 pool_session_id: pool_session_id.map(String::from),
                 tool_use_id: None,
                 cancel: cancel.clone(),
+                loop_halt: None,
             };
 
             let task_with_env = if workspace_root.trim().is_empty() {

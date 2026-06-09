@@ -294,6 +294,7 @@ When you need to wait for an external event, background process, Koi/Fish respon
             pool_session_id: ctx.pool_session_id.clone(),
             tool_use_id: None,
             cancel: ctx.cancel.clone(),
+            loop_halt: None,
         };
 
         let (event_tx, mut event_rx) = tokio::sync::mpsc::channel::<AgentEvent>(256);

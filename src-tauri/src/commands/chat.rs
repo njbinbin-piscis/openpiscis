@@ -1322,6 +1322,7 @@ pub async fn chat_send(
         pool_session_id: bound_pool_id,
         tool_use_id: None,
         cancel: cancel.clone(),
+        loop_halt: None,
     };
 
     // Create event channel
@@ -2307,6 +2308,7 @@ pub async fn run_agent_headless(
         pool_session_id: pool_session_id.clone(),
         tool_use_id: None,
         cancel: cancel.clone(),
+        loop_halt: None,
     };
 
     let (event_tx, mut event_rx) = tokio::sync::mpsc::channel::<AgentEvent>(256);
