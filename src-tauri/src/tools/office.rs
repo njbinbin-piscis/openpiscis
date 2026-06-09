@@ -417,9 +417,18 @@ $result | ConvertTo-Json -Depth 4
                 let range = input["range"].as_str().unwrap_or("A1:B10");
                 let chart_type = input["chart_type"].as_str().unwrap_or("line");
                 let chart_title = input["chart_title"].as_str().unwrap_or("Chart");
+                // XlChartType constants (Microsoft Office interop):
+                // xlLine=4, xlPie=5, xlArea=1, xlColumnClustered=51,
+                // xlBarClustered=57, xlXYScatter=-4169.
+                // Note: -4102 is xl3DPie, NOT xlLine.
                 let xl_type: i32 = match chart_type {
-                    "line" => -4102, "bar" => 2, "column" => 51,
-                    "pie" => 5, "scatter" => -4169, "area" => 1, _ => -4169,
+                    "line" => 4,
+                    "bar" => 57,
+                    "column" => 51,
+                    "pie" => 5,
+                    "scatter" => -4169,
+                    "area" => 1,
+                    _ => 4,
                 };
                 Ok(format!(r#"
 $path = {path_var}

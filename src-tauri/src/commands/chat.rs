@@ -17,7 +17,7 @@ use crate::store::{
 };
 use piscis_core::project_state::build_coordination_event_digest;
 use piscis_kernel::agent::messages::AgentEvent;
-use piscis_kernel::agent::plan::summarize_todos;
+use piscis_kernel::agent::plan::{summarize_todos, PlanTodoItem};
 use piscis_kernel::agent::tool::ToolContext;
 use piscis_kernel::llm::{
     build_client_with_timeout, ContentBlock, LlmMessage, MessageContent, ToolDef,
@@ -277,6 +277,43 @@ pub(crate) fn render_task_state_section(
     ctx
 }
 
+fn plan_snapshot_label(items: &[PlanTodoItem], fallback: &str) -> String {
+    items
+        .iter()
+        .find(|t| t.status == "in_progress")
+        .or_else(|| items.first())
+        .map(|t| t.content.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(fallback)
+        .chars()
+        .take(100)
+        .collect()
+}
+
+/// Write a visible plan snapshot for the activity/audit log. Called on each
+/// `plan_todo` update and at turn boundaries so the log page is not empty
+/// while audit entries already show `plan_todo` tool calls.
+pub(crate) async fn persist_plan_snapshot_items(
+    db_arc: &Arc<tokio::sync::Mutex<crate::store::Database>>,
+    session_id: &str,
+    items: &[PlanTodoItem],
+    label_hint: &str,
+) {
+    if items.is_empty() {
+        return;
+    }
+    let items_json = serde_json::to_string(items).unwrap_or_else(|_| "[]".into());
+    let label = plan_snapshot_label(items, label_hint);
+    let db = db_arc.lock().await;
+    if let Err(e) = db.insert_plan_snapshot(session_id, &label, &items_json) {
+        tracing::warn!(
+            "failed to persist plan snapshot for session {}: {}",
+            session_id,
+            e
+        );
+    }
+}
+
 pub(crate) async fn persist_task_spine_from_plan_state(
     app: &AppHandle,
     db_arc: &Arc<tokio::sync::Mutex<crate::store::Database>>,
@@ -293,6 +330,8 @@ pub(crate) async fn persist_task_spine_from_plan_state(
     if todos.is_empty() {
         return;
     }
+
+    persist_plan_snapshot_items(db_arc, plan_session_id, &todos, fallback_goal).await;
 
     let current_step = todos
         .iter()
@@ -345,9 +384,6 @@ pub(crate) async fn persist_task_spine_from_plan_state(
             Some(&summary),
             Some(status),
         );
-        let items_json = serde_json::to_string(&todos).unwrap_or_else(|_| "[]".into());
-        let label: String = goal.chars().take(100).collect();
-        let _ = db.insert_plan_snapshot(plan_session_id, &label, &items_json);
     }
 }
 
@@ -365,13 +401,7 @@ pub(crate) async fn archive_plan_before_clear(
         let plans = plan_state.lock().await;
         plans.get(session_id).cloned().unwrap_or_default()
     };
-    if items.is_empty() {
-        return;
-    }
-    let items_json = serde_json::to_string(&items).unwrap_or_else(|_| "[]".into());
-    let snapshot_label: String = label.chars().take(100).collect();
-    let db = db_arc.lock().await;
-    let _ = db.insert_plan_snapshot(session_id, &snapshot_label, &items_json);
+    persist_plan_snapshot_items(db_arc, session_id, &items, label).await;
 }
 
 async fn persist_session_task_contract(
@@ -1512,6 +1542,15 @@ pub async fn chat_send(
                     let db = db_arc.lock().await;
                     let _ = db.update_session_status(&session_id_clone, "idle");
                 }
+                persist_task_spine_from_plan_state(
+                    &app_clone,
+                    &db_arc,
+                    &session_id_clone,
+                    "session",
+                    &session_id_clone,
+                    &effective_content_clone,
+                )
+                .await;
                 // Emit error event (Done is not sent on error)
                 let _ = event_tx
                     .send(AgentEvent::Error {

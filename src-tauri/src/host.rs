@@ -18,7 +18,7 @@ use piscis_core::host::{
     ConfirmRequest, EventSink, HostRuntime, HostTools, InteractiveRequest, Notifier, PoolEvent,
     PoolEventSink, SecretsStore, ToolRegistryHandle,
 };
-use piscis_kernel::agent::plan::PlanStore;
+use piscis_kernel::agent::plan::{PlanStore, PlanTodoItem};
 use piscis_kernel::agent::tool::{new_tool_registry_handle, ToolRegistry, ToolRegistryHandleExt};
 use piscis_kernel::pool::coordinator::CoordinatorConfig;
 use piscis_kernel::tools::NeutralToolsConfig;
@@ -73,6 +73,40 @@ impl EventSink for DesktopEventSink {
             map.entry("session_id".to_string())
                 .or_insert_with(|| Value::String(session_id.to_string()));
         }
+
+        // Persist plan snapshots as soon as plan_todo updates so the activity
+        // log's Todo section matches audit entries for the same chat session.
+        if event == "agent_event"
+            && payload.get("type").and_then(Value::as_str) == Some("plan_update")
+        {
+            if let Some(items_val) = payload.get("items").cloned() {
+                if let Some(state) = self.app.try_state::<AppState>() {
+                    let db = state.db.clone();
+                    let sid = session_id.to_string();
+                    tokio::spawn(async move {
+                        match serde_json::from_value::<Vec<PlanTodoItem>>(items_val) {
+                            Ok(items) => {
+                                crate::commands::chat::persist_plan_snapshot_items(
+                                    &db,
+                                    &sid,
+                                    &items,
+                                    "plan update",
+                                )
+                                .await;
+                            }
+                            Err(e) => {
+                                tracing::warn!(
+                                    "plan_update snapshot skipped for session {}: {}",
+                                    sid,
+                                    e
+                                );
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
         let _ = self.app.emit(event, payload);
     }
 
