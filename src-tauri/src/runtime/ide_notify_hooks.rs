@@ -75,8 +75,7 @@ impl AgentHooks for JournalWithIdeNotify {
                 let normalized = path.replace('\\', "/").to_lowercase();
                 if normalized.contains("/skills/installed/")
                     || normalized.contains("/skills/.hub/")
-                    || normalized.ends_with("/skill.md")
-                        && normalized.contains("/skills/")
+                    || normalized.ends_with("/skill.md") && normalized.contains("/skills/")
                 {
                     return HookDecision::Deny(
                         "Cannot modify locked skill files via file_write/file_edit. Use skill_manage for draft/learned skills.".into(),
@@ -98,7 +97,9 @@ impl AgentHooks for JournalWithIdeNotify {
     async fn on_context_event(&self, ev: &ContextHookEvent<'_>) {
         if let ContextHookEvent::AfterCompact { session_id, .. } = ev {
             let count = {
-                let mut counts = SESSION_COMPACTION_COUNTS.lock().unwrap_or_else(|e| e.into_inner());
+                let mut counts = SESSION_COMPACTION_COUNTS
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
                 let entry = counts.entry(session_id.to_string()).or_insert(0);
                 *entry = entry.saturating_add(1);
                 *entry
@@ -112,10 +113,11 @@ impl AgentHooks for JournalWithIdeNotify {
                     let state = state.inner().clone();
                     let sid = session_id.to_string();
                     tokio::spawn(async move {
-                        let _ = crate::commands::chat::scheduler::trigger_consolidation_for_session(
-                            &state, &sid,
-                        )
-                        .await;
+                        let _ =
+                            crate::commands::chat::scheduler::trigger_consolidation_for_session(
+                                &state, &sid,
+                            )
+                            .await;
                     });
                 }
             }

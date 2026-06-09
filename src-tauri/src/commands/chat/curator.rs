@@ -37,9 +37,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 
 fn backup_skills_tree(root: &Path) -> Result<String, String> {
     let ts = Utc::now().format("%Y%m%d-%H%M%S").to_string();
-    let backup_dir = root
-        .join(provenance::SUBDIR_CURATOR_BACKUPS)
-        .join(&ts);
+    let backup_dir = root.join(provenance::SUBDIR_CURATOR_BACKUPS).join(&ts);
     std::fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
     for sub in [
         provenance::SUBDIR_INSTALLED,
@@ -101,11 +99,7 @@ fn last_activity_at(
     }
 }
 
-fn is_writable_curator_target(
-    root: &Path,
-    db: &crate::store::Database,
-    skill_id: &str,
-) -> bool {
+fn is_writable_curator_target(root: &Path, db: &crate::store::Database, skill_id: &str) -> bool {
     let meta = service::load_meta(db, skill_id);
     if meta.locked || meta.pinned {
         return false;
@@ -316,7 +310,10 @@ async fn llm_merge_duplicates(
         .map(|c| {
             format!(
                 "- id={} name={} lifecycle={}\n  excerpt: {}",
-                c.skill_id, c.name, c.lifecycle, c.excerpt.replace('\n', " ")
+                c.skill_id,
+                c.name,
+                c.lifecycle,
+                c.excerpt.replace('\n', " ")
             )
         })
         .collect::<Vec<_>>()
@@ -383,7 +380,8 @@ Skills:
     let text = resp.content;
     let json_start = text.find('{').unwrap_or(0);
     let json_end = text.rfind('}').map(|i| i + 1).unwrap_or(text.len());
-    let Ok(decision) = serde_json::from_str::<CuratorLlmDecision>(&text[json_start..json_end]) else {
+    let Ok(decision) = serde_json::from_str::<CuratorLlmDecision>(&text[json_start..json_end])
+    else {
         warn!("curator LLM merge: failed to parse JSON");
         return Ok((0, 0));
     };
@@ -410,7 +408,11 @@ Skills:
             continue;
         };
         let mut content = std::fs::read_to_string(&keep_path).unwrap_or_default();
-        if let Some(note) = m.pitfalls_append.as_deref().filter(|s| !s.trim().is_empty()) {
+        if let Some(note) = m
+            .pitfalls_append
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+        {
             if content.contains("## Pitfalls") {
                 content.push_str(&format!("\n- {}\n", note.trim()));
             } else {
@@ -427,10 +429,7 @@ Skills:
             if let Some(dup_path) = provenance::find_skill_md(&root, dup_id) {
                 let dup_body = std::fs::read_to_string(&dup_path).unwrap_or_default();
                 let note: String = dup_body.chars().take(200).collect();
-                content.push_str(&format!(
-                    "\n\n<!-- merged from {} -->\n{}\n",
-                    dup_id, note
-                ));
+                content.push_str(&format!("\n\n<!-- merged from {} -->\n{}\n", dup_id, note));
             }
             let meta = service::load_meta(&db, dup_id);
             let result = if meta.lifecycle == provenance::LIFECYCLE_DRAFT {

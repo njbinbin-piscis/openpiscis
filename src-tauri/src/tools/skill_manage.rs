@@ -101,21 +101,17 @@ impl Tool for SkillManageTool {
                     .as_str()
                     .ok_or_else(|| anyhow::anyhow!("name required"))?;
                 let description = input["description"].as_str().unwrap_or(name);
-                let content = input["content"].as_str().map(String::from).unwrap_or_else(|| {
-                    SKILL_TEMPLATE
-                        .replace("{name}", name)
-                        .replace("{description}", description)
-                        .replace("{title}", name)
-                });
+                let content = input["content"]
+                    .as_str()
+                    .map(String::from)
+                    .unwrap_or_else(|| {
+                        SKILL_TEMPLATE
+                            .replace("{name}", name)
+                            .replace("{description}", description)
+                            .replace("{title}", name)
+                    });
                 let db = self.db.lock().await;
-                let id = service::create_draft(
-                    &db,
-                    &root,
-                    name,
-                    &content,
-                    "agent",
-                    session_id,
-                )?;
+                let id = service::create_draft(&db, &root, name, &content, "agent", session_id)?;
                 drop(db);
                 let _ = self.loader.lock().await.load_all();
                 Ok(ToolResult::ok(format!("Created draft skill '{}'", id)))
@@ -129,7 +125,15 @@ impl Tool for SkillManageTool {
                     .ok_or_else(|| anyhow::anyhow!("content required"))?;
                 let skill_id = service::sanitize_skill_id(name);
                 let db = self.db.lock().await;
-                service::patch_skill_content(&db, &root, &skill_id, content, "agent", session_id, Some("edit"))?;
+                service::patch_skill_content(
+                    &db,
+                    &root,
+                    &skill_id,
+                    content,
+                    "agent",
+                    session_id,
+                    Some("edit"),
+                )?;
                 drop(db);
                 let _ = self.loader.lock().await.load_all();
                 Ok(ToolResult::ok(format!("Updated skill '{}'", skill_id)))
@@ -147,13 +151,7 @@ impl Tool for SkillManageTool {
                 let skill_id = service::sanitize_skill_id(name);
                 let db = self.db.lock().await;
                 service::patch_skill_replace(
-                    &db,
-                    &root,
-                    &skill_id,
-                    old_string,
-                    new_string,
-                    "agent",
-                    session_id,
+                    &db, &root, &skill_id, old_string, new_string, "agent", session_id,
                 )?;
                 drop(db);
                 let _ = self.loader.lock().await.load_all();

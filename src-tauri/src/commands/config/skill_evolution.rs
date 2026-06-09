@@ -43,7 +43,10 @@ pub async fn promote_skill(state: State<'_, AppState>, skill_id: String) -> Resu
 }
 
 #[tauri::command]
-pub async fn discard_draft_skill(state: State<'_, AppState>, skill_id: String) -> Result<(), String> {
+pub async fn discard_draft_skill(
+    state: State<'_, AppState>,
+    skill_id: String,
+) -> Result<(), String> {
     let root = app_skills_root(&state);
     let db = state.db.lock().await;
     service::delete_draft(&db, &root, &skill_id).map_err(|e| e.to_string())

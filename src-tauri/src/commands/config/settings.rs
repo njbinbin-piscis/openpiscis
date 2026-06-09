@@ -336,10 +336,7 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
         if let Some(v) = evo.get("review_enabled").and_then(|x| x.as_bool()) {
             settings.skill_evolution.review_enabled = v;
         }
-        if let Some(v) = evo
-            .get("review_every_turn")
-            .and_then(|x| x.as_bool())
-        {
+        if let Some(v) = evo.get("review_every_turn").and_then(|x| x.as_bool()) {
             settings.skill_evolution.review_every_turn = v;
         }
         if let Some(v) = evo
@@ -354,16 +351,10 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
         {
             settings.skill_evolution.umbrella_skill_interval_turns = v.max(1) as u32;
         }
-        if let Some(v) = evo
-            .get("curator_interval_hours")
-            .and_then(|x| x.as_u64())
-        {
+        if let Some(v) = evo.get("curator_interval_hours").and_then(|x| x.as_u64()) {
             settings.skill_evolution.curator_interval_hours = v.max(1) as u32;
         }
-        if let Some(v) = evo
-            .get("curator_min_idle_hours")
-            .and_then(|x| x.as_u64())
-        {
+        if let Some(v) = evo.get("curator_min_idle_hours").and_then(|x| x.as_u64()) {
             settings.skill_evolution.curator_min_idle_hours = v as u32;
         }
         if let Some(v) = evo.get("stale_after_days").and_then(|x| x.as_u64()) {

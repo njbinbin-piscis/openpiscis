@@ -144,9 +144,7 @@ Tool calls this turn: {}
             role: "user".to_string(),
             content: MessageContent::Text(prompt),
         }],
-        system: Some(
-            "You output only valid JSON for skill/memory review decisions.".into(),
-        ),
+        system: Some("You output only valid JSON for skill/memory review decisions.".into()),
         tools: vec![],
         model: model.clone(),
         max_tokens: max_tokens.min(1024),

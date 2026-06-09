@@ -215,8 +215,7 @@ pub async fn sync_skills_from_disk(state: State<'_, AppState>) -> Result<SyncSki
                 crate::skills::provenance::SkillConfigMeta::draft("sync", None)
             }
             crate::skills::provenance::LIFECYCLE_LEARNED => {
-                let mut m =
-                    crate::skills::provenance::SkillConfigMeta::draft("sync", None);
+                let mut m = crate::skills::provenance::SkillConfigMeta::draft("sync", None);
                 m.lifecycle = crate::skills::provenance::LIFECYCLE_LEARNED.to_string();
                 m
             }

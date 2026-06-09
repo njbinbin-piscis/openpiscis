@@ -353,7 +353,11 @@ pub(crate) async fn persist_task_spine_from_plan_state(
 
 pub(crate) async fn archive_plan_before_clear(
     db_arc: &Arc<tokio::sync::Mutex<crate::store::Database>>,
-    plan_state: &Arc<tokio::sync::Mutex<std::collections::HashMap<String, Vec<piscis_kernel::agent::plan::PlanTodoItem>>>>,
+    plan_state: &Arc<
+        tokio::sync::Mutex<
+            std::collections::HashMap<String, Vec<piscis_kernel::agent::plan::PlanTodoItem>>,
+        >,
+    >,
     session_id: &str,
     label: &str,
 ) {
@@ -1478,11 +1482,12 @@ pub async fn chat_send(
                             owner_for_mem,
                         )
                         .await;
-                        if let Err(e) = crate::commands::chat::scheduler::trigger_consolidation_for_session(
-                            &state_for_dream,
-                            &sid_for_mem,
-                        )
-                        .await
+                        if let Err(e) =
+                            crate::commands::chat::scheduler::trigger_consolidation_for_session(
+                                &state_for_dream,
+                                &sid_for_mem,
+                            )
+                            .await
                         {
                             tracing::debug!(
                                 "session memory consolidation skipped for {}: {}",

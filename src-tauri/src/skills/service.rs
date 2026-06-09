@@ -1,9 +1,7 @@
 //! Shared skill install / mutate / promote logic for Tauri commands and `skill_manage`.
 
 use crate::skills::loader::SkillLoader;
-use crate::skills::provenance::{
-    self, SkillConfigMeta, LIFECYCLE_DRAFT, LIFECYCLE_LEARNED,
-};
+use crate::skills::provenance::{self, SkillConfigMeta, LIFECYCLE_DRAFT, LIFECYCLE_LEARNED};
 use crate::store::Database;
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
@@ -33,11 +31,7 @@ pub fn load_meta(db: &Database, skill_id: &str) -> SkillConfigMeta {
         .unwrap_or_default()
 }
 
-pub fn write_guard(
-    root: &Path,
-    db: &Database,
-    skill_id: &str,
-) -> Result<SkillConfigMeta> {
+pub fn write_guard(root: &Path, db: &Database, skill_id: &str) -> Result<SkillConfigMeta> {
     let meta = load_meta(db, skill_id);
     let hub_locked = provenance::is_hub_locked(root, skill_id);
     if !provenance::is_writable(&meta, hub_locked) {
@@ -61,13 +55,7 @@ pub fn register_skill_db(
     meta: &SkillConfigMeta,
     created_by: Option<&str>,
 ) -> Result<()> {
-    db.upsert_skill_with_config(
-        skill_id,
-        name,
-        description,
-        "📦",
-        Some(&meta.to_json()),
-    )?;
+    db.upsert_skill_with_config(skill_id, name, description, "📦", Some(&meta.to_json()))?;
     db.ensure_skill_usage(skill_id, created_by)?;
     Ok(())
 }
@@ -90,7 +78,14 @@ pub fn install_to_installed(
     }
     let skill_id = sanitize_skill_id(&skill.name);
     let meta = SkillConfigMeta::installed(source, source_url, session_id);
-    register_skill_db(db, &skill_id, &skill.name, &skill.description, &meta, Some(source))?;
+    register_skill_db(
+        db,
+        &skill_id,
+        &skill.name,
+        &skill.description,
+        &meta,
+        Some(source),
+    )?;
 
     let skill_dir = provenance::installed_dir(root).join(&skill_id);
     std::fs::create_dir_all(&skill_dir)?;

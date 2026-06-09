@@ -206,10 +206,7 @@ pub fn is_writable(meta: &SkillConfigMeta, hub_locked: bool) -> bool {
     if meta.locked || meta.pinned {
         return false;
     }
-    matches!(
-        meta.lifecycle.as_str(),
-        LIFECYCLE_DRAFT | LIFECYCLE_LEARNED
-    )
+    matches!(meta.lifecycle.as_str(), LIFECYCLE_DRAFT | LIFECYCLE_LEARNED)
 }
 
 pub fn is_hub_locked(root: &Path, skill_id: &str) -> bool {
@@ -236,7 +233,10 @@ pub fn add_hub_lock(root: &Path, skill_id: &str) -> std::io::Result<()> {
     };
     if !ids.iter().any(|id| id == skill_id) {
         ids.push(skill_id.to_string());
-        std::fs::write(&lock_path, serde_json::to_string_pretty(&ids).unwrap_or_default())?;
+        std::fs::write(
+            &lock_path,
+            serde_json::to_string_pretty(&ids).unwrap_or_default(),
+        )?;
     }
     Ok(())
 }
@@ -312,12 +312,9 @@ mod tests {
     #[test]
     fn resolve_skill_dir_paths() {
         let root = std::path::Path::new("/tmp/skills");
-        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_DRAFT)
-            .ends_with(".draft/foo"));
-        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_LEARNED)
-            .ends_with("learned/foo"));
-        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_INSTALLED)
-            .ends_with("installed/foo"));
+        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_DRAFT).ends_with(".draft/foo"));
+        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_LEARNED).ends_with("learned/foo"));
+        assert!(resolve_skill_dir(root, "foo", LIFECYCLE_INSTALLED).ends_with("installed/foo"));
     }
 
     #[test]
