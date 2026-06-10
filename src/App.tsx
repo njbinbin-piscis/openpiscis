@@ -320,7 +320,9 @@ function AppContent() {
             </div>
           )}
           {mountedTabs.has("skills") && (
-            <div className="tab-panel" hidden={activeTab !== "skills"}><Skills /></div>
+            <div className="tab-panel" hidden={activeTab !== "skills"}>
+              <Skills onNavigateTab={() => setActiveTab("chat")} />
+            </div>
           )}
           {mountedTabs.has("scheduler") && (
             <div className="tab-panel" hidden={activeTab !== "scheduler"}><Scheduler /></div>

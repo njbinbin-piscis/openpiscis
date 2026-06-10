@@ -6,6 +6,7 @@
 //! - [`settings`] — global settings (LLM, theme, workspace, …)
 //! - [`skills`] — skill catalog & install/uninstall, Clawhub bridge
 //! - [`claude_plugins`] — Anthropic official plugin git-subdir install
+//! - [`openai_skills`] — OpenAI curated skills git-subdir install
 //! - [`memory`] — long-term memory listing / add / delete
 //! - [`mcp`] — MCP server list / save / test
 //! - [`tools`] — builtin tool listing + manual heartbeat trigger
@@ -23,6 +24,7 @@ pub mod claude_plugins;
 pub mod enterprise_capability;
 pub mod mcp;
 pub mod memory;
+pub mod openai_skills;
 pub mod scene;
 pub mod settings;
 pub mod skill_evolution;

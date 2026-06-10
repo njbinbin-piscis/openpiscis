@@ -25,8 +25,13 @@ interface SessionsState {
   activeSessionId: string | null;
   loading: boolean;
   error: string | null;
-  /** One-shot navigation request from Pond IDE → main Chat tab. */
-  pendingMainChatNav: { filter: MainChatSessionKind; sessionId?: string | null } | null;
+  /** One-shot navigation request from Pond IDE / Skills → main Chat tab. */
+  pendingMainChatNav: {
+    filter: MainChatSessionKind;
+    sessionId?: string | null;
+    composerDraft?: string;
+    autoSend?: boolean;
+  } | null;
 }
 
 export const sessionsSlice = createSlice({
@@ -80,11 +85,18 @@ export const sessionsSlice = createSlice({
     },
     openMainChatView: (
       state,
-      action: PayloadAction<{ filter: MainChatSessionKind; sessionId?: string | null }>,
+      action: PayloadAction<{
+        filter: MainChatSessionKind;
+        sessionId?: string | null;
+        composerDraft?: string;
+        autoSend?: boolean;
+      }>,
     ) => {
       state.pendingMainChatNav = {
         filter: action.payload.filter,
         sessionId: action.payload.sessionId ?? null,
+        composerDraft: action.payload.composerDraft,
+        autoSend: action.payload.autoSend,
       };
       if (action.payload.sessionId) {
         state.activeSessionId = action.payload.sessionId;

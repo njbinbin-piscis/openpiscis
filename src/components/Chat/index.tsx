@@ -388,12 +388,20 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
   // Which session-kind dropdown picker is currently open in the top bar.
   const [openPicker, setOpenPicker] = useState<SessionKind | null>(null);
 
-  // Pond IDE → main Chat: switch filter (and optional session) when requested.
+  const pendingAutoSendRef = useRef<string | null>(null);
+
+  // Pond IDE / Skills → main Chat: switch filter, session, and optional composer draft.
   useEffect(() => {
     if (!pendingMainChatNav) return;
     setSessionFilter(pendingMainChatNav.filter);
     if (pendingMainChatNav.sessionId) {
       dispatch(sessionsActions.setActiveSession(pendingMainChatNav.sessionId));
+    }
+    if (pendingMainChatNav.composerDraft) {
+      setInput(pendingMainChatNav.composerDraft);
+      if (pendingMainChatNav.autoSend) {
+        pendingAutoSendRef.current = pendingMainChatNav.composerDraft;
+      }
     }
     setOpenPicker(null);
     dispatch(sessionsActions.clearPendingMainChatNav());
@@ -1815,6 +1823,14 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
 
     await doSend(content, pending, skills, koi, true);
   }, [canSend, input, pendingAttachments, selectedSkills, selectedKoi, displaySessionId, running, activePlan, doSend, clearPendingComposer]);
+
+  useEffect(() => {
+    const draft = pendingAutoSendRef.current;
+    if (!draft || !displaySessionId || running) return;
+    pendingAutoSendRef.current = null;
+    setInput("");
+    void doSend(draft, [], [], null, true);
+  }, [displaySessionId, running, doSend]);
 
   const handleCancel = useCallback(() => {
     if (displaySessionId) {

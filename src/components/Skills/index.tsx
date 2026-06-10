@@ -1,23 +1,34 @@
 import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { RootState, skillsActions } from "../../store";
+import { RootState, skillsActions, sessionsActions } from "../../store";
 import {
   skillsApi,
   clawHubApi,
   claudePluginsApi,
+  openaiSkillsApi,
+  builtinToolsApi,
+  sessionsApi,
   skillEvolutionApi,
   parseSkillConfig,
   SkillCatalogItem,
   ClawHubSkill,
   ClaudePluginListItem,
   ClaudePluginDetail,
+  OpenAISkillListItem,
+  OpenAISkillDetail,
   SkillCompatibilityCheck,
   CuratorStatus,
   SkillRevision,
 } from "../../services/tauri";
 import ConfirmDialog from "../ConfirmDialog";
 import type { SyncSkillsResult } from "../../services/tauri";
+import i18n from "../../i18n";
+import { buildSkillAdaptationPrompt, type SkillAdaptationTarget } from "../../utils/skillAdaptation";
+
+interface SkillsProps {
+  onNavigateTab?: (tab: "chat") => void;
+}
 
 const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
   builtin:   { label: "builtin",   color: "var(--text-muted)" },
@@ -26,7 +37,7 @@ const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
   registry:  { label: "registry",  color: "var(--accent)" },
 };
 
-export default function Skills() {
+export default function Skills({ onNavigateTab }: SkillsProps = {}) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { skills } = useSelector((s: RootState) => s.skills);
@@ -50,7 +61,7 @@ export default function Skills() {
   const [syncing, setSyncing] = useState(false);
 
   // ClawHub marketplace
-  const [hubTab, setHubTab] = useState<"local" | "evolution" | "hub" | "official">("local");
+  const [hubTab, setHubTab] = useState<"local" | "evolution" | "hub" | "official" | "openai">("local");
   const [hubQuery, setHubQuery] = useState("");
   const [hubResults, setHubResults] = useState<ClawHubSkill[]>([]);
   const [hubSearching, setHubSearching] = useState(false);
@@ -65,6 +76,16 @@ export default function Skills() {
   const [officialDetail, setOfficialDetail] = useState<ClaudePluginDetail | null>(null);
   const [officialDetailLoading, setOfficialDetailLoading] = useState(false);
   const [officialInstalling, setOfficialInstalling] = useState<string | null>(null);
+
+  // OpenAI curated skills
+  const [openaiQuery, setOpenaiQuery] = useState("");
+  const [openaiSkills, setOpenaiSkills] = useState<OpenAISkillListItem[]>([]);
+  const [openaiSearching, setOpenaiSearching] = useState(false);
+  const [openaiError, setOpenaiError] = useState<string | null>(null);
+  const [openaiDetail, setOpenaiDetail] = useState<OpenAISkillDetail | null>(null);
+  const [openaiDetailLoading, setOpenaiDetailLoading] = useState(false);
+  const [openaiInstalling, setOpenaiInstalling] = useState<string | null>(null);
+  const [adaptBusy, setAdaptBusy] = useState<string | null>(null);
 
   // Skill evolution
   const [curatorStatus, setCuratorStatus] = useState<CuratorStatus | null>(null);
@@ -240,6 +261,63 @@ export default function Skills() {
     }
   }, [hubTab, officialPlugins.length, officialSearching, handleOfficialSearch]);
 
+  const handleOpenaiSearch = useCallback(async () => {
+    setOpenaiSearching(true);
+    setOpenaiError(null);
+    setOpenaiDetail(null);
+    try {
+      const result = await openaiSkillsApi.list(openaiQuery.trim(), 80);
+      setOpenaiSkills(result.items);
+      if (result.items.length === 0) {
+        setOpenaiError(t("skills.openaiNoResults"));
+      }
+    } catch (e) {
+      setOpenaiError(t("skills.openaiSearchFailed", { error: String(e) }));
+    } finally {
+      setOpenaiSearching(false);
+    }
+  }, [openaiQuery, t]);
+
+  useEffect(() => {
+    if (hubTab === "openai" && openaiSkills.length === 0 && !openaiSearching) {
+      handleOpenaiSearch();
+    }
+  }, [hubTab, openaiSkills.length, openaiSearching, handleOpenaiSearch]);
+
+  const handleOpenaiSelect = async (skill: OpenAISkillListItem) => {
+    setOpenaiDetailLoading(true);
+    setOpenaiError(null);
+    try {
+      const detail = await openaiSkillsApi.detail(skill.id);
+      setOpenaiDetail(detail);
+    } catch (e) {
+      setOpenaiError(t("skills.openaiDetailFailed", { error: String(e) }));
+    } finally {
+      setOpenaiDetailLoading(false);
+    }
+  };
+
+  const handleOpenaiInstall = async (skillId: string) => {
+    setOpenaiInstalling(skillId);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      const result = await openaiSkillsApi.install([skillId]);
+      const names = result.installed.map((s) => s.name).join(", ");
+      if (names) {
+        setSuccessMsg(t("skills.openaiInstallSuccess", { names, count: result.installed.length }));
+      }
+      if (result.errors.length > 0) {
+        setError(t("skills.openaiInstallPartial", { errors: result.errors.join("; ") }));
+      }
+      loadSkills();
+    } catch (e) {
+      setError(t("skills.installFailed", { error: String(e) }));
+    } finally {
+      setOpenaiInstalling(null);
+    }
+  };
+
   const handleOfficialSelect = async (plugin: ClaudePluginListItem) => {
     setOfficialDetailLoading(true);
     setOfficialError(null);
@@ -252,6 +330,64 @@ export default function Skills() {
       setOfficialDetailLoading(false);
     }
   };
+
+  const startAdaptationSession = useCallback(
+    async (target: SkillAdaptationTarget, sessionTitle: string) => {
+      setAdaptBusy(sessionTitle);
+      setError(null);
+      try {
+        const tools = await builtinToolsApi.list();
+        const lang = (i18n.language === "en" ? "en" : "zh") as "zh" | "en";
+        const prompt = buildSkillAdaptationPrompt(target, tools, lang);
+        const session = await sessionsApi.create(sessionTitle);
+        dispatch(sessionsActions.addSession(session));
+        dispatch(
+          sessionsActions.openMainChatView({
+            filter: "chat",
+            sessionId: session.id,
+            composerDraft: prompt,
+            autoSend: true,
+          }),
+        );
+        onNavigateTab?.("chat");
+      } catch (e) {
+        setError(t("skills.adaptSessionFailed", { error: String(e) }));
+      } finally {
+        setAdaptBusy(null);
+      }
+    },
+    [dispatch, onNavigateTab, t],
+  );
+
+  const handleOfficialAdapt = useCallback(() => {
+    if (!officialDetail || officialDetail.skills.length === 0) return;
+    void startAdaptationSession(
+      {
+        market: "anthropic-official",
+        bundleName: officialDetail.plugin.name,
+        bundleDescription: officialDetail.plugin.description,
+        skillNames: officialDetail.skills.map((s) => s.name),
+        sourcePath: officialDetail.plugin.source_path,
+        sourceTag: "claude-plugins-official",
+      },
+      t("skills.adaptSessionTitle", { name: officialDetail.plugin.name }),
+    );
+  }, [officialDetail, startAdaptationSession, t]);
+
+  const handleOpenaiAdapt = useCallback(() => {
+    if (!openaiDetail) return;
+    void startAdaptationSession(
+      {
+        market: "openai-curated",
+        bundleName: openaiDetail.skill.name,
+        bundleDescription: openaiDetail.skill.description,
+        skillNames: [openaiDetail.skill.name],
+        sourcePath: `skills/.curated/${openaiDetail.skill.dir_name}`,
+        sourceTag: "openai-curated",
+      },
+      t("skills.adaptSessionTitle", { name: openaiDetail.skill.name }),
+    );
+  }, [openaiDetail, startAdaptationSession, t]);
 
   const handleOfficialInstall = async (pluginId: string, skillDirs?: string[]) => {
     setOfficialInstalling(pluginId);
@@ -431,7 +567,7 @@ export default function Skills() {
 
         {/* Tab switcher */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
-          {(["local", "evolution", "hub", "official"] as const).map((tab) => (
+          {(["local", "evolution", "hub", "official", "openai"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setHubTab(tab)}
@@ -453,7 +589,9 @@ export default function Skills() {
                   ? `🧬 ${t("skills.tabEvolution")}`
                   : tab === "hub"
                     ? `🛒 ${t("skills.tabHub")}`
-                    : `🏛 ${t("skills.tabOfficial")}`}
+                    : tab === "official"
+                      ? `🏛 ${t("skills.tabOfficial")}`
+                      : `🤖 ${t("skills.tabOpenai")}`}
             </button>
           ))}
         </div>
@@ -814,17 +952,141 @@ export default function Skills() {
                               </div>
                             ))}
                           </div>
-                          <button
-                            className="btn btn-primary"
-                            disabled={officialInstalling === officialDetail.plugin.id}
-                            onClick={() => handleOfficialInstall(officialDetail.plugin.id)}
-                          >
-                            {officialInstalling === officialDetail.plugin.id
-                              ? t("skills.installing")
-                              : t("skills.officialInstallAll", { count: officialDetail.skills.length })}
-                          </button>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button
+                              className="btn btn-primary"
+                              disabled={officialInstalling === officialDetail.plugin.id}
+                              onClick={() => handleOfficialInstall(officialDetail.plugin.id)}
+                            >
+                              {officialInstalling === officialDetail.plugin.id
+                                ? t("skills.installing")
+                                : t("skills.officialInstallAll", { count: officialDetail.skills.length })}
+                            </button>
+                            <button
+                              className="btn btn-secondary"
+                              disabled={adaptBusy !== null}
+                              onClick={handleOfficialAdapt}
+                              title={t("skills.adaptBtnHint")}
+                            >
+                              {adaptBusy ? t("common.loading") : t("skills.adaptBtn")}
+                            </button>
+                          </div>
                         </>
                       )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {hubTab === "openai" && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 8, fontSize: 14 }}>
+                🤖 {t("skills.openaiSearch")}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  className="input"
+                  style={{ flex: 1 }}
+                  value={openaiQuery}
+                  onChange={(e) => setOpenaiQuery(e.target.value)}
+                  placeholder={t("skills.openaiSearchPlaceholder")}
+                  onKeyDown={(e) => e.key === "Enter" && handleOpenaiSearch()}
+                  disabled={openaiSearching}
+                />
+                <button
+                  className="btn btn-primary"
+                  onClick={handleOpenaiSearch}
+                  disabled={openaiSearching}
+                  style={{ flexShrink: 0 }}
+                >
+                  {openaiSearching ? t("common.loading") : t("common.search")}
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                {t("skills.openaiHint")}
+              </p>
+            </div>
+
+            {openaiError && (
+              <div style={{ padding: "8px 14px", background: "rgba(220,53,69,0.1)", borderLeft: "3px solid #dc3545", color: "#ff6b6b", fontSize: 12, marginBottom: 12 }}>
+                {openaiError}
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: openaiDetail ? "1fr 1.2fr" : "1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12, alignContent: "start" }}>
+                {openaiSkills.length === 0 && !openaiSearching && !openaiError && (
+                  <div className="empty-state" style={{ padding: "28px 16px", gridColumn: "1 / -1" }}>
+                    <div className="empty-state-title">{t("skills.openaiEmpty")}</div>
+                    <div className="empty-state-desc">{t("skills.openaiEmptyDesc")}</div>
+                  </div>
+                )}
+                {openaiSkills.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="card"
+                    style={{
+                      padding: 12,
+                      cursor: "pointer",
+                      border: openaiDetail?.skill.id === skill.id ? "1px solid var(--accent)" : undefined,
+                    }}
+                    onClick={() => handleOpenaiSelect(skill)}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>{skill.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>
+                      {skill.dir_name}
+                    </div>
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>
+                      {skill.description || t("skills.noDescription")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {openaiDetail && (
+                <div className="card" style={{ padding: 14, alignSelf: "start" }}>
+                  {openaiDetailLoading ? (
+                    <div>{t("common.loading")}</div>
+                  ) : (
+                    <>
+                      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{openaiDetail.skill.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
+                        skills/.curated/{openaiDetail.skill.dir_name}
+                        {" · "}
+                        <a
+                          href={`https://github.com/openai/skills/tree/main/skills/.curated/${openaiDetail.skill.dir_name}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          GitHub
+                        </a>
+                      </div>
+                      <p style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                        {openaiDetail.skill.description || t("skills.noDescription")}
+                      </p>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button
+                          className="btn btn-primary"
+                          disabled={openaiInstalling === openaiDetail.skill.id}
+                          onClick={() => handleOpenaiInstall(openaiDetail.skill.id)}
+                        >
+                          {openaiInstalling === openaiDetail.skill.id
+                            ? t("skills.installing")
+                            : t("skills.installBtn")}
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          disabled={adaptBusy !== null}
+                          onClick={handleOpenaiAdapt}
+                          title={t("skills.adaptBtnHint")}
+                        >
+                          {adaptBusy ? t("common.loading") : t("skills.adaptBtn")}
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

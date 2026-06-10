@@ -338,6 +338,52 @@ export const claudePluginsApi = {
 };
 
 // ---------------------------------------------------------------------------
+// OpenAI skills/.curated (git-subdir skill bundles)
+// ---------------------------------------------------------------------------
+
+export interface OpenAISkillListItem {
+  id: string;
+  name: string;
+  description: string;
+  dir_name: string;
+}
+
+export interface OpenAISkillPreview {
+  dir_name: string;
+  name: string;
+  description: string;
+  version: string;
+}
+
+export interface OpenAISkillListResult {
+  items: OpenAISkillListItem[];
+  total: number;
+  query: string;
+}
+
+export interface OpenAISkillDetail {
+  skill: OpenAISkillListItem;
+  preview: OpenAISkillPreview;
+}
+
+export interface OpenAISkillInstallResult {
+  installed: SkillCatalogItem[];
+  skipped: string[];
+  errors: string[];
+}
+
+export const openaiSkillsApi = {
+  list: (query: string, limit?: number) =>
+    invoke<OpenAISkillListResult>("openai_skills_list", { query, limit }),
+  detail: (skillId: string) =>
+    invoke<OpenAISkillDetail>("openai_skills_detail", { skillId }),
+  install: (skillIds?: string[]) =>
+    invoke<OpenAISkillInstallResult>("openai_skills_install", {
+      skillIds: skillIds ?? null,
+    }),
+};
+
+// ---------------------------------------------------------------------------
 // Skill evolution (draft / promote / lock / curator)
 // ---------------------------------------------------------------------------
 
