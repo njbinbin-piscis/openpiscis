@@ -8,14 +8,15 @@ use piscis_kernel::llm::{
 use piscis_kernel::store::SkillEvolutionSettings;
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::sync::{Arc, LazyLock, Mutex};
+use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use tracing::debug;
 
-static SESSION_REVIEW_TURNS: LazyLock<Mutex<HashMap<String, u32>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-static SESSION_LAST_UMBRELLA_TURN: LazyLock<Mutex<HashMap<String, u32>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static SESSION_REVIEW_TURNS: Lazy<Mutex<HashMap<String, u32>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+static SESSION_LAST_UMBRELLA_TURN: Lazy<Mutex<HashMap<String, u32>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Debug, Deserialize)]
 struct ReviewDecision {

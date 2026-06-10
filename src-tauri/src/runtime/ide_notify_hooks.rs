@@ -11,15 +11,16 @@ use piscis_kernel::agent::file_journal::FileJournal;
 use piscis_kernel::agent::hooks::{AgentHooks, ContextHookEvent, HookDecision, ToolHookEvent};
 use piscis_kernel::agent::tool::ToolResult;
 use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex};
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
 use tauri::{AppHandle, Emitter, Manager};
 
 const FILE_TOOLS: &[&str] = &["file_write", "file_edit"];
 const COMPACTION_CONSOLIDATION_THRESHOLD: u32 = 3;
 
-static SESSION_COMPACTION_COUNTS: LazyLock<Mutex<HashMap<String, u32>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
+static SESSION_COMPACTION_COUNTS: Lazy<Mutex<HashMap<String, u32>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// Wraps [`FileJournal`] and broadcasts IDE refresh events after file mutations.
 pub struct JournalWithIdeNotify {

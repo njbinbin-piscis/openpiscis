@@ -139,7 +139,7 @@ pub fn create_draft(
         session_id,
         created_by,
         Some("create"),
-        before_hash.as_deref(),
+        before_hash,
         Some(&after_hash),
     )?;
     db.bump_skill_patch(&skill_id)?;
