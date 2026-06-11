@@ -743,7 +743,7 @@
 }
 
 .chatpool-orgspec-editor {
-  background: var(--bg-input, #161622);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px;

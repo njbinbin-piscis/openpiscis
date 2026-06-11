@@ -395,7 +395,7 @@ impl SkillLoader {
                 "web-automation",
                 "Web Automation",
                 "Automate web browsing tasks using Chrome",
-                vec!["browser", "web_search"],
+                vec!["browser", "web_search", "web_fetch"],
                 vec![
                     "browser",
                     "web",
@@ -673,6 +673,7 @@ impl SkillLoader {
                 | "process_control"
                 | "shell"
                 | "web_search"
+                | "web_fetch"
                 | "powershell_query"
                 | "memory_store"
                 | "plan_todo"

@@ -1797,6 +1797,12 @@ fn summarize_input(tool_name: &str, input: &serde_json::Value) -> String {
             .chars()
             .take(80)
             .collect(),
+        "web_fetch" => input["url"]
+            .as_str()
+            .unwrap_or("")
+            .chars()
+            .take(80)
+            .collect(),
         "browser" => {
             let action = input["action"].as_str().unwrap_or("?");
             let url = input["url"].as_str().unwrap_or("");

@@ -2891,8 +2891,10 @@ This applies to every new task, no exceptions.
 → For window management: `desktop_automation(action="list_windows")`, `desktop_automation(action="activate_window", title="...")`
 
 **Web browsing / web scraping:**
-→ Use `browser` — full Chrome control (navigate, click, screenshot, eval_js)
-→ Do NOT use shell+curl for web pages — browser handles JS-rendered content
+→ For **static docs, changelogs, README, API reference** when you already have the URL: use `web_fetch` (lightweight HTTP, fast)
+→ For **JS-rendered pages, login flows, clicking, screenshots**: use `browser` — full Chrome control (navigate, click, screenshot, eval_js)
+→ Use `web_search` first to discover links, then `web_fetch` or `browser` to read them
+→ Do NOT use shell+curl for web pages — use `web_fetch` or `browser` instead
 
 **Office automation (Excel, Word, PowerPoint, Outlook):**
 → Use `office` for all structured Office operations. ALL values are passed safely — no escaping needed for $, quotes, formulas.
@@ -3600,6 +3602,9 @@ fn extract_key_artifact(tool_name: &str, input: &serde_json::Value) -> Option<St
         "web_search" => input["query"]
             .as_str()
             .map(|q| format!("search:{}", q.chars().take(40).collect::<String>())),
+        "web_fetch" => input["url"]
+            .as_str()
+            .map(|u| u.chars().take(60).collect()),
         "browser" => input["url"].as_str().map(|u| u.chars().take(60).collect()),
         _ => None,
     }

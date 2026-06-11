@@ -8,17 +8,17 @@ pub mod chat_ui_patch;
 pub mod chat_ui_schema;
 pub mod im_channel;
 pub mod im_send;
-pub mod lsp;
 #[cfg(target_os = "windows")]
 pub mod office;
 #[cfg(target_os = "windows")]
 pub mod powershell;
-pub mod read_lints;
 pub mod skill_list;
 pub mod skill_manage;
 pub mod system_info;
 #[cfg(target_os = "windows")]
 pub mod wmi_tool;
+
+pub use piscis_ide_tools::{LspTool, ReadLintsTool};
 
 // `plan_todo`, `pool_org`, `pool_chat` now live entirely in
 // `piscis-kernel::tools::*` and register themselves through

@@ -47,6 +47,12 @@ pub async fn list_builtin_tools(
             windows_only: false,
         },
         BuiltinToolInfo {
+            name: "web_fetch".into(),
+            description: "抓取指定 URL 的正文（HTML 转纯文本），适合读文档与 changelogs".into(),
+            icon: "📰".into(),
+            windows_only: false,
+        },
+        BuiltinToolInfo {
             name: "browser".into(),
             description: "控制 Chrome 浏览器，支持网页导航、点击、截图等操作".into(),
             icon: "🌐".into(),

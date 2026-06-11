@@ -6,6 +6,32 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.62] - 2026-06-12
+
+### Added
+- **Pond inbox / Koi observer**: tool-call cards with full input/output (replaces `🔧 pool_org` / `🔧 tool result` placeholders); `koi_task_*` sessions show Koi name + todo title.
+- **`web_fetch` tool**: fetch URL and return plain-text body (kernel `v0.8.58`).
+- **`piscis-ide-tools` crate**: shared LSP / `read_lints` tools moved out of the desktop host into the engine repo.
+
+### Fixed
+- **Pool coordination (engine `v0.8.58`)**: atomic `try_claim_koi_todo` prevents duplicate dispatch when heartbeat, auto-pickup, and `assign_koi` race; single-turn-per-Koi serialization; board-aware idle restore so `call_koi` and coordinator paths no longer clobber each other's busy status.
+- **Shell / tool output**: smarter truncation with head+tail and error-line preservation (kernel `v0.8.58`).
+- **Light mode**: pond project org-spec textarea and interactive-card inputs use theme `bg-secondary` instead of a hardcoded dark fallback.
+
+---
+
+## [0.8.61] - 2026-06-11
+
+### Added
+- **UI font scale**: Settings → Appearance → 1× / 1.25× / 1.5× / 1.75× / 2× zoom.
+- **OpenAI curated skills market** and skill adaptation workflow (install → adapt in main chat).
+
+### Fixed
+- **Composer skill list** refreshes from Redux after install.
+- **Plan todo snapshots** persist to activity log; Excel chart type constants corrected.
+
+---
+
 ## [0.8.58] - 2026-06-10
 
 ### Added

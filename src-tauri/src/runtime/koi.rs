@@ -164,11 +164,28 @@ async fn run_in_process_koi_turn(
         Some(request.pool_id.as_str())
     };
 
-    let koi_system_prompt = {
+    let (koi_system_prompt, session_title) = {
         let db = state.db.lock().await;
         let koi_def = db.resolve_koi_identifier(&request.koi_id).ok().flatten();
+        let todo_title = request
+            .todo_id
+            .as_ref()
+            .and_then(|id| db.get_koi_todo(id).ok().flatten())
+            .map(|todo| todo.title);
+        let session_title = koi_def.as_ref().and_then(|koi| {
+            if let Some(task) = todo_title.as_ref() {
+                let short: String = task.chars().take(100).collect();
+                Some(format!("{} · {}", koi.name, short))
+            } else if request.session_id.starts_with("koi_runtime_") {
+                Some(format!("{} · Runtime", koi.name))
+            } else if request.session_id.starts_with("koi_notify_") {
+                Some(format!("{} · Notify", koi.name))
+            } else {
+                None
+            }
+        });
         drop(db);
-        if let Some(koi_def) = koi_def {
+        let prompt = if let Some(koi_def) = koi_def {
             assemble_koi_task_system_prompt(&state, &koi_def, pool_session_id, &request.user_prompt)
                 .await
         } else {
@@ -176,13 +193,14 @@ async fn run_in_process_koi_turn(
                 .extra_system_context
                 .clone()
                 .unwrap_or_else(|| request.system_prompt.clone())
-        }
+        };
+        (prompt, session_title)
     };
 
     let options = HeadlessRunOptions {
         pool_session_id: pool_session_id.map(|s| s.to_string()),
         extra_system_context: Some(koi_system_prompt),
-        session_title: None,
+        session_title,
         session_source: Some(SESSION_SOURCE_PISCIS_POOL.to_string()),
         scene_kind: Some(SceneKind::KoiTask),
         memory_owner_id: Some(request.koi_id.clone()),

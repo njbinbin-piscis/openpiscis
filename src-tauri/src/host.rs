@@ -634,7 +634,7 @@ impl HostTools for DesktopHostTools {
 
         if self.is_enabled("lsp") {
             if let Some(ref lsp_manager) = self.lsp_manager {
-                registry.register(Box::new(crate::tools::lsp::LspTool {
+                registry.register(Box::new(crate::tools::LspTool {
                     lsp_manager: lsp_manager.clone(),
                 }));
             }
@@ -642,7 +642,7 @@ impl HostTools for DesktopHostTools {
 
         if self.is_enabled("read_lints") {
             if let Some(ref lsp_manager) = self.lsp_manager {
-                registry.register(Box::new(crate::tools::read_lints::ReadLintsTool {
+                registry.register(Box::new(crate::tools::ReadLintsTool {
                     lsp_manager: lsp_manager.clone(),
                 }));
             }

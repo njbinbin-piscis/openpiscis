@@ -1,8 +1,3 @@
-//! LSP (Language Server Protocol) integration module.
-//!
-//! Provides:
-//! - [`manager::LspManager`] — Global LSP process lifecycle manager.
-//! - [`bridge::run_lsp_bridge`] — WebSocket bridge for Monaco Editor LSP client.
+//! LSP (Language Server Protocol) integration — shared with AgentZ via piscis-ide-tools.
 
-pub mod bridge;
-pub mod manager;
+pub use piscis_ide_tools::lsp::{bridge, manager};

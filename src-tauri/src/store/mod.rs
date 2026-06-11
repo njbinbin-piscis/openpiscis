@@ -111,7 +111,7 @@ impl AppState {
             piscis_heartbeat_cursor: Arc::new(Mutex::new(std::collections::HashMap::new())),
             terminals: Arc::new(Mutex::new(crate::commands::ide::TerminalRegistry::new())),
             file_watchers: Arc::new(Mutex::new(std::collections::HashMap::new())),
-            lsp_manager: Arc::new(LspManager::new()),
+            lsp_manager: Arc::new(LspManager::with_bridge_name("OpenPiscis")),
         })
     }
 }

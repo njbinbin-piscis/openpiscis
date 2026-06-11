@@ -61,15 +61,23 @@ fn managed_run_slot_key(koi_id: &str, pool_session_id: Option<&str>) -> String {
 
 async fn refresh_managed_koi_status(app: &AppHandle, db_arc: &Arc<Mutex<Database>>, koi_id: &str) {
     let prefix = format!("{}:", koi_id);
-    let is_busy = {
+    let slot_active = {
         let active = ACTIVE_KOI_RUNS.lock().await;
         active.iter().any(|key| key.starts_with(&prefix))
     };
-    let new_status = if is_busy { "busy" } else { "idle" };
-    {
+    // A Koi is busy if a managed (`call_koi`) run slot is active OR the
+    // board shows it owns an `in_progress` todo. Considering the board
+    // here means releasing a `call_koi` slot will not wrongly flip a Koi
+    // to idle while the kernel coordinator is still running a todo turn
+    // for it (and vice versa) — the two dispatch paths share one
+    // board-derived source of truth.
+    let new_status = {
         let db = db_arc.lock().await;
-        let _ = db.update_koi_status(koi_id, new_status);
-    }
+        let board_busy = db.koi_has_in_progress_todo(koi_id).unwrap_or(false);
+        let status = if slot_active || board_busy { "busy" } else { "idle" };
+        let _ = db.update_koi_status(koi_id, status);
+        status
+    };
     let _ = app.emit(
         "koi_status_changed",
         json!({ "id": koi_id, "status": new_status }),
