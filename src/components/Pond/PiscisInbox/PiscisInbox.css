@@ -133,6 +133,136 @@
   gap: 8px;
 }
 
+.piscis-inbox-session-secondary {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.piscis-inbox-message--tools {
+  border-left-color: #f59e0b;
+}
+
+.piscis-inbox-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inbox-tool-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.inbox-tool-card.inbox-tool--ok {
+  border-left: 3px solid #22c55e;
+}
+
+.inbox-tool-card.inbox-tool--error {
+  border-left: 3px solid #ef4444;
+}
+
+.inbox-tool-card.inbox-tool--pending {
+  border-left: 3px solid #f59e0b;
+}
+
+.inbox-tool-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.inbox-tool-icon {
+  flex-shrink: 0;
+}
+
+.inbox-tool-name {
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+}
+
+.inbox-tool-summary {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox-tool-status {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+
+.inbox-tool-chevron {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.inbox-tool-body {
+  padding: 0 10px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.inbox-tool-section {
+  margin-top: 8px;
+}
+
+.inbox-tool-section-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.inbox-tool-section-label.label-error {
+  color: #ef4444;
+}
+
+.inbox-tool-pre {
+  margin: 0;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.inbox-tool-pre.pre-error {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.inbox-tool-show-more {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
 .piscis-inbox-main {
   flex: 1;
   min-width: 0;
@@ -191,7 +321,6 @@
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
-  text-transform: uppercase;
 }
 
 .piscis-inbox-message-content {

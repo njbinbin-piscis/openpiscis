@@ -4,40 +4,20 @@ import { useDispatch, useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage, Session, sessionsApi, boardApi, poolApi, koiApi, openPath } from "../../../services/tauri";
-import type { KoiWithStats } from "../../../services/tauri/pool";
+import type { KoiTodo, KoiWithStats, PoolSession } from "../../../services/tauri/pool";
 import { RootState, koiActions } from "../../../store";
+import { buildInboxRows, type InboxRow, type InboxToolStep } from "../../../utils/inboxRows";
+import { resolveInboxSessionLabel } from "../../../utils/inboxSessionLabel";
 import { linkifyPaths, isLocalPath, uriToNativePath } from "../../../utils/linkify";
 import { isInternalSession } from "../../../utils/session";
+import { formatToolInput, toolIcon, toolSummary } from "../../../utils/toolDisplay";
 import ConfirmDialog from "../../ConfirmDialog";
 import "./PiscisInbox.css";
 
 const INBOX_INITIAL_SIZE = 200;
 const INBOX_LAZY_STEP = 50;
+const INBOX_TOOL_RESULT_PREVIEW = 600;
 
-function parsePersistedToolBlocks(raw?: string | null): Array<Record<string, unknown>> {
-  if (!raw?.trim()) return [];
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as Array<Record<string, unknown>>) : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Text to show in the inbox when `content` is empty (common for tool carrier rows). */
-function inboxMessageDisplayText(message: ChatMessage): string {
-  const trimmed = message.content.trim();
-  if (trimmed) return trimmed;
-  for (const call of parsePersistedToolBlocks(message.tool_calls_json)) {
-    const name = typeof call.name === "string" ? call.name : "";
-    if (name) return `🔧 ${name}`;
-  }
-  if (message.tool_results_json?.trim()) {
-    return "🔧 tool result";
-  }
-  if (message.role === "tool") return "🔧 tool";
-  return "";
-}
 type InboxMode = "coordination" | "koiObserver";
 
 type PiscisInboxProps = {
@@ -88,6 +68,80 @@ function sessionBelongsToPool(session: Session, poolId: string, mode: InboxMode)
   return false;
 }
 
+function InboxToolStepCard({
+  step,
+  t,
+}: {
+  step: InboxToolStep;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const summary = toolSummary(step.name, step.input);
+  const statusClass = !step.hasResult
+    ? "inbox-tool--pending"
+    : step.isError
+      ? "inbox-tool--error"
+      : "inbox-tool--ok";
+  const result = step.result ?? "";
+  const truncated = result.length > INBOX_TOOL_RESULT_PREVIEW;
+  const [showFull, setShowFull] = useState(false);
+
+  return (
+    <div className={`inbox-tool-card ${statusClass}`}>
+      <button
+        type="button"
+        className="inbox-tool-header"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <span className="inbox-tool-icon">{toolIcon(step.name)}</span>
+        <span className="inbox-tool-name">{step.name}</span>
+        {summary ? <span className="inbox-tool-summary">{summary}</span> : null}
+        <span className={`inbox-tool-status ${statusClass}`}>
+          {!step.hasResult ? "…" : step.isError ? "✕" : "✓"}
+        </span>
+        <span className="inbox-tool-chevron">{expanded ? "▲" : "▼"}</span>
+      </button>
+      {expanded && (
+        <div className="inbox-tool-body">
+          {step.input != null && (
+            <div className="inbox-tool-section">
+              <span className="inbox-tool-section-label">{t("chat.toolStepInput")}</span>
+              <pre className="inbox-tool-pre">{formatToolInput(step.input)}</pre>
+            </div>
+          )}
+          <div className="inbox-tool-section">
+            <span className={`inbox-tool-section-label ${step.isError ? "label-error" : ""}`}>
+              {step.hasResult
+                ? (step.isError ? t("chat.toolStepError") : t("chat.toolStepOutput"))
+                : t("pond.inboxToolPending")}
+            </span>
+            <pre className={`inbox-tool-pre ${step.isError ? "pre-error" : ""}`}>
+              {step.hasResult
+                ? (showFull || !truncated ? result : `${result.slice(0, INBOX_TOOL_RESULT_PREVIEW)}…`)
+                : t("pond.inboxToolNoResult")}
+            </pre>
+            {step.hasResult && truncated && (
+              <button
+                type="button"
+                className="inbox-tool-show-more"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowFull((v) => !v);
+                }}
+              >
+                {showFull
+                  ? t("chat.toolStepCollapse")
+                  : t("chat.toolStepExpand", { count: result.length })}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function InboxMessageContent({ content }: { content: string }) {
   const processed = linkifyPaths(content);
   return (
@@ -135,6 +189,27 @@ function formatTime(value: string): string {
   }
 }
 
+function inboxToolsRowLabel(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  mode: InboxMode,
+  source: "assistant" | "results",
+  koiName?: string | null,
+  koiIcon?: string | null,
+): string {
+  if (source === "results") {
+    return t("pond.inboxRoleTool");
+  }
+  if (mode === "koiObserver") {
+    if (koiName) {
+      return t("pond.inboxToolsFromAgent", {
+        agent: koiIcon ? `${koiIcon} ${koiName}` : koiName,
+      });
+    }
+    return t("pond.observerRoleAssistant");
+  }
+  return t("pond.inboxToolsFromAgent", { agent: t("chat.piscis") });
+}
+
 function inboxMessageRoleLabel(
   t: (key: string) => string,
   mode: InboxMode,
@@ -142,30 +217,27 @@ function inboxMessageRoleLabel(
   koiName?: string | null,
   koiIcon?: string | null,
 ): string {
-  if (mode === "koiObserver") {
-    switch (role) {
-      case "assistant":
-        // Prefer the real Koi name (with icon if available) over the generic
-        // "Koi" label so users can tell which Koi sent which message.
-        if (koiName) {
-          return koiIcon ? `${koiIcon} ${koiName}` : koiName;
-        }
+  switch (role) {
+    case "assistant":
+      if (mode === "koiObserver") {
+        if (koiName) return koiIcon ? `${koiIcon} ${koiName}` : koiName;
         return t("pond.observerRoleAssistant");
-      case "user":
-        return t("pond.observerRoleUser");
-      case "system":
-        return t("pond.observerRoleSystem");
-      case "tool":
-        return t("pond.observerRoleTool");
-      default:
-        return role;
-    }
+      }
+      return t("chat.piscis");
+    case "user":
+      return mode === "koiObserver" ? t("pond.observerRoleUser") : t("pond.inboxRoleUser");
+    case "system":
+      return mode === "koiObserver" ? t("pond.observerRoleSystem") : t("pond.inboxRoleSystem");
+    case "tool":
+      return mode === "koiObserver" ? t("pond.observerRoleTool") : t("pond.inboxRoleTool");
+    default:
+      return role;
   }
-  return role === "assistant" ? t("chat.piscis") : role;
 }
 
 function sessionKindLabel(t: (key: string) => string, mode: InboxMode, session: Session): string {
   if (mode === "koiObserver") {
+    if (session.id.startsWith("koi_task_")) return t("pond.observerTask");
     if (session.id.startsWith("koi_runtime_")) return t("pond.observerRuntime");
     if (session.id.startsWith("koi_notify_")) return t("pond.observerNotify");
     return t("pond.observerInternal");
@@ -202,26 +274,37 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
   const loadingMoreRef = useRef(false);
 
   const [poolTodoSessionIds, setPoolTodoSessionIds] = useState<Set<string>>(new Set());
+  const [poolTodos, setPoolTodos] = useState<KoiTodo[]>([]);
+  const [poolSessions, setPoolSessions] = useState<PoolSession[]>([]);
 
   useEffect(() => {
-    if (mode !== "koiObserver" || !poolSessionId) {
-      setPoolTodoSessionIds(new Set());
-      return;
-    }
+    poolApi.listSessions().then(setPoolSessions).catch(() => setPoolSessions([]));
+  }, []);
+
+  useEffect(() => {
     boardApi
       .listTodos()
       .then((todos) => {
-        const poolTodos = todos.filter((todo) => todo.pool_session_id === poolSessionId);
-        const ids = new Set(
-          poolTodos.map((todo) => {
-            const koiId = todo.owner_id ?? "";
-            const short = todo.id.slice(0, 8);
-            return `koi_task_${koiId}_${short}`;
-          }),
-        );
-        setPoolTodoSessionIds(ids);
+        if (mode === "koiObserver" && poolSessionId) {
+          const scoped = todos.filter((todo) => todo.pool_session_id === poolSessionId);
+          setPoolTodos(scoped);
+          const ids = new Set(
+            scoped.map((todo) => {
+              const koiId = todo.owner_id ?? "";
+              const short = todo.id.slice(0, 8);
+              return `koi_task_${koiId}_${short}`;
+            }),
+          );
+          setPoolTodoSessionIds(ids);
+        } else {
+          setPoolTodos(todos);
+          setPoolTodoSessionIds(new Set());
+        }
       })
-      .catch(() => setPoolTodoSessionIds(new Set()));
+      .catch(() => {
+        setPoolTodos([]);
+        setPoolTodoSessionIds(new Set());
+      });
   }, [mode, poolSessionId]);
 
   const sessionFilter = useCallback(
@@ -303,13 +386,11 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
     loadSessions().catch(console.error);
   }, [loadSessions]);
 
-  // Load the Koi registry once so we can resolve the real Koi name/icon for
-  // assistant messages shown in the koi observer.
+  // Load Koi registry for observer session labels and assistant/tool headers.
   useEffect(() => {
     if (mode !== "koiObserver") return;
-    if (kois.length > 0) return;
     koiApi.list().then((list) => dispatch(koiActions.setKois(list))).catch(() => {});
-  }, [mode, kois.length, dispatch]);
+  }, [mode, dispatch]);
 
   useEffect(() => {
     if (!activeSessionId) {
@@ -320,12 +401,16 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
     loadMessages(activeSessionId).catch(console.error);
   }, [activeSessionId, loadMessages]);
 
-  const visibleMessages = useMemo(
-    () =>
-      messages
-        .map((message) => ({ message, text: inboxMessageDisplayText(message) }))
-        .filter((row) => row.text.length > 0),
-    [messages],
+  const inboxRows = useMemo(() => buildInboxRows(messages), [messages]);
+
+  const sessionLabelCtx = useMemo(
+    () => ({ kois, todos: poolTodos, pools: poolSessions }),
+    [kois, poolTodos, poolSessions],
+  );
+
+  const sessionLabel = useCallback(
+    (session: Session) => resolveInboxSessionLabel(session, sessionLabelCtx, t),
+    [sessionLabelCtx, t],
   );
 
   // After initial load: jump to bottom once messages are in the DOM
@@ -361,13 +446,13 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
     const el = messagesContainerRef.current;
     if (!el) return;
     const scrollable = el.scrollHeight - el.clientHeight > 8;
-    if (scrollable && visibleMessages.length > 0) return;
+    if (scrollable && inboxRows.length > 0) return;
     loadOlderMessages(activeSessionId, messages.length);
   }, [
     activeSessionId,
     hasMore,
     loadingMessages,
-    visibleMessages.length,
+    inboxRows.length,
     messages.length,
     loadOlderMessages,
   ]);
@@ -384,8 +469,9 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
         if (pool && pool.status === "active") blocked = true;
       } catch { /* ignore */ }
     }
-    setConfirmTarget({ id: session.id, title: session.title || session.id, blocked });
-  }, []);
+    const label = resolveInboxSessionLabel(session, sessionLabelCtx, t);
+    setConfirmTarget({ id: session.id, title: label.primary, blocked });
+  }, [sessionLabelCtx, t]);
 
   const confirmDeleteSession = useCallback(async () => {
     if (!confirmTarget) return;
@@ -459,7 +545,9 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
           {!loadingSessions && internalSessions.length === 0 && (
             <div className="piscis-inbox-empty">{copy.empty}</div>
           )}
-          {internalSessions.map((session) => (
+          {internalSessions.map((session) => {
+            const label = sessionLabel(session);
+            return (
             <div
               key={session.id}
               className={`piscis-inbox-session ${session.id === activeSessionId ? "active" : ""}`}
@@ -467,7 +555,7 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
               style={{ cursor: "pointer" }}
             >
               <div className="piscis-inbox-session-top">
-                <span className="piscis-inbox-session-name">{session.title || session.id}</span>
+                <span className="piscis-inbox-session-name" title={session.id}>{label.primary}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span className="piscis-inbox-session-kind">{sessionKindLabel(t, mode, session)}</span>
                   <button
@@ -484,8 +572,12 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
                 <span>{formatTime(session.updated_at)}</span>
                 <span>{t("pond.inboxMessageCount", { count: session.message_count })}</span>
               </div>
+              {label.secondary ? (
+                <div className="piscis-inbox-session-secondary">{label.secondary}</div>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -501,7 +593,7 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
           <>
             <div className="piscis-inbox-main-header">
               <div>
-                <div className="piscis-inbox-main-title">{activeSession.title || activeSession.id}</div>
+                <div className="piscis-inbox-main-title">{sessionLabel(activeSession).primary}</div>
                 <div className="piscis-inbox-main-meta">
                   {sessionKindLabel(t, mode, activeSession)} · {copy.readonly}
                 </div>
@@ -525,8 +617,8 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
               {!loadingMessages && messages.length === 0 && (
                 <div className="piscis-inbox-empty">{copy.noMessages}</div>
               )}
-              {!loadingMessages && messages.length > 0 && visibleMessages.length === 0 && !hasMore && (
-                <div className="piscis-inbox-empty">{t("pond.inboxOnlyToolRows")}</div>
+              {!loadingMessages && messages.length > 0 && inboxRows.length === 0 && !hasMore && (
+                <div className="piscis-inbox-empty">{t("pond.inboxNoMessages")}</div>
               )}
               {hasMore && (
                 <button
@@ -538,17 +630,45 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
                   {loadingMore ? t("common.loading") : t("common.loadMore")}
                 </button>
               )}
-              {visibleMessages.map(({ message, text }) => (
-                <div key={message.id} className={`piscis-inbox-message piscis-inbox-message--${message.role}`}>
-                  <div className="piscis-inbox-message-header">
-                    <span className="piscis-inbox-message-role">
-                      {inboxMessageRoleLabel(t, mode, message.role, activeKoi?.name, activeKoi?.icon)}
-                    </span>
-                    <span className="piscis-inbox-message-time">{formatTime(message.created_at)}</span>
+              {inboxRows.map((row) => {
+                if (row.kind === "text") {
+                  return (
+                    <div
+                      key={`text-${row.message.id}`}
+                      className={`piscis-inbox-message piscis-inbox-message--${row.message.role}`}
+                    >
+                      <div className="piscis-inbox-message-header">
+                        <span className="piscis-inbox-message-role">
+                          {inboxMessageRoleLabel(t, mode, row.message.role, activeKoi?.name, activeKoi?.icon)}
+                        </span>
+                        <span className="piscis-inbox-message-time">{formatTime(row.message.created_at)}</span>
+                      </div>
+                      <div className="piscis-inbox-message-content">
+                        <InboxMessageContent content={row.content} />
+                      </div>
+                    </div>
+                  );
+                }
+                const toolRow = row as Extract<InboxRow, { kind: "tools" }>;
+                return (
+                  <div
+                    key={`tools-${toolRow.message.id}`}
+                    className={`piscis-inbox-message piscis-inbox-message--${toolRow.message.role} piscis-inbox-message--tools`}
+                  >
+                    <div className="piscis-inbox-message-header">
+                      <span className="piscis-inbox-message-role">
+                        {inboxToolsRowLabel(t, mode, toolRow.source, activeKoi?.name, activeKoi?.icon)}
+                      </span>
+                      <span className="piscis-inbox-message-time">{formatTime(toolRow.message.created_at)}</span>
+                    </div>
+                    <div className="piscis-inbox-tools">
+                      {toolRow.steps.map((step) => (
+                        <InboxToolStepCard key={step.id} step={step} t={t} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="piscis-inbox-message-content"><InboxMessageContent content={text} /></div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           </>
