@@ -3602,9 +3602,7 @@ fn extract_key_artifact(tool_name: &str, input: &serde_json::Value) -> Option<St
         "web_search" => input["query"]
             .as_str()
             .map(|q| format!("search:{}", q.chars().take(40).collect::<String>())),
-        "web_fetch" => input["url"]
-            .as_str()
-            .map(|u| u.chars().take(60).collect()),
+        "web_fetch" => input["url"].as_str().map(|u| u.chars().take(60).collect()),
         "browser" => input["url"].as_str().map(|u| u.chars().take(60).collect()),
         _ => None,
     }

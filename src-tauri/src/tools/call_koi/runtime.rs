@@ -74,7 +74,11 @@ async fn refresh_managed_koi_status(app: &AppHandle, db_arc: &Arc<Mutex<Database
     let new_status = {
         let db = db_arc.lock().await;
         let board_busy = db.koi_has_in_progress_todo(koi_id).unwrap_or(false);
-        let status = if slot_active || board_busy { "busy" } else { "idle" };
+        let status = if slot_active || board_busy {
+            "busy"
+        } else {
+            "idle"
+        };
         let _ = db.update_koi_status(koi_id, status);
         status
     };
