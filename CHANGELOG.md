@@ -10,7 +10,8 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 
-- **Kernel `v0.8.60`**: plan path validation fix for Windows/macOS.
+- **Kernel `v0.8.62`**: merge v0.8.61 features (`list_all_artifacts`, notification pool_name) with plan path validation fix.
+- **RobotZ `v0.1.6`**: optional piscis-kernel pin aligned with engine v0.8.62.
 
 ---
 
