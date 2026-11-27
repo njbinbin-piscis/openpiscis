@@ -279,7 +279,7 @@ impl GatewayManager {
     pub async fn list_channels(&self) -> Vec<ChannelInfo> {
         let channels = self.channels.read().await;
         let mut infos = Vec::new();
-        for (_, channel) in channels.iter() {
+        for channel in channels.values() {
             let ch = channel.read().await;
             infos.push(ChannelInfo {
                 name: ch.name().to_string(),
