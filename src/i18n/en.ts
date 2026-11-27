@@ -765,6 +765,7 @@ model = "default"`,
     reviewUndoing: "Undoing…",
     reviewNew: "new",
     reviewEdit: "edit",
+    reviewDelete: "deleted",
     reviewUndoFailed: "Undo failed",
     workspaceOutsideAutoEnabled:
       "The selected directory is outside the workspace root — \"Allow access outside workspace\" was turned on automatically.",

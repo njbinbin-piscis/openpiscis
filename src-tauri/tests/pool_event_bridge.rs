@@ -29,6 +29,7 @@ fn sample_pool_snapshot() -> PoolSessionSnapshot {
         status: "active".into(),
         project_dir: None,
         task_timeout_secs: 0,
+        member_koi_ids: Vec::new(),
     }
 }
 

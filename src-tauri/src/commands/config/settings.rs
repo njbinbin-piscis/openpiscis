@@ -488,6 +488,11 @@ pub async fn save_settings(state: State<'_, AppState>, updates: Value) -> Result
                 },
                 base_url: item["base_url"].as_str().unwrap_or("").to_string(),
                 max_tokens: item["max_tokens"].as_u64().unwrap_or(0) as u32,
+                context_window: item["context_window"].as_u64().unwrap_or(0) as u32,
+                temperature: item["temperature"].as_f64().map(|v| v as f32),
+                top_p: item["top_p"].as_f64().map(|v| v as f32),
+                thinking: item["thinking"].as_bool(),
+                stream: item["stream"].as_bool(),
             });
         }
         settings.llm_providers = providers;

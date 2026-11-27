@@ -2709,7 +2709,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -3830,6 +3830,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35bd024e8b2ff75562e5f34e7f4905839deb4b22955ef5e73d2fea1b9813cb23"
+dependencies = [
+ "num-bigint",
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3838,6 +3852,15 @@ dependencies = [
  "num-integer",
  "num-traits",
  "rand 0.8.6",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -3863,6 +3886,27 @@ version = "0.1.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
 dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-iter"
+version = "0.1.46"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c92800bd69a1eac91786bcfe9da64a897eb72911b8dc3095decbd07429e8048b"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
+dependencies = [
+ "num-bigint",
+ "num-integer",
  "num-traits",
 ]
 
@@ -4608,8 +4652,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-core"
-version = "0.8.62"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.62#c2c622e363b5701c3bab08a9bd1e4f1da2664426"
+version = "0.8.63"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.79#5da4da27f6ef0b8d3aecc9b520304e435b2157ab"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4620,7 +4664,7 @@ dependencies = [
 
 [[package]]
 name = "piscis-desktop"
-version = "0.8.66"
+version = "0.8.67"
 dependencies = [
  "aes",
  "anyhow",
@@ -4684,7 +4728,7 @@ dependencies = [
 [[package]]
 name = "piscis-ide-tools"
 version = "0.1.0"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.62#c2c622e363b5701c3bab08a9bd1e4f1da2664426"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.79#5da4da27f6ef0b8d3aecc9b520304e435b2157ab"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4701,8 +4745,8 @@ dependencies = [
 
 [[package]]
 name = "piscis-kernel"
-version = "0.8.62"
-source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.62#c2c622e363b5701c3bab08a9bd1e4f1da2664426"
+version = "0.8.63"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.79#5da4da27f6ef0b8d3aecc9b520304e435b2157ab"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4725,8 +4769,10 @@ dependencies = [
  "rusqlite",
  "russh",
  "scraper",
+ "secret-service",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
  "tokio-cron-scheduler",
@@ -4734,6 +4780,7 @@ dependencies = [
  "urlencoding",
  "uuid",
  "windows 0.58.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5463,8 +5510,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-automation"
-version = "0.1.6"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.6#7b839988e4de477d785e11dfa67ac69ea6075208"
+version = "0.1.15"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.15#8ce3e20a2c7671144cd4734e89ab9049ac7136ac"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5485,8 +5532,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-browser"
-version = "0.1.6"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.6#7b839988e4de477d785e11dfa67ac69ea6075208"
+version = "0.1.15"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.15#8ce3e20a2c7671144cd4734e89ab9049ac7136ac"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5509,8 +5556,8 @@ dependencies = [
 
 [[package]]
 name = "robotz-core"
-version = "0.1.6"
-source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.6#7b839988e4de477d785e11dfa67ac69ea6075208"
+version = "0.1.15"
+source = "git+https://github.com/njbinbin-piscis/RobotZ.git?rev=v0.1.15#8ce3e20a2c7671144cd4734e89ab9049ac7136ac"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5890,6 +5937,24 @@ dependencies = [
  "pkcs8 0.10.2",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "secret-service"
+version = "5.1.0"
+source = "git+https://github.com/njbinbin-piscis/piscis-engine.git?rev=v0.8.79#5da4da27f6ef0b8d3aecc9b520304e435b2157ab"
+dependencies = [
+ "aes",
+ "cbc",
+ "futures-util",
+ "generic-array 0.14.7",
+ "getrandom 0.2.17",
+ "hkdf",
+ "num",
+ "once_cell",
+ "serde",
+ "sha2 0.10.9",
+ "zbus",
 ]
 
 [[package]]

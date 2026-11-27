@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.67] - 2026-11-27
+
+### Changed
+
+- **Kernel `v0.8.79`** (was v0.8.62): OpenAI provider reliability fixes (v0.8.63), background process registry (`shell`/`code_run` background mode + `process_wait` family), sandbox policy gates, compaction notices, journal net-status reconciliation (`added`/`modified`/`deleted`), per-provider sampling params (`temperature`/`top_p`/`thinking`/`stream`).
+- **RobotZ `v0.1.15`**: piscis-kernel pin aligned with engine v0.8.79 — single unified kernel across all consumers.
+
+### Added
+
+- **Chat**: non-terminal `notice` events (model fallback / corrective retry) shown as dismissible banner without clearing running state; structured `error.code` classification.
+- **File review panel**: net-status tags (new / edit / deleted) reconciled against disk.
+- **Background processes**: shared registry wired into desktop host tools.
+
+---
+
 ## [0.8.66] - 2026-06-13
 
 ### Changed

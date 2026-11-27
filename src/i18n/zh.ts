@@ -765,6 +765,7 @@ model = "default"`,
     reviewUndoing: "撤销中…",
     reviewNew: "新建",
     reviewEdit: "修改",
+    reviewDelete: "删除",
     reviewUndoFailed: "撤销失败",
     workspaceOutsideAutoEnabled:
       "所选目录在工作区根目录之外，已自动开启「允许访问工作区以外的文件」。",

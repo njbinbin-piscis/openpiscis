@@ -21,7 +21,11 @@ src-tauri/robotz-mcp-*
 *.db-shm
 *.db-wal
 .piscis/
+.agentz/
 config.json
+
+# Local RobotZ checkout used for release work (not a build dependency).
+.robotz-checkout/
 
 # OS
 .DS_Store

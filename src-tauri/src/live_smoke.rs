@@ -333,7 +333,7 @@ async fn harness_live_smoke() {
                     final_tokens = (total_input_tokens, total_output_tokens);
                     saw_done = true;
                 }
-                AgentEvent::Error { message } => {
+                AgentEvent::Error { message, .. } => {
                     saw_error = Some(message);
                 }
                 _ => {}
