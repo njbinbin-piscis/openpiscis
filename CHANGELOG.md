@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.68] - 2026-11-27
+
+### Added
+
+- **Koi Timeline** (Collab → 🕒): video-editor-style lane view of every pool member's work history — working / waiting-for-you / waiting-for-teammate / idle / not-in-team segments rebuilt from todos + task event stream. Wheel zoom, drag pan, full-range minimap, live "now" line, growing in-progress blocks, event-driven refresh, and click-to-jump into the chat transcript with highlight. Waiting states are heuristic and marked as inferred (dashed). New backend aggregate command `get_koi_timeline`.
+
+### Fixed
+
+- **Git branch switching**: Koi branches held by leftover `.koi-worktrees` worktrees (after crashes or archived pools) could not be checked out ("already checked out at …"). `ide_git_checkout` now auto-saves any pending work in the stale worktree, removes it, and retries the checkout.
+
+---
+
 ## [0.8.67] - 2026-11-27
 
 ### Changed
