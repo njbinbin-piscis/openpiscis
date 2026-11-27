@@ -78,4 +78,23 @@ describe("KoiTimeline", () => {
     await waitFor(() => expect(screen.getByText(/boom/)).toBeTruthy());
     expect(screen.getByText(/Retry/i)).toBeTruthy();
   });
+
+  it("minimap frame has drag handles and reflects the zoomed window width", async () => {
+    // Join 4 h ago → fullSpan ≈ 4 h; default view 1 h → frame ≈ 25 % wide.
+    const fourHAgo = new Date(Date.now() - 4 * 3_600_000).toISOString();
+    const f = fixture();
+    f.members = f.members.map((m) => ({ ...m, joined_at: fourHAgo }));
+    mockInvoke.mockResolvedValueOnce(f);
+    const { container } = render(<KoiTimeline poolId="p1" />);
+    await waitFor(() => expect(container.querySelector(".koi-tl-mini-view")).toBeTruthy());
+    const frame = container.querySelector(".koi-tl-mini-view") as HTMLElement;
+    // Zoomed-in window must be narrower than the full range.
+    const w = parseFloat(frame.style.width);
+    expect(w).toBeGreaterThan(5);
+    expect(w).toBeLessThan(90);
+    // Draggable affordances: body + two edge resize handles.
+    expect(frame.classList.contains("koi-tl-mini-view--draggable")).toBe(true);
+    expect(frame.querySelector(".koi-tl-mini-handle--left")).toBeTruthy();
+    expect(frame.querySelector(".koi-tl-mini-handle--right")).toBeTruthy();
+  });
 });

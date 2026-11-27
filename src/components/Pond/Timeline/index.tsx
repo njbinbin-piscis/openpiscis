@@ -69,6 +69,14 @@ export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startEnd: number } | null>(null);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Minimap frame drag: move the whole window, or resize from an edge.
+  const miniDragRef = useRef<{
+    mode: "move" | "left" | "right";
+    startX: number;
+    startViewStart: number;
+    startViewMs: number;
+    miniW: number;
+  } | null>(null);
 
   // ── data loading ──────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -194,12 +202,57 @@ export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
   }, [effectiveEnd, viewMs, clampView, now]);
 
   const onMinimapClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Ignore clicks that originated on the frame (drag handles it).
+    if ((e.target as HTMLElement).closest(".koi-tl-mini-view")) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const frac = (e.clientX - rect.left) / rect.width;
     const center = fullStart + frac * fullSpan;
     const next = clampView(center + viewMs / 2, viewMs);
     setViewEnd(next.end >= now - 1000 ? null : next.end);
   }, [fullStart, fullSpan, viewMs, clampView, now]);
+
+  // ── minimap frame drag (move / edge-resize) ───────────────────────
+  const applyMiniView = useCallback((start: number, span: number) => {
+    const next = clampView(start + span, span);
+    setViewMs(next.span);
+    setViewEnd(next.end >= now - 1000 ? null : next.end);
+  }, [clampView, now]);
+
+  const onMiniFramePointerDown = useCallback((e: React.PointerEvent, mode: "move" | "left" | "right") => {
+    e.stopPropagation();
+    const mini = (e.currentTarget as HTMLElement).closest(".koi-tl-minimap") as HTMLElement | null;
+    if (!mini) return;
+    miniDragRef.current = {
+      mode,
+      startX: e.clientX,
+      startViewStart: viewStart,
+      startViewMs: viewMs,
+      miniW: mini.getBoundingClientRect().width || 1,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, [viewStart, viewMs]);
+
+  const onMiniFramePointerMove = useCallback((e: React.PointerEvent) => {
+    const drag = miniDragRef.current;
+    if (!drag) return;
+    e.stopPropagation();
+    const dt = ((e.clientX - drag.startX) / drag.miniW) * fullSpan;
+    if (drag.mode === "move") {
+      applyMiniView(drag.startViewStart + dt, drag.startViewMs);
+    } else if (drag.mode === "right") {
+      applyMiniView(drag.startViewStart, Math.max(drag.startViewMs + dt, MIN_VIEW_MS));
+    } else {
+      // Left edge: keep the right edge fixed while moving the left one.
+      const right = drag.startViewStart + drag.startViewMs;
+      const newStart = Math.min(drag.startViewStart + dt, right - MIN_VIEW_MS);
+      applyMiniView(newStart, right - newStart);
+    }
+  }, [fullSpan, applyMiniView]);
+
+  const onMiniFramePointerUp = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation();
+    miniDragRef.current = null;
+  }, []);
 
   const stateLabel = (s: LaneState): string =>
     t(`pond.timeline.state_${s}`) || s;
@@ -317,7 +370,28 @@ export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
               ))}
             </div>
           ))}
-          <div className="koi-tl-mini-view" style={{ left: `${Math.max(miniViewLeft, 0)}%`, width: `${miniViewW}%` }} />
+          <div
+            className="koi-tl-mini-view koi-tl-mini-view--draggable"
+            style={{ left: `${Math.max(miniViewLeft, 0)}%`, width: `${miniViewW}%` }}
+            title={t("pond.timeline.dragToNavigate") || "Drag to navigate · edges resize"}
+            onPointerDown={(e) => onMiniFramePointerDown(e, "move")}
+            onPointerMove={onMiniFramePointerMove}
+            onPointerUp={onMiniFramePointerUp}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="koi-tl-mini-handle koi-tl-mini-handle--left"
+              onPointerDown={(e) => onMiniFramePointerDown(e, "left")}
+              onPointerMove={onMiniFramePointerMove}
+              onPointerUp={onMiniFramePointerUp}
+            />
+            <div
+              className="koi-tl-mini-handle koi-tl-mini-handle--right"
+              onPointerDown={(e) => onMiniFramePointerDown(e, "right")}
+              onPointerMove={onMiniFramePointerMove}
+              onPointerUp={onMiniFramePointerUp}
+            />
+          </div>
         </div>
       </div>
 

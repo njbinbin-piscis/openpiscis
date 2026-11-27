@@ -100,6 +100,7 @@ const en = {
       inferred: "inferred",
       inferredNote: "dashed = inferred",
       clickToJump: "Click to jump to chat",
+      dragToNavigate: "Drag to navigate · edges resize",
       state_working: "Working",
       state_waiting_user: "Waiting for you",
       state_waiting_peer: "Waiting for teammate",

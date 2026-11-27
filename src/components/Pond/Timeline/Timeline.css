@@ -290,8 +290,43 @@
   border: 1px solid rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
-  pointer-events: none;
 }
+
+.koi-tl-mini-view--draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.koi-tl-mini-view--draggable:active { cursor: grabbing; }
+
+.koi-tl-mini-view--draggable:hover {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.koi-tl-mini-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: ew-resize;
+  touch-action: none;
+  z-index: 1;
+}
+
+.koi-tl-mini-handle::after {
+  content: "";
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 2px;
+  width: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.koi-tl-mini-handle--left { left: -3px; }
+.koi-tl-mini-handle--right { right: -3px; }
 
 /* ── Tooltip ── */
 
