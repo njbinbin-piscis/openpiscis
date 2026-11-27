@@ -990,13 +990,77 @@ pub async fn ide_git_commit(project_dir: String, message: String) -> Result<Stri
 
 /// Checkout (switch to) a branch. Refuses if there are uncommitted changes
 /// that would be overwritten (git handles that itself — the error is surfaced).
+///
+/// Koi branches may still be held by a leftover `.koi-worktrees` worktree
+/// (e.g. after a crash or an archived pool). Git refuses to check out a
+/// branch that is already checked out in a linked worktree, so when that
+/// happens we detach the stale worktree first and retry. The worktree's
+/// own commits stay on the branch; only the working directory is removed.
 #[tauri::command]
 pub async fn ide_git_checkout(project_dir: String, branch: String) -> Result<String, String> {
     let root = PathBuf::from(&project_dir);
-    let output = run_git_cmd(&root, &["checkout", &branch])
+    match run_git_cmd(&root, &["checkout", &branch]).await {
+        Ok(output) => Ok(output),
+        Err(e) if e.contains("is already checked out at") => {
+            release_worktree_holding_branch(&root, &branch).await?;
+            run_git_cmd(&root, &["checkout", &branch])
+                .await
+                .map_err(|e| format!("git checkout failed: {}", e))
+        }
+        Err(e) => Err(format!("git checkout failed: {}", e)),
+    }
+}
+
+/// Find the linked worktree that currently holds `branch` and remove it so
+/// the branch can be checked out in the main working tree. Only touches
+/// worktrees whose HEAD is exactly `branch`; the main worktree is skipped.
+async fn release_worktree_holding_branch(root: &Path, branch: &str) -> Result<(), String> {
+    let listing = run_git_cmd(root, &["worktree", "list", "--porcelain"])
         .await
-        .map_err(|e| format!("git checkout failed: {}", e))?;
-    Ok(output)
+        .map_err(|e| format!("git worktree list failed: {}", e))?;
+
+    let target_ref = format!("branch refs/heads/{}", branch);
+    let mut current_path: Option<String> = None;
+    let mut holding_path: Option<String> = None;
+    for line in listing.lines() {
+        if let Some(p) = line.strip_prefix("worktree ") {
+            current_path = Some(p.to_string());
+        } else if line == target_ref {
+            if let Some(p) = current_path.take() {
+                // Skip the main worktree (it is `root` itself).
+                if Path::new(&p) != root {
+                    holding_path = Some(p);
+                }
+            }
+        }
+    }
+
+    let Some(wt) = holding_path else {
+        return Err(format!(
+            "git checkout failed: branch '{}' is checked out in another worktree that could not be located",
+            branch
+        ));
+    };
+
+    // Commit any pending work inside the stale worktree so nothing is lost,
+    // then remove it. `--force` is needed because the worktree may contain
+    // untracked/ignored build artifacts.
+    let wt_path = PathBuf::from(&wt);
+    let _ = run_git_cmd(&wt_path, &["add", "-A"]).await;
+    let _ = run_git_cmd(
+        &wt_path,
+        &[
+            "commit",
+            "-m",
+            "koi: auto-save before branch switch",
+            "--allow-empty",
+        ],
+    )
+    .await;
+    run_git_cmd(root, &["worktree", "remove", "--force", &wt])
+        .await
+        .map_err(|e| format!("git worktree remove failed: {}", e))?;
+    Ok(())
 }
 
 /// Create a new branch from the current HEAD and switch to it.
