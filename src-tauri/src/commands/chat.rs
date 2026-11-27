@@ -1555,6 +1555,8 @@ pub async fn chat_send(
                 let _ = event_tx
                     .send(AgentEvent::Error {
                         message: e.to_string(),
+                        code: None,
+                        details: None,
                     })
                     .await;
             }
@@ -2462,6 +2464,8 @@ pub async fn run_agent_headless(
             // text accumulated during the run) so the user can still see the partial output.
             let err_payload = serde_json::to_value(&AgentEvent::Error {
                 message: e.to_string(),
+                code: None,
+                details: None,
             })
             .unwrap_or_default();
             let _ = state
@@ -4498,6 +4502,7 @@ pub async fn get_context_preview(
         builtin_tool_enabled,
         project_instruction_budget_chars,
         enable_project_instructions,
+        max_tool_result_tokens,
     ) = {
         let settings = state.settings.lock().await;
         (
@@ -4509,6 +4514,7 @@ pub async fn get_context_preview(
             settings.builtin_tool_enabled.clone(),
             settings.project_instruction_budget_chars,
             settings.enable_project_instructions,
+            settings.max_tool_result_tokens,
         )
     };
     let workspace_root =
@@ -4622,6 +4628,7 @@ pub async fn get_context_preview(
         piscis_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
         piscis_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
         message_budget,
+        max_tool_result_tokens,
     );
     let request_view_messages =
         piscis_kernel::agent::vision::inject_selected_context(&request_view_messages, &session_id)
@@ -4666,6 +4673,7 @@ pub async fn get_context_preview(
             piscis_kernel::agent::compaction::CTX_PRESERVE_RECENT_TURNS,
             piscis_kernel::agent::compaction::CTX_KEEP_RECENT_TOOL_CARRIERS,
             message_budget,
+            max_tool_result_tokens,
         );
         let compacted_request_messages = piscis_kernel::agent::vision::inject_selected_context(
             &compacted_request_messages,
@@ -4737,6 +4745,7 @@ mod tests {
             created_at: Utc::now(),
             tool_calls_json: None,
             tool_results_json: None,
+            attachments_json: None,
             turn_index: Some(turn_index),
         }
     }

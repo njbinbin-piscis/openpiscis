@@ -372,6 +372,10 @@ pub struct DesktopHostTools {
     pub subagent_runtime: Option<Arc<dyn SubagentRuntime>>,
     /// Coordinator configuration (task timeout, worktree usage).
     pub coordinator_config: CoordinatorConfig,
+    /// Shared background-process registry for `shell` / `code_run`
+    /// background mode and the `process_wait` family. `None` keeps
+    /// background execution disabled (kernel returns a clean error).
+    pub background_registry: Option<Arc<piscis_kernel::background::BackgroundRegistry>>,
     /// IM gateway shared by every tool that needs the `wecom` /
     /// `feishu` / `dingtalk` / … long-running connection.
     ///
@@ -435,6 +439,9 @@ impl DesktopHostTools {
     /// at process startup; that instance is preserved here (we only
     /// fill in when the caller left the slot empty).
     pub fn fill_pool_defaults(mut self) -> Self {
+        if self.background_registry.is_none() {
+            self.background_registry = Some(piscis_kernel::background::shared_default_registry());
+        }
         let Some(app) = self.app_handle.as_ref() else {
             return self;
         };
@@ -480,6 +487,7 @@ impl DesktopHostTools {
             pool_event_sink: self.pool_event_sink.clone(),
             subagent_runtime: self.subagent_runtime.clone(),
             coordinator_config: self.coordinator_config.clone(),
+            background_registry: self.background_registry.clone(),
         }
     }
 
@@ -799,6 +807,7 @@ impl DesktopHost {
             pool_event_sink: Some(pool_event_sink_dyn),
             subagent_runtime: Some(subagent_runtime),
             coordinator_config: resolve_desktop_coordinator_config(Some(&app)),
+            background_registry: Some(piscis_kernel::background::shared_default_registry()),
             gateway: Some(state.gateway.clone()),
             lsp_manager: Some(state.lsp_manager.clone()),
             confirm_flags: Some(state.confirm_flags.clone()),

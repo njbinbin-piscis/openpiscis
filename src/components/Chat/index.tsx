@@ -1194,12 +1194,17 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
             textDelta: (event as { type: "fish_progress"; fish_id: string; fish_name: string; iteration: number; tool_name: string | null; status: string; text_delta?: string }).text_delta,
           }));
           break;
+        case "notice":
+          // Non-terminal notice (model fallback / corrective retry): the run
+          // is still going — surface a dismissible banner, keep running state.
+          setInfoNotice(event.message);
+          break;
         case "error":
           // Also use boundSessionId for error — clears running state for the correct session.
           flushBufferedDelta(boundSessionId);
           dispatch(chatActions.setRunning({ sessionId: boundSessionId, running: false }));
           dispatch(chatActions.clearStreaming(boundSessionId));
-          setSendError((event as { type: "error"; message: string }).message ?? "Unknown error");
+          setSendError(event.message ?? "Unknown error");
           break;
       }
     }).then((unlisten) => {
@@ -2271,8 +2276,8 @@ export default function Chat({ onNavigateTab }: ChatProps = {}) {
                 <ul className="review-files">
                   {reviewChanges.map((c) => (
                     <li key={c.id} className="review-file" title={c.rel_path}>
-                      <span className={`review-tag ${c.existed ? "edit" : "new"}`}>
-                        {c.existed ? t("chat.reviewEdit") : t("chat.reviewNew")}
+                      <span className={`review-tag ${c.status === "added" ? "new" : c.status === "deleted" ? "del" : "edit"}`}>
+                        {c.status === "added" ? t("chat.reviewNew") : c.status === "deleted" ? t("chat.reviewDelete") : t("chat.reviewEdit")}
                       </span>
                       <span className="review-path">{c.rel_path}</span>
                     </li>

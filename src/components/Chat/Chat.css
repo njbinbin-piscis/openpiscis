@@ -891,6 +891,11 @@
   color: var(--text-muted);
 }
 
+.review-tag.del {
+  background: var(--danger-dim, rgba(220, 60, 60, 0.15));
+  color: var(--danger, #dc3c3c);
+}
+
 .review-path {
   overflow: hidden;
   text-overflow: ellipsis;

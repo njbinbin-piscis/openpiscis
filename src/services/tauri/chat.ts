@@ -137,7 +137,23 @@ export type AgentEventType =
     }
   | { type: "done"; total_input_tokens: number; total_output_tokens: number }
   | { type: "cancelled" }
-  | { type: "error"; message: string }
+  | {
+      type: "error";
+      message: string;
+      /** Stable machine-readable classification (engine ≥ v0.8.63), e.g.
+       *  "model_unavailable" | "tool_args_invalid" | "protocol_error". */
+      code?: string;
+      details?: unknown;
+    }
+  | {
+      /** Non-terminal informational notice (engine ≥ v0.8.63): model fallback,
+       *  corrective retry, etc. The run is still going — do NOT clear the
+       *  streaming/running state on this event. */
+      type: "notice";
+      message: string;
+      code?: string;
+      details?: unknown;
+    }
   | {
       type: "plan_update";
       items: Array<{
@@ -205,6 +221,11 @@ export interface JournalChange {
   existed: boolean;
   /** Whether the edit actually applied. */
   applied: boolean;
+  /** Net state vs. the pre-edit baseline, reconciled against disk (engine ≥ v0.8.79):
+   *  "added" | "modified" | "deleted". */
+  status: string;
+  /** Turn that produced this change (engine ≥ v0.8.79). */
+  turn_id: string;
 }
 
 export const journalApi = {

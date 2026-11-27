@@ -176,6 +176,10 @@ export default function AssistantPanel({
           }
           break;
         }
+        case "notice":
+          // Non-terminal: keep busy state, just log the notice.
+          append({ kind: "info", text: evt.message });
+          break;
         case "error":
           append({ kind: "error", text: `error: ${evt.message}` });
           setBusy(false);
