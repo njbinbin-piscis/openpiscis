@@ -7,6 +7,7 @@
 // Pool-domain submodules (registered as Tauri commands by `app::bootstrap`).
 pub mod board;
 pub mod koi;
+pub mod timeline;
 
 use std::sync::Arc;
 

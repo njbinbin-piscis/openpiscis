@@ -393,3 +393,38 @@ export const boardApi = {
   onTodoUpdated: (handler: (data: unknown) => void): Promise<UnlistenFn> =>
     listen("koi_todo_updated", (e) => handler(e.payload)),
 };
+
+// ---------------------------------------------------------------------------
+// Koi timeline (video-editor-style lane view over one pool)
+// ---------------------------------------------------------------------------
+
+/** One task-lifecycle message, trimmed by the backend. `id` is the
+ *  pool_messages row id and doubles as the chat-jump anchor. */
+export interface TimelineEvent {
+  id: number;
+  sender_id: string;
+  todo_id?: string;
+  event_type?: string;
+  msg_type: string;
+  created_at: string;
+}
+
+export interface TimelineMember {
+  koi: KoiDefinition;
+  /** Normalised RFC3339 join time — left boundary of the Koi's lane. */
+  joined_at: string;
+}
+
+/** Raw material for the timeline; segment reconstruction happens in
+ *  `components/Pond/Timeline/buildLanes.ts`. */
+export interface KoiTimelineData {
+  pool_id: string;
+  server_now: string;
+  members: TimelineMember[];
+  todos: KoiTodo[];
+  events: TimelineEvent[];
+}
+
+export const timelineApi = {
+  get: (poolId: string) => invoke<KoiTimelineData>("get_koi_timeline", { poolId }),
+};

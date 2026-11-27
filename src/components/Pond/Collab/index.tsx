@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch, useStore } from "react-redux";
 import { listen } from "@tauri-apps/api/event";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -13,6 +13,7 @@ import AssistantPanel from "../IDE/AssistantPanel";
 import GitPanel from "../IDE/GitPanel";
 import SearchPanel from "../IDE/SearchPanel";
 import Board from "../Board";
+import KoiTimeline from "../Timeline";
 import PiscisInbox from "../PiscisInbox";
 import PoolMemberPicker from "../PoolMemberPicker";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
@@ -36,14 +37,14 @@ import "../IDE/IDE.css";
 import "../ChatPool/ChatPool.css";
 import "./Collab.css";
 
-type ContentView = "chat" | "explorer" | "search" | "git" | "board" | "inbox" | "koiObserver";
+type ContentView = "chat" | "explorer" | "search" | "git" | "board" | "timeline" | "inbox" | "koiObserver";
 
 const VIEW_ORDER: ContentView[] = [
-  "chat", "explorer", "search", "git", "board", "inbox", "koiObserver",
+  "chat", "explorer", "search", "git", "board", "timeline", "inbox", "koiObserver",
 ];
 
 const VIEW_ICONS: Record<Exclude<ContentView, "git">, string> = {
-  chat: "💬", explorer: "📁", search: "🔍", board: "📋", inbox: "📬", koiObserver: "🔎",
+  chat: "💬", explorer: "📁", search: "🔍", board: "📋", timeline: "🕒", inbox: "📬", koiObserver: "🔎",
 };
 
 function CollabViewIcon({ view }: { view: ContentView }) {
@@ -125,7 +126,7 @@ function MessageBubble({ msg, kois }: { msg: PoolMessage; kois: KoiWithStats[] }
   const meta = parseMeta(msg.metadata);
 
   return (
-    <div className={`pool-msg pool-msg--${msg.msg_type}`}>
+    <div className={`pool-msg pool-msg--${msg.msg_type}`} id={`pool-msg-${msg.id}`}>
       <div className="pool-msg-bar" style={{ background: color }} />
       <div className="pool-msg-body">
         <div className="pool-msg-header">
@@ -179,6 +180,7 @@ interface CollabProps {
 export default function Collab({ onNavigateToSchoolKoi, visible = true }: CollabProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const store = useStore<RootState>();
 
   // Pool state
   const sessions = useSelector((s: RootState) => s.pool.sessions);
@@ -394,6 +396,33 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
     active: Boolean(activeSessionId),
   });
   scrollCancelRef.current = scrollHistory.cancelPendingRestore;
+
+  // ─── Timeline → chat jump ──────────────────────────────────────────
+  // Switch to chat, page backwards until the anchor message is loaded
+  // (bounded), then scroll it into view and flash a highlight.
+  const handleJumpToMessage = useCallback(async (messageId: number) => {
+    if (!activeSessionId) return;
+    setContentView("chat");
+    const sid = activeSessionId;
+    const isLoaded = () =>
+      (store.getState().pool.messagesBySession[sid] ?? []).some((m) => m.id === messageId);
+    let count = (store.getState().pool.messagesBySession[sid] ?? []).length;
+    for (let i = 0; i < 20 && !isLoaded(); i++) {
+      const more = store.getState().pool.hasMoreBySession[sid];
+      if (more === false) break;
+      await loadOlderMessages(sid, count);
+      const next = (store.getState().pool.messagesBySession[sid] ?? []).length;
+      if (next === count) break; // no progress — stop
+      count = next;
+    }
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`pool-msg-${messageId}`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center" });
+      el.classList.add("pool-msg--jump-highlight");
+      setTimeout(() => el.classList.remove("pool-msg--jump-highlight"), 2200);
+    });
+  }, [activeSessionId, loadOlderMessages, store]);
 
   // ─── Init ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1163,6 +1192,11 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
 
             {/* Board view */}
             {contentView === "board" && <Board />}
+
+            {/* Timeline view */}
+            {contentView === "timeline" && (
+              <KoiTimeline poolId={activeSessionId} onJumpToMessage={handleJumpToMessage} />
+            )}
 
             {/* Inbox view */}
             {contentView === "inbox" && (

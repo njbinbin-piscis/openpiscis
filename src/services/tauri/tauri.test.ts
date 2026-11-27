@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { settingsApi, sessionsApi, chatApi, skillsApi, schedulerApi, memoryApi, auditApi } from ".";
+import { settingsApi, sessionsApi, chatApi, skillsApi, schedulerApi, memoryApi, auditApi, timelineApi } from ".";
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -59,6 +59,24 @@ describe("sessionsApi", () => {
     mockInvoke.mockResolvedValueOnce(null);
     await sessionsApi.rename("abc", "New Title");
     expect(mockInvoke).toHaveBeenCalledWith("rename_session", { sessionId: "abc", title: "New Title" });
+  });
+});
+
+// ─── timelineApi ──────────────────────────────────────────────────────────────
+
+describe("timelineApi", () => {
+  it("get() calls get_koi_timeline with poolId", async () => {
+    const fake = {
+      pool_id: "pool-1",
+      server_now: "2026-11-27T10:00:00+00:00",
+      members: [],
+      todos: [],
+      events: [],
+    };
+    mockInvoke.mockResolvedValueOnce(fake);
+    const result = await timelineApi.get("pool-1");
+    expect(mockInvoke).toHaveBeenCalledWith("get_koi_timeline", { poolId: "pool-1" });
+    expect(result).toEqual(fake);
   });
 });
 

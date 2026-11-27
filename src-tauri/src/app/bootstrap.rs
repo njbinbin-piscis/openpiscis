@@ -1365,6 +1365,7 @@ fn run_impl() {
             commands::pool::board::complete_koi_todo,
             commands::pool::board::resume_koi_todo,
             commands::pool::board::delete_koi_todo,
+            commands::pool::timeline::get_koi_timeline,
             // ide/
             commands::ide::ide_list_files,
             commands::ide::ide_read_file,
