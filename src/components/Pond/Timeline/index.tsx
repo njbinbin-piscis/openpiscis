@@ -27,6 +27,9 @@ const DEFAULT_VIEW_MS = 3_600_000;   // 1 h initial window
 interface Props {
   poolId: string | null;
   onJumpToMessage?: (messageId: number) => void;
+  /** Open the Koi Observer focused on this todo's task session
+   *  (`koi_task_{koiId}_{todoId前8位}`) — the Koi's iteration transcript. */
+  onOpenTask?: (koiId: string, todoId: string) => void;
 }
 
 function fmtClock(t: number): string {
@@ -54,7 +57,7 @@ function tickStep(viewMs: number): number {
   return steps.find((s) => s >= target) ?? steps[steps.length - 1];
 }
 
-export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
+export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Props) {
   const { t } = useTranslation();
   const [data, setData] = useState<KoiTimelineData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -336,7 +339,15 @@ export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
                     key={`${seg.todoId ?? seg.state}-${i}`}
                     className={`koi-tl-seg koi-tl-seg--${seg.state}${seg.inferred ? " koi-tl-seg--inferred" : ""}`}
                     style={{ left, width: w, background: STATE_COLORS[seg.state] }}
-                    onClick={() => seg.anchorMessageId != null && onJumpToMessage?.(seg.anchorMessageId)}
+                    onClick={() => {
+                      // Task segments open the Koi's iteration transcript
+                      // (Observer); only non-task anchors fall back to chat.
+                      if (seg.todoId && onOpenTask) {
+                        onOpenTask(lane.koi.id, seg.todoId);
+                      } else if (seg.anchorMessageId != null) {
+                        onJumpToMessage?.(seg.anchorMessageId);
+                      }
+                    }}
                     onMouseEnter={(e) => setTooltip({ seg, x: e.clientX, y: e.clientY })}
                     onMouseMove={(e) => setTooltip({ seg, x: e.clientX, y: e.clientY })}
                     onMouseLeave={() => setTooltip(null)}
@@ -401,9 +412,11 @@ export default function KoiTimeline({ poolId, onJumpToMessage }: Props) {
           <div className="koi-tl-tooltip-title">{tooltip.seg.title || stateLabel(tooltip.seg.state)}</div>
           <div>{stateLabel(tooltip.seg.state)}{tooltip.seg.inferred ? ` · ${t("pond.timeline.inferred") || "inferred"}` : ""}</div>
           <div>{fmtClock(tooltip.seg.start)} – {fmtClock(tooltip.seg.end)} · {fmtDuration(tooltip.seg.end - tooltip.seg.start)}</div>
-          {tooltip.seg.anchorMessageId != null && (
+          {tooltip.seg.todoId && onOpenTask ? (
+            <div className="koi-tl-tooltip-hint">{t("pond.timeline.clickToOpenTask") || "Click to open the Koi's task iterations"}</div>
+          ) : tooltip.seg.anchorMessageId != null ? (
             <div className="koi-tl-tooltip-hint">{t("pond.timeline.clickToJump") || "Click to jump to chat"}</div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

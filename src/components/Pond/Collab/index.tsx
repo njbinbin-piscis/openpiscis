@@ -301,6 +301,8 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
 
   // Panel / content view state
   const [contentView, setContentView] = useState<ContentView>("chat");
+  // Timeline → Koi Observer: task session to focus (koi_task_{koi}_{todo8}).
+  const [observerFocusSession, setObserverFocusSession] = useState<string | null>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [leftWidth, setLeftWidth] = useState(280);
   const [participantsOpen, setParticipantsOpen] = useState(false);
@@ -423,6 +425,14 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
       setTimeout(() => el.classList.remove("pool-msg--jump-highlight"), 2200);
     });
   }, [activeSessionId, loadOlderMessages, store]);
+
+  // ─── Timeline → Koi task iterations ────────────────────────────────
+  // Open the Observer focused on the todo's per-task session so the user
+  // sees the Koi's actual iteration transcript, not the pool chat room.
+  const handleOpenTask = useCallback((koiId: string, todoId: string) => {
+    setObserverFocusSession(`koi_task_${koiId}_${todoId.slice(0, 8)}`);
+    setContentView("koiObserver");
+  }, []);
 
   // ─── Init ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1195,7 +1205,7 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
 
             {/* Timeline view */}
             {contentView === "timeline" && (
-              <KoiTimeline poolId={activeSessionId} onJumpToMessage={handleJumpToMessage} />
+              <KoiTimeline poolId={activeSessionId} onJumpToMessage={handleJumpToMessage} onOpenTask={handleOpenTask} />
             )}
 
             {/* Inbox view */}
@@ -1205,7 +1215,7 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
 
             {/* Koi Observer view */}
             {contentView === "koiObserver" && (
-              <PiscisInbox mode="koiObserver" poolSessionId={activeSessionId} />
+              <PiscisInbox mode="koiObserver" poolSessionId={activeSessionId} focusSessionId={observerFocusSession} />
             )}
           </div>
 

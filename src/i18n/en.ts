@@ -100,6 +100,7 @@ const en = {
       inferred: "inferred",
       inferredNote: "dashed = inferred",
       clickToJump: "Click to jump to chat",
+      clickToOpenTask: "Click to open the Koi's task iterations",
       dragToNavigate: "Drag to navigate · edges resize",
       state_working: "Working",
       state_waiting_user: "Waiting for you",

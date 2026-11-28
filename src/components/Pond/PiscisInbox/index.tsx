@@ -24,6 +24,9 @@ type PiscisInboxProps = {
   mode?: InboxMode;
   /** Active pool session — scopes coordination / observer to this project. */
   poolSessionId?: string | null;
+  /** When set (observer mode), auto-select this session once it appears in
+   *  the list — used by the timeline to open a Koi's task iterations. */
+  focusSessionId?: string | null;
 };
 
 function isKoiObserverSession(session: Session): boolean {
@@ -253,7 +256,7 @@ function sessionKindLabel(t: (key: string) => string, mode: InboxMode, session: 
   return t("pond.inboxProject");
 }
 
-export default function PiscisInbox({ mode = "coordination", poolSessionId = null }: PiscisInboxProps) {
+export default function PiscisInbox({ mode = "coordination", poolSessionId = null, focusSessionId = null }: PiscisInboxProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const kois = useSelector((s: RootState) => s.koi.kois) as KoiWithStats[];
@@ -341,6 +344,19 @@ export default function PiscisInbox({ mode = "coordination", poolSessionId = nul
       setLoadingSessions(false);
     }
   }, [sessionFilter]);
+
+  // External focus request (timeline → task iterations): select the target
+  // session as soon as it shows up in the filtered list. Consumed once per
+  // request so manual selection afterwards is not overridden.
+  const consumedFocusRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusSessionId) return;
+    if (consumedFocusRef.current === focusSessionId) return;
+    if (internalSessions.some((s) => s.id === focusSessionId)) {
+      consumedFocusRef.current = focusSessionId;
+      setActiveSessionId(focusSessionId);
+    }
+  }, [focusSessionId, internalSessions]);
 
   const loadMessages = useCallback(async (sessionId: string) => {
     setLoadingMessages(true);

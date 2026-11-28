@@ -100,6 +100,7 @@ const zh = {
       inferred: "推断",
       inferredNote: "虚线 = 推断",
       clickToJump: "点击跳转到聊天",
+      clickToOpenTask: "点击查看该 Koi 的任务迭代过程",
       dragToNavigate: "拖动快速导航 · 边缘缩放窗口",
       state_working: "工作中",
       state_waiting_user: "等你",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import KoiTimeline from "./index";
 import type { KoiTimelineData } from "../../../services/tauri/pool";
@@ -96,5 +96,30 @@ describe("KoiTimeline", () => {
     expect(frame.classList.contains("koi-tl-mini-view--draggable")).toBe(true);
     expect(frame.querySelector(".koi-tl-mini-handle--left")).toBeTruthy();
     expect(frame.querySelector(".koi-tl-mini-handle--right")).toBeTruthy();
+  });
+
+  it("clicking a task segment opens the Koi task iterations, not the chat", async () => {
+    const f = fixture();
+    const claimedAt = new Date(Date.now() - 1_800_000).toISOString();
+    f.todos = [{
+      id: "todo-abc-123", owner_id: "k1", title: "build feature", description: "",
+      status: "in_progress", priority: "medium", assigned_by: "user",
+      pool_session_id: "p1", source_type: "user", task_timeout_secs: 0,
+      claimed_at: claimedAt, created_at: claimedAt, updated_at: claimedAt,
+    } as KoiTimelineData["todos"][number]];
+    f.events = [{
+      id: 42, sender_id: "k1", todo_id: "todo-abc-123",
+      event_type: "task_claimed", msg_type: "task_claimed", created_at: claimedAt,
+    }];
+    mockInvoke.mockResolvedValueOnce(f);
+    const onOpenTask = vi.fn();
+    const onJumpToMessage = vi.fn();
+    const { container } = render(
+      <KoiTimeline poolId="p1" onOpenTask={onOpenTask} onJumpToMessage={onJumpToMessage} />,
+    );
+    await waitFor(() => expect(container.querySelector(".koi-tl-seg--working")).toBeTruthy());
+    fireEvent.click(container.querySelector(".koi-tl-seg--working")!);
+    expect(onOpenTask).toHaveBeenCalledWith("k1", "todo-abc-123");
+    expect(onJumpToMessage).not.toHaveBeenCalled();
   });
 });
