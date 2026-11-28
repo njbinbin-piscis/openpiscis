@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.69] - 2026-11-27
+
+### Added
+
+- **Koi Timeline minimap navigation**: the overview viewport frame is now draggable — drag the frame body to pan the visible window across the full range, drag either edge handle to resize (zoom) the window. Clicking outside the frame still centers the view there; dragging near "now" resumes follow mode.
+
+---
+
 ## [0.8.68] - 2026-11-27
 
 ### Added
