@@ -86,6 +86,7 @@ const zh = {
     tabGit: "版本控制",
     tabBoard: "看板",
     tabTimeline: "时间线",
+    tabTasks: "任务",
     tabInbox: "协调台",
     tabKoiObserver: "Koi观察",
     tabIde: "IDE",

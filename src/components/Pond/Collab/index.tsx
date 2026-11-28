@@ -12,8 +12,7 @@ import TerminalPanel from "../IDE/Terminal";
 import AssistantPanel from "../IDE/AssistantPanel";
 import GitPanel from "../IDE/GitPanel";
 import SearchPanel from "../IDE/SearchPanel";
-import Board from "../Board";
-import KoiTimeline from "../Timeline";
+import TasksView from "../TasksView";
 import PiscisInbox from "../PiscisInbox";
 import PoolMemberPicker from "../PoolMemberPicker";
 import { ideApi, onFileChanged } from "../../../services/tauri/ide";
@@ -37,14 +36,14 @@ import "../IDE/IDE.css";
 import "../ChatPool/ChatPool.css";
 import "./Collab.css";
 
-type ContentView = "chat" | "explorer" | "search" | "git" | "board" | "timeline" | "inbox" | "koiObserver";
+type ContentView = "chat" | "explorer" | "search" | "git" | "tasks" | "inbox" | "koiObserver";
 
 const VIEW_ORDER: ContentView[] = [
-  "chat", "explorer", "search", "git", "board", "timeline", "inbox", "koiObserver",
+  "chat", "explorer", "search", "git", "tasks", "inbox", "koiObserver",
 ];
 
 const VIEW_ICONS: Record<Exclude<ContentView, "git">, string> = {
-  chat: "💬", explorer: "📁", search: "🔍", board: "📋", timeline: "🕒", inbox: "📬", koiObserver: "🔎",
+  chat: "💬", explorer: "📁", search: "🔍", tasks: "📋", inbox: "📬", koiObserver: "🔎",
 };
 
 function CollabViewIcon({ view }: { view: ContentView }) {
@@ -770,9 +769,9 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
     document.body.style.userSelect = "none";
   }, [leftWidth]);
 
-  // Auto-set Board filter when viewing Board tab
+  // Auto-set Board filter when viewing the Tasks tab (Board + Timeline)
   useEffect(() => {
-    if (contentView === "board" && activeSessionId) {
+    if (contentView === "tasks" && activeSessionId) {
       dispatch(boardActions.setFilterSessionId(activeSessionId));
     }
   }, [contentView, activeSessionId, dispatch]);
@@ -1200,12 +1199,9 @@ export default function Collab({ onNavigateToSchoolKoi, visible = true }: Collab
               </div>
             )}
 
-            {/* Board view */}
-            {contentView === "board" && <Board />}
-
-            {/* Timeline view */}
-            {contentView === "timeline" && (
-              <KoiTimeline poolId={activeSessionId} onJumpToMessage={handleJumpToMessage} onOpenTask={handleOpenTask} />
+            {/* Tasks view: Board + Timeline sub-tabs with shared filters */}
+            {contentView === "tasks" && (
+              <TasksView poolId={activeSessionId} onJumpToMessage={handleJumpToMessage} onOpenTask={handleOpenTask} />
             )}
 
             {/* Inbox view */}

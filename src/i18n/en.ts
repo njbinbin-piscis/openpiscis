@@ -86,6 +86,7 @@ const en = {
     tabGit: "Source Control",
     tabBoard: "Board",
     tabTimeline: "Timeline",
+    tabTasks: "Tasks",
     tabInbox: "Coordination",
     tabKoiObserver: "Koi Observer",
     tabIde: "IDE",

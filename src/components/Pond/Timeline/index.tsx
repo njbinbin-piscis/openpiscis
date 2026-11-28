@@ -30,6 +30,9 @@ interface Props {
   /** Open the Koi Observer focused on this todo's task session
    *  (`koi_task_{koiId}_{todoId前8位}`) — the Koi's iteration transcript. */
   onOpenTask?: (koiId: string, todoId: string) => void;
+  /** Shared filters from the merged Tasks view (same Redux board slice). */
+  filterOwnerId?: string | null;
+  filterPriority?: string | null;
 }
 
 function fmtClock(t: number): string {
@@ -57,7 +60,7 @@ function tickStep(viewMs: number): number {
   return steps.find((s) => s >= target) ?? steps[steps.length - 1];
 }
 
-export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Props) {
+export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask, filterOwnerId = null, filterPriority = null }: Props) {
   const { t } = useTranslation();
   const [data, setData] = useState<KoiTimelineData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -148,6 +151,25 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
     () => (data ? buildTimelineLanes(data, now, fullStart) : []),
     [data, now, fullStart],
   );
+
+  // Shared Tasks-view filters: Koi filter hides other lanes; priority
+  // filter keeps only segments whose todo matches (idle/not-member stay).
+  const visibleLanes = useMemo(() => {
+    let out = lanes;
+    if (filterOwnerId) out = out.filter((l) => l.koi.id === filterOwnerId);
+    if (filterPriority && data) {
+      const matchIds = new Set(
+        data.todos.filter((td) => td.priority === filterPriority).map((td) => td.id),
+      );
+      out = out.map((l) => ({
+        ...l,
+        segments: l.segments.filter(
+          (s) => !s.todoId || matchIds.has(s.todoId),
+        ),
+      }));
+    }
+    return out;
+  }, [lanes, filterOwnerId, filterPriority, data]);
 
   const xOf = useCallback(
     (t: number) => ((t - viewStart) / viewMs) * trackW,
@@ -270,7 +292,7 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
   if (!data) {
     return <div className="koi-tl-empty">{t("common.loading") || "Loading..."}</div>;
   }
-  if (lanes.length === 0) {
+  if (visibleLanes.length === 0) {
     return <div className="koi-tl-empty">{t("pond.timeline.noMembers") || "No Koi members in this project yet"}</div>;
   }
 
@@ -317,7 +339,7 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
 
       {/* Lanes */}
       <div className="koi-tl-body">
-        {lanes.map((lane) => (
+        {visibleLanes.map((lane) => (
           <div key={lane.koi.id} className="koi-tl-lane">
             <div className="koi-tl-lane-label">
               <span className="koi-tl-lane-icon">{lane.koi.icon}</span>
@@ -328,7 +350,7 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
             </div>
             <div
               className="koi-tl-track"
-              ref={lane === lanes[0] ? trackRef : undefined}
+              ref={lane === visibleLanes[0] ? trackRef : undefined}
               onWheel={onWheel}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -370,7 +392,7 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
       <div className="koi-tl-minimap-row">
         <div className="koi-tl-lane-label koi-tl-minimap-label">{t("pond.timeline.overview") || "Overview"}</div>
         <div className="koi-tl-minimap" onClick={onMinimapClick}>
-          {lanes.map((lane) => (
+          {visibleLanes.map((lane) => (
             <div key={lane.koi.id} className="koi-tl-mini-lane">
               {lane.segments.filter((s) => s.state !== "idle" && s.state !== "not_member").map((seg, i) => (
                 <div

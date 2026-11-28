@@ -452,7 +452,7 @@ function CreateTaskDialog({
   );
 }
 
-export default function Board() {
+export default function Board({ hideToolbar = false }: { hideToolbar?: boolean } = {}) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -616,6 +616,7 @@ export default function Board() {
 
   return (
     <div className="board">
+      {!hideToolbar && (
       <div className="board-toolbar">
         <div className="board-filters">
           <AppDropdown
@@ -647,6 +648,7 @@ export default function Board() {
           + {t("board.createTask")}
         </button>
       </div>
+      )}
 
       {!filterSessionId ? (
         <div className="board-empty">{t("board.selectProject") || t("pool.selectSession")}</div>
