@@ -6,6 +6,23 @@
   padding: 12px;
   overflow: hidden;
   position: relative;
+
+  /* Theme-aware overlay colors: white overlays on dark, ink on light. */
+  --tl-overlay: rgba(255, 255, 255, 0.55);
+  --tl-overlay-strong: rgba(255, 255, 255, 0.9);
+  --tl-overlay-fill: rgba(255, 255, 255, 0.08);
+  --tl-overlay-fill-hover: rgba(255, 255, 255, 0.14);
+  --tl-stripe: rgba(255, 255, 255, 0.05);
+  --tl-idle-opacity: 0.45;
+}
+
+:root[data-color-mode="light"] .koi-tl {
+  --tl-overlay: rgba(26, 26, 36, 0.55);
+  --tl-overlay-strong: rgba(26, 26, 36, 0.9);
+  --tl-overlay-fill: rgba(26, 26, 36, 0.07);
+  --tl-overlay-fill-hover: rgba(26, 26, 36, 0.13);
+  --tl-stripe: rgba(26, 26, 36, 0.08);
+  --tl-idle-opacity: 0.3;
 }
 
 .koi-tl-empty {
@@ -28,6 +45,14 @@
   gap: 16px;
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+/* Legend gets its own full-width row so it is never squeezed out by
+   the title + controls when the panel is narrow. */
+.koi-tl-legend-row {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .koi-tl-title {
@@ -56,6 +81,7 @@
   height: 12px;
   border-radius: 3px;
   display: inline-block;
+  border: 1px solid var(--tl-overlay);
 }
 
 .koi-tl-legend-note {
@@ -181,7 +207,7 @@
 .koi-tl-track {
   flex: 1;
   position: relative;
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary, var(--bg-secondary));
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 6px);
   overflow: hidden;
@@ -207,7 +233,7 @@
 .koi-tl-seg:hover { opacity: 1; filter: brightness(1.15); }
 
 .koi-tl-seg--inferred {
-  border: 1px dashed rgba(255, 255, 255, 0.65);
+  border: 1px dashed var(--tl-overlay);
   background-image: repeating-linear-gradient(
     45deg, transparent, transparent 4px, rgba(0,0,0,0.15) 4px, rgba(0,0,0,0.15) 8px
   );
@@ -215,12 +241,12 @@
 
 .koi-tl-seg--not_member {
   background-image: repeating-linear-gradient(
-    45deg, transparent, transparent 5px, rgba(255,255,255,0.05) 5px, rgba(255,255,255,0.05) 10px
+    45deg, transparent, transparent 5px, var(--tl-stripe) 5px, var(--tl-stripe) 10px
   );
   cursor: default;
 }
 
-.koi-tl-seg--idle { cursor: default; opacity: 0.45; }
+.koi-tl-seg--idle { cursor: default; opacity: var(--tl-idle-opacity); }
 
 .koi-tl-seg-title {
   font-size: 10px;
@@ -259,7 +285,7 @@
 .koi-tl-minimap {
   flex: 1;
   position: relative;
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary, var(--bg-secondary));
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 6px);
   cursor: pointer;
@@ -272,7 +298,7 @@
 
 .koi-tl-mini-lane {
   position: relative;
-  height: 5px;
+  height: 6px;
 }
 
 .koi-tl-mini-seg {
@@ -280,15 +306,15 @@
   top: 0;
   bottom: 0;
   border-radius: 2px;
-  min-width: 1px;
+  min-width: 2px;
 }
 
 .koi-tl-mini-view {
   position: absolute;
   top: 0;
   bottom: 0;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--tl-overlay);
+  background: var(--tl-overlay-fill);
   border-radius: 3px;
 }
 
@@ -300,8 +326,8 @@
 .koi-tl-mini-view--draggable:active { cursor: grabbing; }
 
 .koi-tl-mini-view--draggable:hover {
-  border-color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--tl-overlay-strong);
+  background: var(--tl-overlay-fill-hover);
 }
 
 .koi-tl-mini-handle {
@@ -322,7 +348,7 @@
   left: 2px;
   width: 3px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--tl-overlay);
 }
 
 .koi-tl-mini-handle--left { left: -3px; }
@@ -341,7 +367,7 @@
   color: var(--text-secondary);
   pointer-events: none;
   max-width: 280px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg, 0 4px 16px rgba(0, 0, 0, 0.4));
 }
 
 .koi-tl-tooltip-title {

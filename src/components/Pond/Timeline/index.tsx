@@ -280,9 +280,20 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
 
   return (
     <div className="koi-tl">
-      {/* Header: title, legend, zoom controls */}
+      {/* Header: title + zoom controls */}
       <div className="koi-tl-header">
         <span className="koi-tl-title">🕒 {t("pond.timeline.title") || "Koi Timeline"}</span>
+        <div className="koi-tl-controls">
+          <button onClick={() => zoomBy(0.5)} title={t("pond.timeline.zoomIn") || "Zoom in"}>＋</button>
+          <span className="koi-tl-zoom-label">{fmtDuration(viewMs)}</span>
+          <button onClick={() => zoomBy(2)} title={t("pond.timeline.zoomOut") || "Zoom out"}>－</button>
+          <button onClick={() => { setViewEnd(null); setViewMs(DEFAULT_VIEW_MS); }} title={t("pond.timeline.followNow") || "Follow now"}>⏱</button>
+          <button onClick={load} disabled={loading} title={t("common.refresh") || "Refresh"}>↻</button>
+        </div>
+      </div>
+
+      {/* Legend: dedicated row, always visible */}
+      <div className="koi-tl-legend-row">
         <div className="koi-tl-legend">
           {(Object.keys(STATE_COLORS) as LaneState[]).map((s) => (
             <span key={s} className="koi-tl-legend-item">
@@ -291,13 +302,6 @@ export default function KoiTimeline({ poolId, onJumpToMessage, onOpenTask }: Pro
             </span>
           ))}
           <span className="koi-tl-legend-note">{t("pond.timeline.inferredNote") || "dashed = inferred"}</span>
-        </div>
-        <div className="koi-tl-controls">
-          <button onClick={() => zoomBy(0.5)} title={t("pond.timeline.zoomIn") || "Zoom in"}>＋</button>
-          <span className="koi-tl-zoom-label">{fmtDuration(viewMs)}</span>
-          <button onClick={() => zoomBy(2)} title={t("pond.timeline.zoomOut") || "Zoom out"}>－</button>
-          <button onClick={() => { setViewEnd(null); setViewMs(DEFAULT_VIEW_MS); }} title={t("pond.timeline.followNow") || "Follow now"}>⏱</button>
-          <button onClick={load} disabled={loading} title={t("common.refresh") || "Refresh"}>↻</button>
         </div>
       </div>
 

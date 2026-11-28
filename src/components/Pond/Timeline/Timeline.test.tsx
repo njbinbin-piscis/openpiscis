@@ -59,8 +59,9 @@ describe("KoiTimeline", () => {
     });
     expect(screen.getByText("Coder")).toBeTruthy();
     expect(screen.getByText("Reviewer")).toBeTruthy();
-    // five-state legend
+    // five-state legend lives in its own dedicated row
     expect(container.querySelectorAll(".koi-tl-legend-item")).toHaveLength(5);
+    expect(container.querySelector(".koi-tl-legend-row")).toBeTruthy();
     // minimap present with viewport box
     expect(container.querySelector(".koi-tl-minimap")).toBeTruthy();
     expect(container.querySelector(".koi-tl-mini-view")).toBeTruthy();
