@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/) and
 
 ---
 
+## [0.8.70] - 2026-11-28
+
+### Fixed
+
+- **Koi Timeline task click**: clicking a task segment now opens the Koi Observer focused on that todo's iteration transcript (`koi_task_{koiId}_{todoId}` session) instead of jumping to the pool chat room. Non-task anchors still jump to chat.
+- **Koi Timeline legend**: the five-state legend moved to its own dedicated row so it is always visible regardless of panel width.
+- **Koi Timeline light theme**: minimap viewport frame, drag handles, inferred/not-member stripes and idle segments used hardcoded white overlays invisible on light themes; they now follow theme-aware `--tl-*` variables. Track/minimap backgrounds use `--bg-tertiary` for contrast.
+
+---
+
 ## [0.8.69] - 2026-11-27
 
 ### Added

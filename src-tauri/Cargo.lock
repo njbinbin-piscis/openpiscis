@@ -4664,7 +4664,7 @@ dependencies = [
 
 [[package]]
 name = "piscis-desktop"
-version = "0.8.69"
+version = "0.8.70"
 dependencies = [
  "aes",
  "anyhow",
